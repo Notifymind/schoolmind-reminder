@@ -79,6 +79,62 @@ export const verification = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
+export const schoolclass = pgTable("schoolclass", {
+  name: varchar("name", { length: 50 }).primaryKey(),
+  username: varchar("username", { length: 100 }).notNull(),
+  password: varchar("password", { length: 100 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const exams = pgTable("exams", {
+  id: serial("id").primaryKey(),
+  className: varchar("class_name", { length: 50 })
+    .notNull()
+    .references(() => schoolclass.name),
+  subject: varchar("subject"),
+  title: varchar("title"),
+  date: varchar("date"),
+  time: varchar("time"),
+  type: varchar("type"),
+  description: text("description"),
+  dueDate: timestamp("due_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const assignments = pgTable("assignments", {
+  id: serial("id").primaryKey(),
+  className: varchar("class_name", { length: 50 })
+    .notNull()
+    .references(() => schoolclass.name),
+  subject: varchar("subject"),
+  title: varchar("title"),
+  date: varchar("date"),
+  time: varchar("time"),
+  type: varchar("type"),
+  description: text("description"),
+  dueDate: timestamp("due_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const schoolclassRelations = relations(schoolclass, ({ many }) => ({
+  exams: many(exams),
+  assignments: many(assignments),
+}));
+
+export const examsRelations = relations(exams, ({ one }) => ({
+  class: one(schoolclass, {
+    fields: [exams.className],
+    references: [schoolclass.name],
+  }),
+}));
+
+export const assignmentsRelations = relations(assignments, ({ one }) => ({
+  class: one(schoolclass, {
+    fields: [assignments.className],
+    references: [schoolclass.name],
+  }),
+}));
+
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
@@ -97,27 +153,3 @@ export const accountRelations = relations(account, ({ one }) => ({
     references: [user.id],
   }),
 }));
-
-export const exams = pgTable("exams", {
-  id: serial("id").primaryKey(),
-  subject: varchar("subject"),
-  title: varchar("title"),
-  date: varchar("date"),
-  time: varchar("time"),
-  type: varchar("type"),
-  description: text("description"),
-  dueDate: timestamp("due_date"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const assignments = pgTable("assignments", {
-  id: serial("id").primaryKey(),
-  subject: varchar("subject"),
-  title: varchar("title"),
-  date: varchar("date"),
-  time: varchar("time"),
-  type: varchar("type"),
-  description: text("description"),
-  dueDate: timestamp("due_date"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
