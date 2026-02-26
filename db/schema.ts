@@ -121,8 +121,3 @@ export const assignments = pgTable("assignments", {
   dueDate: timestamp("due_date"),
   createdAt: timestamp("created_at").defaultNow(),
 });
-
-export type Exam = typeof exams.$inferSelect;
-export type NewExam = typeof exams.$inferInsert;
-export type Assignment = typeof assignments.$inferSelect;
-export type NewAssignment = typeof assignments.$inferInsert;
