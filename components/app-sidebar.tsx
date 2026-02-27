@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { authClient } from "@/lib/auth-client"
 
 const navItems = [
   {
@@ -57,6 +58,7 @@ const navItems = [
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
+  const { data: session } = authClient.useSession()
 
   React.useEffect(() => {
     setMounted(true)
@@ -109,12 +111,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src="/avatars/user.jpg" alt="User" />
-                    <AvatarFallback className="rounded-lg">U</AvatarFallback>
+                    <AvatarImage src={session?.user?.image ?? undefined} alt={session?.user?.name ?? "User"} />
+                    <AvatarFallback className="rounded-lg">{session?.user?.name?.charAt(0).toUpperCase() ?? "U"}</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">User</span>
-                    <span className="truncate text-xs">user@example.com</span>
+                    <span className="truncate font-semibold">{session?.user?.name ?? "User"}</span>
+                    <span className="truncate text-xs">{session?.user?.email ?? ""}</span>
                   </div>
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
@@ -124,16 +126,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 align="start"
                 sideOffset={4}
               >
-                <DropdownMenuItem>
-                  <User />
-                  Account
+                <DropdownMenuItem asChild>
+                  <Link href="/app/account">
+                    <User />
+                    Account
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
                   {mounted && theme === "dark" ? <Sun /> : <Moon />}
                   Toggle theme
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive">
+                <DropdownMenuItem variant="destructive" onClick={() => authClient.signOut()}>
                   <LogOut />
                   Log out
                 </DropdownMenuItem>
