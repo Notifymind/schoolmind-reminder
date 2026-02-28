@@ -19,6 +19,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Bell,
   Plus,
@@ -308,6 +309,7 @@ function PushNotificationManager() {
   const [isSupported, setIsSupported] = React.useState(false);
   const [isSubscribed, setIsSubscribed] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isChecking, setIsChecking] = React.useState(true);
 
   async function checkSubscription() {
     const result = await getPushSubscriptionStatusAction();
@@ -317,9 +319,25 @@ function PushNotificationManager() {
   React.useEffect(() => {
     if ("serviceWorker" in navigator && "PushManager" in window) {
       setIsSupported(true);
-      checkSubscription();
+      checkSubscription().finally(() => setIsChecking(false));
+    } else {
+      setIsChecking(false);
     }
   }, []);
+
+  if (isChecking) {
+    return (
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-44" />
+          <Skeleton className="h-4 w-56 mt-2" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-9 w-40" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   async function subscribeToPush() {
     setIsLoading(true);
@@ -423,6 +441,7 @@ export default function NotificationsPage() {
   const [newPresetName, setNewPresetName] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [isTestLoading, setIsTestLoading] = React.useState(false);
+  const [isInitialLoading, setIsInitialLoading] = React.useState(true);
 
   const role = session?.user?.role as "free" | "pro" | "admin" | undefined;
 
@@ -436,7 +455,7 @@ export default function NotificationsPage() {
   }
 
   React.useEffect(() => {
-    loadPresets();
+    loadPresets().finally(() => setIsInitialLoading(false));
   }, []);
 
   async function handleCreatePreset(e: React.FormEvent) {
@@ -528,7 +547,28 @@ export default function NotificationsPage() {
 
           <PushNotificationManager />
 
-          {presets.length > 0 ? (
+          {isInitialLoading ? (
+            <div className="grid gap-4">
+              <Card>
+                <CardHeader>
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-4 w-48 mt-1" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-16 w-full" />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <Skeleton className="h-6 w-36" />
+                  <Skeleton className="h-4 w-24 mt-1" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-9 w-full" />
+                </CardContent>
+              </Card>
+            </div>
+          ) : presets.length > 0 ? (
             <div className="grid gap-4">
               {presets.map((preset) => (
                 <PresetCard
@@ -559,7 +599,7 @@ export default function NotificationsPage() {
             </Card>
           )}
 
-          {canAddPreset && (
+          {!isInitialLoading && canAddPreset && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Create New Preset</CardTitle>
@@ -591,7 +631,7 @@ export default function NotificationsPage() {
             </Card>
           )}
 
-          {!canAddPreset && role === "free" && (
+          {!isInitialLoading && !canAddPreset && role === "free" && (
             <Card className="bg-muted/50">
               <CardContent className="py-4 text-center">
                 <p className="text-sm text-muted-foreground">

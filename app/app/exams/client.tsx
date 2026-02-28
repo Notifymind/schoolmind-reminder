@@ -19,6 +19,22 @@ type Exam = {
 };
 
 function ExamCard({ exam }: { exam: Exam }) {
+  const getDaysText = () => {
+    if (!exam.dueDate) return null
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+    const due = new Date(exam.dueDate)
+    due.setHours(0, 0, 0, 0)
+    const diffDays = Math.floor((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    
+    if (diffDays === 0) return "Today"
+    if (diffDays === 1) return "Tomorrow"
+    if (diffDays > 1) return `In ${diffDays} days`
+    return `${Math.abs(diffDays)} days ago`
+  }
+
+  const daysText = getDaysText()
+
   return (
     <Card className="gap-1">
       <CardHeader>
@@ -29,28 +45,34 @@ function ExamCard({ exam }: { exam: Exam }) {
             </CardTitle>
             <div className="flex items-center gap-3 mt-1 text-muted-foreground text-sm">
               <span className="flex items-center gap-1">
-                <BookOpen className="size-3" />
+                <BookOpen className="size-4" />
                 {exam.subject || "No subject"}
               </span>
               {exam.date && (
                 <span className="flex items-center gap-1">
-                  <Calendar className="size-3" />
+                  <Calendar className="size-4" />
                   {exam.date}
                 </span>
               )}
               {exam.time && (
                 <span className="flex items-center gap-1">
-                  <Clock className="size-3" />
+                  <Clock className="size-4" />
                   {exam.time}
+                </span>
+              )}
+              {daysText && (
+                <span className="flex items-center gap-1">
+                  <Clock className="size-3" />
+                  {daysText}
+                </span>
+              )}
+              {exam.type && (
+                <span className="text-xs bg-primary/10 text-primary px-2 rounded-full">
+                  {exam.type}
                 </span>
               )}
             </div>
           </div>
-          {exam.type && (
-            <span className="text-xs bg-primary/10 text-primary px-2 rounded-full">
-              {exam.type}
-            </span>
-          )}
         </div>
       </CardHeader>
       {exam.description && (

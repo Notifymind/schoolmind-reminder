@@ -17,7 +17,12 @@ export default async function ExamsPage() {
     const userClass = await getUserClass(session.user.id)
     if (userClass) {
       hasClass = true
-      examsList = await getExamsByClass(userClass)
+      examsList = (await getExamsByClass(userClass)).sort((a, b) => {
+        if (!a.dueDate && !b.dueDate) return 0
+        if (!a.dueDate) return 1
+        if (!b.dueDate) return -1
+        return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+      })
     }
   }
 

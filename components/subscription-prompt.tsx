@@ -3,11 +3,24 @@
 import Link from "next/link"
 import { authClient, type Session } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { DollarSign } from "lucide-react"
 
 export function SubscriptionGate({ children }: { children: React.ReactNode }) {
-  const { data: session } = authClient.useSession()
+  const { data: session, isPending } = authClient.useSession()
   const user = session?.user as Session["user"] | undefined
+
+  if (isPending) {
+    return (
+      <div className="flex flex-1 flex-col gap-6 items-center">
+        <div className="grid gap-6 w-full max-w-2xl">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-60 w-full" />
+        </div>
+      </div>
+    )
+  }
 
   if (!user || user.role !== "free") {
     return children
