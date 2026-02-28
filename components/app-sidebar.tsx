@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { useTheme } from "next-themes"
-import { Home, FileText, ClipboardList, Bell, User, LogOut, Sun, Moon, DollarSign } from "lucide-react"
+import { Home, FileText, ClipboardList, User, LogOut, Sun, Moon, DollarSign, Bell } from "lucide-react"
 
 import {
   Sidebar,
@@ -45,17 +45,13 @@ const navItems = [
     subItems: [
       { title: "All Exams", url: "/app/exams" },
       { title: "Upcoming Exams", url: "/app/exams/upcoming" },
+      { title: "Notifications", url: "/app/exams/notifications" },
     ],
   },
   {
     title: "Assignments",
     url: "/app/assignments",
     icon: ClipboardList,
-  },
-  {
-    title: "Notifications",
-    url: "/app/notifications",
-    icon: Bell,
   },
 ]
 
