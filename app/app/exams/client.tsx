@@ -29,10 +29,9 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, BookOpen, Bell, Plus, Trash2, Check } from "lucide-react";
+import { Calendar, Clock, BookOpen, Bell, Plus, Trash2 } from "lucide-react";
 import {
   applyPresetToExamAction,
-  clearExamPresetAction,
   createOneTimePresetForExamAction,
   getPresetsAction,
   getExamPresetsAction,
@@ -283,12 +282,7 @@ function ExamCard({
   const daysText = getDaysText();
 
   const handleSelectPreset = async (value: string) => {
-    if (value === "default") {
-      setIsLoading(true);
-      await clearExamPresetAction(exam.id);
-      setIsLoading(false);
-      onPresetChange();
-    } else if (value === "custom") {
+    if (value === "custom") {
       setIsCustomDialogOpen(true);
     } else {
       setIsLoading(true);
@@ -358,16 +352,10 @@ function ExamCard({
                             : String(preset.id)
                           : activePreset
                             ? String(activePreset.id)
-                            : "default"
+                            : ""
                       }
                       onValueChange={handleSelectPreset}
                     >
-                      <DropdownMenuRadioItem value="default">
-                        Use default
-                        {activePreset && !preset && (
-                          <Check className="size-4 ml-auto" />
-                        )}
-                      </DropdownMenuRadioItem>
                       {presets.map((p) => (
                         <DropdownMenuRadioItem
                           key={p.id}
