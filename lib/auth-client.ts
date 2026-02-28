@@ -1,10 +1,20 @@
 import { createAuthClient } from "better-auth/react";
 import { passkeyClient } from "@better-auth/passkey/client";
 import { adminClient } from "better-auth/client/plugins";
+import { ac, sellerRole, adminRole } from "./permissions";
 
 export const authClient = createAuthClient({
   baseURL: process.env.BETTER_AUTH_URL,
-  plugins: [passkeyClient(), adminClient()],
+  plugins: [
+    passkeyClient(),
+    adminClient({
+      ac,
+      roles: {
+        seller: sellerRole,
+        admin: adminRole,
+      },
+    }),
+  ],
 });
 
 export type Role = "free" | "basic" | "pro" | "seller" | "admin";

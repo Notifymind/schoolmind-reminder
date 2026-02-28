@@ -33,11 +33,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { authClient } from "@/lib/auth-client"
 
-function hasCodePermission(role: string | null | undefined): boolean {
-  if (!role) return false;
-  return role === "seller" || role === "admin";
-}
-
 const navItems = [
   {
     title: "Home",
@@ -66,7 +61,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [mounted, setMounted] = React.useState(false)
   const { data: session } = authClient.useSession()
 
-  const canAccessSellerPlatform = hasCodePermission(session?.user?.role)
+  const userRole = session?.user?.role as "admin" | "seller" | undefined
+  const canAccessSellerPlatform = userRole
+    ? authClient.admin.checkRolePermission({
+        role: userRole,
+        permission: {
+          code: ["generate"],
+        },
+      })
+    : false
 
   React.useEffect(() => {
     setMounted(true)

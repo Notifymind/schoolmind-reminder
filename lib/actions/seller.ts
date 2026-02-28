@@ -1,7 +1,6 @@
 "use server";
 
 import { auth } from "@/lib/auth";
-import { hasCodePermission } from "@/lib/permissions";
 import {
   getSellerBalance,
   updateSellerBalance,
@@ -19,6 +18,18 @@ const PRICING = {
   pro: { month: 5, quarter: 15, school_year: 30 },
   upgrade: { month: 2, quarter: 6, school_year: 9 },
 } as const;
+
+async function hasCodePermission(userId: string): Promise<boolean> {
+  const result = await auth.api.userHasPermission({
+    body: {
+      userId,
+      permission: {
+        code: ["generate"],
+      },
+    },
+  });
+  return result?.success ?? false;
+}
 
 function getCodePrice(type: CodeType, duration: CodeDuration): number {
   return PRICING[type][duration];
@@ -45,7 +56,7 @@ export async function generateCodeAction(type: CodeType, duration: CodeDuration)
     return { error: "Not authenticated" };
   }
 
-  if (!hasCodePermission(session.user.role)) {
+  if (!(await hasCodePermission(session.user.id))) {
     return { error: "You don't have permission to generate codes" };
   }
 
@@ -84,7 +95,7 @@ export async function deleteCodeAction(codeId: number) {
     return { error: "Not authenticated" };
   }
 
-  if (!hasCodePermission(session.user.role)) {
+  if (!(await hasCodePermission(session.user.id))) {
     return { error: "You don't have permission to delete codes" };
   }
 
@@ -107,7 +118,11 @@ export async function getCodesAction() {
     headers: await import("next/headers").then((m) => m.headers()),
   });
 
-  if (!session?.user?.id || !hasCodePermission(session.user.role)) {
+  if (!session?.user?.id) {
+    return { codes: [] };
+  }
+
+  if (!(await hasCodePermission(session.user.id))) {
     return { codes: [] };
   }
 
@@ -120,7 +135,11 @@ export async function getBalanceAction() {
     headers: await import("next/headers").then((m) => m.headers()),
   });
 
-  if (!session?.user?.id || !hasCodePermission(session.user.role)) {
+  if (!session?.user?.id) {
+    return { balance: "0", maxDebt: "0" };
+  }
+
+  if (!(await hasCodePermission(session.user.id))) {
     return { balance: "0", maxDebt: "0" };
   }
 

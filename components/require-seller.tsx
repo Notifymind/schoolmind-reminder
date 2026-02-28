@@ -1,27 +1,39 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-
-function hasCodePermission(role: string | null | undefined): boolean {
-  if (!role) return false;
-  return role === "seller" || role === "admin";
-}
 
 export function RequireSeller({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
-
-  const canAccess = hasCodePermission(session?.user?.role);
+  const [canAccess, setCanAccess] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    if (!isPending && !canAccess && session) {
+    async function checkPermission() {
+      if (!isPending && session) {
+        const result = await authClient.admin.hasPermission({
+          permission: {
+            code: ["generate"],
+          },
+        });
+        setCanAccess(result.data?.success ?? false);
+        setChecking(false);
+      } else if (!isPending && !session) {
+        setChecking(false);
+      }
+    }
+    checkPermission();
+  }, [isPending, session]);
+
+  useEffect(() => {
+    if (!checking && !canAccess && session) {
       router.push("/app");
     }
-  }, [isPending, canAccess, session, router]);
+  }, [checking, canAccess, session, router]);
 
-  if (isPending || !session || !canAccess) {
+  if (isPending || checking || !session || !canAccess) {
     return null;
   }
 
