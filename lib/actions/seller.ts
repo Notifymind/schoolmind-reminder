@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth";
+import { hasCodePermission } from "@/lib/permissions";
 import {
   getSellerBalance,
   updateSellerBalance,
@@ -44,8 +45,8 @@ export async function generateCodeAction(type: CodeType, duration: CodeDuration)
     return { error: "Not authenticated" };
   }
 
-  if (session.user.role !== "seller") {
-    return { error: "Only sellers can generate codes" };
+  if (!hasCodePermission(session.user.role)) {
+    return { error: "You don't have permission to generate codes" };
   }
 
   const price = getCodePrice(type, duration);
@@ -83,8 +84,8 @@ export async function deleteCodeAction(codeId: number) {
     return { error: "Not authenticated" };
   }
 
-  if (session.user.role !== "seller") {
-    return { error: "Only sellers can delete codes" };
+  if (!hasCodePermission(session.user.role)) {
+    return { error: "You don't have permission to delete codes" };
   }
 
   const deletedCode = await deleteCodeById(codeId, session.user.id);
@@ -106,11 +107,7 @@ export async function getCodesAction() {
     headers: await import("next/headers").then((m) => m.headers()),
   });
 
-  if (!session?.user?.id) {
-    return { codes: [] };
-  }
-
-  if (session.user.role !== "seller") {
+  if (!session?.user?.id || !hasCodePermission(session.user.role)) {
     return { codes: [] };
   }
 
@@ -123,11 +120,7 @@ export async function getBalanceAction() {
     headers: await import("next/headers").then((m) => m.headers()),
   });
 
-  if (!session?.user?.id) {
-    return { balance: "0", maxDebt: "0" };
-  }
-
-  if (session.user.role !== "seller") {
+  if (!session?.user?.id || !hasCodePermission(session.user.role)) {
     return { balance: "0", maxDebt: "0" };
   }
 

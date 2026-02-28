@@ -5,8 +5,8 @@ import { admin } from "better-auth/plugins";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 
-export const roles = ["free", "basic", "pro", "seller", "admin"] as const;
-export type Role = (typeof roles)[number];
+export const roleNames = ["free", "basic", "pro", "seller", "admin"] as const;
+export type Role = (typeof roleNames)[number];
 
 export const auth = betterAuth({
   emailAndPassword: {
