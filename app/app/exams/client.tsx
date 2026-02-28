@@ -299,7 +299,6 @@ function ExamCard({
     }
   };
 
-  const currentPresetName = preset?.isOneTime ? "Custom" : preset?.name;
   const activePreset = presets.find((p) => p.isActive);
 
   return (
@@ -342,14 +341,7 @@ function ExamCard({
               </div>
             </div>
             <CardAction>
-              <div className="flex items-center gap-2">
-                {currentPresetName && (
-                  <span className="text-xs bg-muted px-2 py-1 rounded-full flex items-center gap-1">
-                    <Bell className="size-3" />
-                    {currentPresetName}
-                  </span>
-                )}
-                <DropdownMenu>
+              <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" disabled={isLoading}>
                       <Bell className="size-4" />
@@ -397,8 +389,7 @@ function ExamCard({
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </div>
-            </CardAction>
+              </CardAction>
           </div>
         </CardHeader>
         {exam.description && (
