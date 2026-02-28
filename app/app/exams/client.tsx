@@ -98,7 +98,7 @@ function TimePicker({
         value={hours}
         onChange={(e) =>
           onChange(
-            `${e.target.value.padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`
+            `${e.target.value.padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`,
           )
         }
         className="flex h-9 w-16 rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -114,7 +114,7 @@ function TimePicker({
         value={minutes}
         onChange={(e) =>
           onChange(
-            `${hours.toString().padStart(2, "0")}:${e.target.value.padStart(2, "0")}`
+            `${hours.toString().padStart(2, "0")}:${e.target.value.padStart(2, "0")}`,
           )
         }
         className="flex h-9 w-16 rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -142,9 +142,9 @@ function CustomPresetDialog({
   limits: Limits;
   onCreated: () => void;
 }) {
-  const [times, setTimes] = React.useState<{ daysBefore: number; time: string }[]>([
-    { daysBefore: 1, time: "09:00" },
-  ]);
+  const [times, setTimes] = React.useState<
+    { daysBefore: number; time: string }[]
+  >([{ daysBefore: 1, time: "09:00" }]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [newDaysBefore, setNewDaysBefore] = React.useState("1");
   const [newTime, setNewTime] = React.useState("09:00");
@@ -224,7 +224,7 @@ function CustomPresetDialog({
                   className="w-20"
                 />
                 <span className="text-sm text-muted-foreground whitespace-nowrap">
-                  days before
+                  days before at:
                 </span>
               </div>
               <TimePicker value={newTime} onChange={setNewTime} />
@@ -238,7 +238,10 @@ function CustomPresetDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleCreate} disabled={isLoading || times.length === 0}>
+          <Button
+            onClick={handleCreate}
+            disabled={isLoading || times.length === 0}
+          >
             {isLoading ? "Creating..." : "Create & Apply"}
           </Button>
         </SheetFooter>
@@ -270,7 +273,7 @@ function ExamCard({
     const due = new Date(exam.dueDate);
     due.setHours(0, 0, 0, 0);
     const diffDays = Math.floor(
-      (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
     );
 
     if (diffDays === 0) return "Today";
@@ -336,48 +339,45 @@ function ExamCard({
             </div>
             <CardAction>
               <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" disabled={isLoading}>
-                      <Bell className="size-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Notification Preset</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuRadioGroup
-                      value={
-                        preset
-                          ? preset.isOneTime
-                            ? "custom"
-                            : String(preset.id)
-                          : activePreset
-                            ? String(activePreset.id)
-                            : ""
-                      }
-                      onValueChange={handleSelectPreset}
-                    >
-                      {presets.map((p) => (
-                        <DropdownMenuRadioItem
-                          key={p.id}
-                          value={String(p.id)}
-                        >
-                          {p.name}
-                          {p.isActive && (
-                            <span className="text-xs text-muted-foreground ml-1">
-                              (default)
-                            </span>
-                          )}
-                        </DropdownMenuRadioItem>
-                      ))}
-                    </DropdownMenuRadioGroup>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setIsCustomDialogOpen(true)}>
-                      <Plus className="size-4 mr-2" />
-                      Create custom...
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </CardAction>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" disabled={isLoading}>
+                    <Bell className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Notification Preset</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup
+                    value={
+                      preset
+                        ? preset.isOneTime
+                          ? "custom"
+                          : String(preset.id)
+                        : activePreset
+                          ? String(activePreset.id)
+                          : ""
+                    }
+                    onValueChange={handleSelectPreset}
+                  >
+                    {presets.map((p) => (
+                      <DropdownMenuRadioItem key={p.id} value={String(p.id)}>
+                        {p.name}
+                        {p.isActive && (
+                          <span className="text-xs text-muted-foreground ml-1">
+                            (default)
+                          </span>
+                        )}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setIsCustomDialogOpen(true)}>
+                    <Plus className="size-4 mr-2" />
+                    Create custom...
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </CardAction>
           </div>
         </CardHeader>
         {exam.description && (
@@ -414,7 +414,8 @@ export function ExamsClient({
   usePageTitle("Exams");
 
   const [presets, setPresets] = React.useState<Preset[]>(initialPresets);
-  const [examPresets, setExamPresets] = React.useState<ExamPreset[]>(initialExamPresets);
+  const [examPresets, setExamPresets] =
+    React.useState<ExamPreset[]>(initialExamPresets);
   const [limits, setLimits] = React.useState<Limits>({
     presets: 1,
     timesPerPreset: 2,

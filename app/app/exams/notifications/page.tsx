@@ -285,7 +285,7 @@ function PresetCard({
                       className="w-20"
                     />
                     <span className="text-sm text-muted-foreground whitespace-nowrap">
-                      days before
+                      days before at:
                     </span>
                   </div>
                   <TimePicker value={time} onChange={setTime} />
@@ -348,7 +348,7 @@ function PushNotificationManager() {
         sub = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(
-            process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
+            process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
           ),
         });
       }
@@ -360,7 +360,9 @@ function PushNotificationManager() {
       setIsSubscribed(true);
     } catch (error) {
       console.error("Failed to subscribe:", error);
-      alert("Failed to subscribe to push notifications. Make sure you've added this app to your home screen and granted notification permission.");
+      alert(
+        "Failed to subscribe to push notifications. Make sure you've added this app to your home screen and granted notification permission.",
+      );
     }
     setIsLoading(false);
   }
@@ -400,9 +402,7 @@ function PushNotificationManager() {
           <Smartphone className="size-5" />
           Push Notifications
         </CardTitle>
-        <CardDescription>
-          Receive notifications on your device
-        </CardDescription>
+        <CardDescription>Receive notifications on your device</CardDescription>
       </CardHeader>
       <CardContent>
         {isSubscribed ? (
@@ -512,7 +512,7 @@ export default function NotificationsPage() {
     const result = await testNotificationToAdminsAction();
     setIsTestLoading(false);
     alert(
-      `Sent: ${result.sent}/${result.total}\n${result.details.map((d) => `${d.user}: ${d.message}`).join("\n")}`
+      `Sent: ${result.sent}/${result.total}\n${result.details.map((d) => `${d.user}: ${d.message}`).join("\n")}`,
     );
   }
 
