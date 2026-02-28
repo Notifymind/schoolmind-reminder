@@ -16,6 +16,9 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
+  class: varchar("class", { length: 50 }).references(() => schoolclass.name),
+  role: varchar("role", { length: 50 }).default("free").notNull(),
+  lastTrial: timestamp("last_trial"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -105,10 +108,14 @@ export const passkey = pgTable(
   ],
 );
 
-export const userRelations = relations(user, ({ many }) => ({
+export const userRelations = relations(user, ({ many, one }) => ({
   sessions: many(session),
   accounts: many(account),
   passkeys: many(passkey),
+  class: one(schoolclass, {
+    fields: [user.class],
+    references: [schoolclass.name],
+  }),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -172,6 +179,7 @@ export const assignments = pgTable("assignments", {
 export const schoolclassRelations = relations(schoolclass, ({ many }) => ({
   exams: many(exams),
   assignments: many(assignments),
+  users: many(user),
 }));
 
 export const examsRelations = relations(exams, ({ one }) => ({

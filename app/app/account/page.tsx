@@ -18,7 +18,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Key, Mail, User, Fingerprint, Trash2 } from "lucide-react";
+import { Key, Mail, Fingerprint, Trash2 } from "lucide-react";
 
 type Passkey = {
   id: string;
@@ -29,12 +29,12 @@ type Passkey = {
 export default function AccountPage() {
   usePageTitle("Account Settings");
   const { data: session } = authClient.useSession();
-  const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [currentPassword, setCurrentPassword] = React.useState("");
   const [newPassword, setNewPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
   const [passkeys, setPasskeys] = React.useState<Passkey[]>([]);
+  const [passkeyName, setPasskeyName] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
 
   async function loadPasskeys() {
@@ -46,7 +46,6 @@ export default function AccountPage() {
 
   React.useEffect(() => {
     if (session?.user) {
-      setName(session.user.name ?? "");
       setEmail(session.user.email ?? "");
     }
   }, [session]);
@@ -54,13 +53,6 @@ export default function AccountPage() {
   React.useEffect(() => {
     loadPasskeys();
   }, []);
-
-  async function handleUpdateName(e: React.FormEvent) {
-    e.preventDefault();
-    setIsLoading(true);
-    await authClient.updateUser({ name });
-    setIsLoading(false);
-  }
 
   async function handleUpdateEmail(e: React.FormEvent) {
     e.preventDefault();
@@ -86,7 +78,8 @@ export default function AccountPage() {
   }
 
   async function handleAddPasskey() {
-    await authClient.passkey.addPasskey();
+    await authClient.passkey.addPasskey({ name: passkeyName || undefined });
+    setPasskeyName("");
     loadPasskeys();
   }
 
@@ -96,39 +89,8 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 items-center">
+    <div className="flex flex-1 flex-col gap-6 items-center">
       <div className="grid gap-6 w-full max-w-2xl">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="size-5" />
-              Profile Information
-            </CardTitle>
-            <CardDescription>Update your display name</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleUpdateName}>
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="name">Name</FieldLabel>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Your name"
-                  />
-                </Field>
-                <Field>
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading ? "Saving..." : "Save Name"}
-                  </Button>
-                </Field>
-              </FieldGroup>
-            </form>
-          </CardContent>
-        </Card>
-
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -255,7 +217,12 @@ export default function AccountPage() {
               ) : (
                 <FieldDescription>No passkeys registered yet.</FieldDescription>
               )}
-              <Field>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Passkey name (optional)"
+                  value={passkeyName}
+                  onChange={(e) => setPasskeyName(e.target.value)}
+                />
                 <Button
                   type="button"
                   variant="outline"
@@ -263,7 +230,7 @@ export default function AccountPage() {
                 >
                   Add Passkey
                 </Button>
-              </Field>
+              </div>
             </FieldGroup>
           </CardContent>
         </Card>

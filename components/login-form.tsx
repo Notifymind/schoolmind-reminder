@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { authClient } from "@/lib/auth-client"
+import { Fingerprint } from "lucide-react"
 
 export function LoginForm({
   className,
@@ -28,6 +29,7 @@ export function LoginForm({
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(false)
+  const [isPasskeyLoading, setIsPasskeyLoading] = React.useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -39,6 +41,13 @@ export function LoginForm({
     })
 
     setIsLoading(false)
+    router.push("/app")
+  }
+
+  async function handlePasskeyLogin() {
+    setIsPasskeyLoading(true)
+    await authClient.signIn.passkey()
+    setIsPasskeyLoading(false)
     router.push("/app")
   }
 
@@ -84,9 +93,20 @@ export function LoginForm({
                 />
               </Field>
               <Field>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? "Logging in..." : "Login"}
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? "Logging in..." : "Login"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isPasskeyLoading}
+                    onClick={handlePasskeyLogin}
+                  >
+                    <Fingerprint className="size-4" />
+                    {isPasskeyLoading ? "Signing in..." : "Login with Passkey"}
+                  </Button>
+                </div>
                 <FieldDescription className="text-center">
                   Don&apos;t have an account? <a href="/register">Sign up</a>
                 </FieldDescription>

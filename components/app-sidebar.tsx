@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { useTheme } from "next-themes"
-import { Home, FileText, ClipboardList, Bell, Calendar, User, LogOut, Sun, Moon } from "lucide-react"
+import { Home, FileText, ClipboardList, Bell, User, LogOut, Sun, Moon, DollarSign } from "lucide-react"
 
 import {
   Sidebar,
@@ -47,11 +47,6 @@ const navItems = [
     title: "Notifications",
     url: "/app/notifications",
     icon: Bell,
-  },
-  {
-    title: "Plan",
-    url: "/app/plan",
-    icon: Calendar,
   },
 ]
 
@@ -130,6 +125,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <Link href="/app/account">
                     <User />
                     Account
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/app/subscription">
+                    <DollarSign />
+                    Subscription
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
