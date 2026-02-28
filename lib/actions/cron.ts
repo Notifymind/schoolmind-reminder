@@ -1,0 +1,211 @@
+"use server";
+
+import webpush from "web-push";
+import {
+  getPendingNotifications,
+  markNotificationSent,
+  applyPresetToNewExams,
+  getUserClass,
+  getUsersByRole,
+  getAllPushSubscriptions,
+} from "@/db";
+
+webpush.setVapidDetails(
+  "mailto:schoolmind@example.com",
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+  process.env.VAPID_PRIVATE_KEY!
+);
+
+export async function processNotificationsAction() {
+  const pendingNotifications = await getPendingNotifications();
+
+  const results = {
+    processed: 0,
+    sent: 0,
+    errors: 0,
+  };
+
+  for (const item of pendingNotifications) {
+    results.processed++;
+
+    try {
+      const { user, exam, notification, notificationTime } = item;
+
+      const title = "📚 Exam Reminder";
+      const body =
+        `${exam.title || exam.subject || "Untitled Exam"}\n` +
+        `📅 ${exam.date || "TBD"} at ${exam.time || "TBD"}\n` +
+        `This exam is in ${notificationTime.daysBefore} day(s)!`;
+
+      const subscriptions = await getAllPushSubscriptions();
+      const userSubs = subscriptions.filter((s) => s.userId === user.id);
+
+      let sent = false;
+      for (const sub of userSubs) {
+        try {
+          await webpush.sendNotification(
+            {
+              endpoint: sub.endpoint,
+              keys: {
+                p256dh: sub.p256dh,
+                auth: sub.auth,
+              },
+            },
+            JSON.stringify({
+              title,
+              body,
+              icon: "/icon-192x192.png",
+            })
+          );
+          sent = true;
+        } catch (error) {
+          console.error("[Push] Error sending to subscription:", error);
+        }
+      }
+
+      if (sent) {
+        await markNotificationSent(notification.id);
+        results.sent++;
+      } else {
+        console.log(`[Notification] No push subscriptions for user ${user.id}`);
+        results.errors++;
+      }
+    } catch (error) {
+      console.error(`[Notification] Error processing notification:`, error);
+      results.errors++;
+    }
+  }
+
+  return results;
+}
+
+export async function syncNewExamsAction(userId: string) {
+  const userClass = await getUserClass(userId);
+  if (!userClass) {
+    return { applied: 0, error: "User has no class" };
+  }
+
+  const result = await applyPresetToNewExams(userId);
+  return result;
+}
+
+export async function runCronJobAction() {
+  console.log("[Cron] Starting notification processing...");
+
+  const notificationResults = await processNotificationsAction();
+
+  console.log("[Cron] Notification processing complete:", notificationResults);
+
+  return {
+    notifications: notificationResults,
+  };
+}
+
+export async function testNotificationToAdminsAction() {
+  const admins = await getUsersByRole("admin");
+
+  const results = {
+    total: admins.length,
+    sent: 0,
+    errors: 0,
+    details: [] as { user: string; success: boolean; message: string }[],
+  };
+
+  const title = "🧪 Test Notification";
+  const body = "This is a test notification from SchoolMind Reminder.\nIf you received this, your notification setup is working!";
+
+  for (const admin of admins) {
+    const subscriptions = await getAllPushSubscriptions();
+    const adminSubs = subscriptions.filter((s) => s.userId === admin.id);
+
+    if (adminSubs.length === 0) {
+      results.details.push({
+        user: admin.name,
+        success: false,
+        message: "No push subscription",
+      });
+      results.errors++;
+      continue;
+    }
+
+    let sent = false;
+    for (const sub of adminSubs) {
+      try {
+        await webpush.sendNotification(
+          {
+            endpoint: sub.endpoint,
+            keys: {
+              p256dh: sub.p256dh,
+              auth: sub.auth,
+            },
+          },
+          JSON.stringify({
+            title,
+            body,
+            icon: "/icon-192x192.png",
+          })
+        );
+        sent = true;
+      } catch (error) {
+        console.error("[Push] Error sending test notification:", error);
+      }
+    }
+
+    if (sent) {
+      results.details.push({
+        user: admin.name,
+        success: true,
+        message: "Sent successfully",
+      });
+      results.sent++;
+    } else {
+      results.details.push({
+        user: admin.name,
+        success: false,
+        message: "Failed to send",
+      });
+      results.errors++;
+    }
+  }
+
+  console.log("[Test] Notification results:", results);
+  return results;
+}
+
+export async function sendPushNotificationAction(
+  userId: string,
+  title: string,
+  body: string
+) {
+  const subscriptions = await getAllPushSubscriptions();
+  const userSubs = subscriptions.filter((s) => s.userId === userId);
+
+  if (userSubs.length === 0) {
+    return { success: false, error: "No push subscriptions found" };
+  }
+
+  let sent = false;
+  for (const sub of userSubs) {
+    try {
+      await webpush.sendNotification(
+        {
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: sub.p256dh,
+            auth: sub.auth,
+          },
+        },
+        JSON.stringify({
+          title,
+          body,
+          icon: "/icon-192x192.png",
+        })
+      );
+      sent = true;
+    } catch (error) {
+      console.error("[Push] Error sending notification:", error);
+    }
+  }
+
+  return { success: sent };
+}
