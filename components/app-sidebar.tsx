@@ -61,6 +61,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [mounted, setMounted] = React.useState(false)
   const { data: session } = authClient.useSession()
 
+  const userRole = session?.user?.role as string | undefined
+  const canAccessSellerPlatform = userRole === "seller" || userRole === "admin"
+
   React.useEffect(() => {
     setMounted(true)
   }, [])
@@ -128,37 +131,39 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel>Seller Platform</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Overview">
-                  <Link href="/app/seller">
-                    <LayoutDashboard />
-                    <span>Overview</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Codes">
-                  <Link href="/app/seller/codes">
-                    <Ticket />
-                    <span>Codes</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Transaction History">
-                  <Link href="/app/seller/transactions">
-                    <Receipt />
-                    <span>Transaction History</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {canAccessSellerPlatform && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Seller Platform</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Overview">
+                    <Link href="/app/seller">
+                      <LayoutDashboard />
+                      <span>Overview</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Codes">
+                    <Link href="/app/seller/codes">
+                      <Ticket />
+                      <span>Codes</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Transaction History">
+                    <Link href="/app/seller/transactions">
+                      <Receipt />
+                      <span>Transaction History</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
