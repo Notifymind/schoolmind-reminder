@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { eq, desc, and, lt, notInArray, inArray, isNull } from "drizzle-orm";
+import { eq, desc, and, lt, notInArray, inArray, isNull, or } from "drizzle-orm";
 import {
   user,
   exams,
@@ -401,6 +401,73 @@ export async function deleteCodeById(codeId: number, sellerId: string) {
     .where(and(eq(codes.id, codeId), eq(codes.sellerId, sellerId), isNull(codes.redeemedBy)))
     .returning();
   return result[0] ?? null;
+}
+
+export async function getUserSubscription(userId: string) {
+  const result = await db
+    .select({
+      role: user.role,
+      subscriptionEndsAt: user.subscriptionEndsAt,
+      lastTrialCodeGenerated: user.lastTrialCodeGenerated,
+    })
+    .from(user)
+    .where(eq(user.id, userId));
+  return result[0] ?? null;
+}
+
+export async function setUserSubscription(
+  userId: string,
+  role: string,
+  subscriptionEndsAt: Date
+) {
+  await db
+    .update(user)
+    .set({ role, subscriptionEndsAt })
+    .where(eq(user.id, userId));
+}
+
+export async function extendSubscription(userId: string, newEndsAt: Date, newRole?: string) {
+  const updateData: { subscriptionEndsAt: Date; role?: string } = { subscriptionEndsAt: newEndsAt };
+  if (newRole) {
+    updateData.role = newRole;
+  }
+  await db.update(user).set(updateData).where(eq(user.id, userId));
+}
+
+export async function redeemCodeInDb(codeId: number, userId: string) {
+  const result = await db
+    .update(codes)
+    .set({ redeemedBy: userId, redeemedAt: new Date() })
+    .where(and(eq(codes.id, codeId), isNull(codes.redeemedBy)))
+    .returning();
+  return result[0] ?? null;
+}
+
+export async function getExpiredSubscriptions() {
+  const now = new Date();
+  return db
+    .select()
+    .from(user)
+    .where(
+      and(
+        lt(user.subscriptionEndsAt, now),
+        or(eq(user.role, "basic"), eq(user.role, "pro"))
+      )
+    );
+}
+
+export async function downgradeExpiredUser(userId: string) {
+  await db
+    .update(user)
+    .set({ role: "free", subscriptionEndsAt: null })
+    .where(eq(user.id, userId));
+}
+
+export async function updateLastTrialCodeGenerated(userId: string) {
+  await db
+    .update(user)
+    .set({ lastTrialCodeGenerated: new Date() })
+    .where(eq(user.id, userId));
 }
 
 export { db };

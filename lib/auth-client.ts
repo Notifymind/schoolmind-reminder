@@ -1,7 +1,7 @@
 import { createAuthClient } from "better-auth/react";
 import { passkeyClient } from "@better-auth/passkey/client";
 import { adminClient } from "better-auth/client/plugins";
-import { ac, sellerRole, adminRole } from "./permissions";
+import { ac, proRole, sellerRole, adminRole } from "./permissions";
 
 export const authClient = createAuthClient({
   baseURL: process.env.BETTER_AUTH_URL,
@@ -10,6 +10,7 @@ export const authClient = createAuthClient({
     adminClient({
       ac,
       roles: {
+        pro: proRole,
         seller: sellerRole,
         admin: adminRole,
       },
@@ -27,6 +28,8 @@ export type Session = {
     image?: string | null;
     role: Role;
     lastTrial: Date | null;
+    subscriptionEndsAt: Date | null;
+    lastTrialCodeGenerated: Date | null;
   };
   session: {
     id: string;

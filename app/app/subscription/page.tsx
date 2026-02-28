@@ -11,8 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Check, X, Gift } from "lucide-react";
-import Link from "next/link";
+import { Check, X, Gift, Copy, Loader2 } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import {
+  redeemCodeAction,
+  generateTrialCodeAction,
+  getSubscriptionStatusAction,
+} from "@/lib/actions/subscription";
 
 const features = [
   { name: "Test Reminders", basic: true, pro: true },
@@ -23,7 +28,7 @@ const features = [
     basic: true,
     pro: true,
   },
-  { name: "Trial Codes for friends", basic: "0", pro: "1" },
+  { name: "Trial Codes for friends", basic: "0", pro: "1/month" },
   { name: "Max. notifications", basic: "2", pro: "5" },
   { name: "Notification Presets", basic: "1", pro: "3" },
   { name: "Price/Month", basic: "3KM", pro: "5KM" },
@@ -33,22 +38,132 @@ const features = [
 
 export default function SubscriptionPage() {
   usePageTitle("Subscription");
+
+  const { data: session } = authClient.useSession();
   const [code, setCode] = React.useState("");
   const [isRedeeming, setIsRedeeming] = React.useState(false);
+  const [isGeneratingTrial, setIsGeneratingTrial] = React.useState(false);
+  const [message, setMessage] = React.useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = React.useState<{
+    role: string;
+    subscriptionEndsAt: Date | null;
+    isActive: boolean;
+    lastTrialCodeGenerated: Date | null;
+  } | null>(null);
+  const [trialCode, setTrialCode] = React.useState<string | null>(null);
+
+  const userRole = session?.user?.role as string | undefined;
+  const isPro = userRole === "pro";
+
+  React.useEffect(() => {
+    async function loadStatus() {
+      const status = await getSubscriptionStatusAction();
+      setSubscriptionStatus(status);
+    }
+    loadStatus();
+  }, []);
 
   async function handleRedeemCode(e: React.FormEvent) {
     e.preventDefault();
     if (!code.trim()) return;
 
     setIsRedeeming(true);
-    // TODO: Implement code redemption logic
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setMessage(null);
+
+    const result = await redeemCodeAction(code);
+
+    if (result.error) {
+      setMessage({ type: "error", text: result.error });
+    } else if (result.success) {
+      setMessage({ type: "success", text: result.message });
+      setCode("");
+      const status = await getSubscriptionStatusAction();
+      setSubscriptionStatus(status);
+    }
+
     setIsRedeeming(false);
-    setCode("");
   }
+
+  async function handleGenerateTrialCode() {
+    setIsGeneratingTrial(true);
+    setMessage(null);
+    setTrialCode(null);
+
+    const result = await generateTrialCodeAction();
+
+    if (result.error) {
+      setMessage({ type: "error", text: result.error });
+    } else if (result.code) {
+      setTrialCode(result.code.code);
+      setMessage({ type: "success", text: "Trial code generated! Share it with a friend." });
+      const status = await getSubscriptionStatusAction();
+      setSubscriptionStatus(status);
+    }
+
+    setIsGeneratingTrial(false);
+  }
+
+  async function copyTrialCode() {
+    if (trialCode) {
+      await navigator.clipboard.writeText(trialCode);
+      setMessage({ type: "success", text: "Code copied to clipboard!" });
+    }
+  }
+
+  const [canGenerateTrial, setCanGenerateTrial] = React.useState(false);
+  const [daysUntilNextTrial, setDaysUntilNextTrial] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!isPro || !subscriptionStatus) {
+      setCanGenerateTrial(false);
+      setDaysUntilNextTrial(0);
+      return;
+    }
+    const lastGenerated = subscriptionStatus.lastTrialCodeGenerated;
+    if (!lastGenerated) {
+      setCanGenerateTrial(true);
+      setDaysUntilNextTrial(0);
+      return;
+    }
+    const daysSince = Math.floor(
+      (Date.now() - new Date(lastGenerated).getTime()) / (1000 * 60 * 60 * 24)
+    );
+    setCanGenerateTrial(daysSince >= 30);
+    setDaysUntilNextTrial(Math.max(0, 30 - daysSince));
+  }, [isPro, subscriptionStatus]);
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center -mt-16 gap-6">
+      {subscriptionStatus?.isActive && (
+        <Card className="w-full max-w-2xl border-green-500/50 bg-green-500/5">
+          <CardHeader>
+            <CardTitle className="text-green-600 dark:text-green-400">
+              Active Subscription
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>
+              You have an active <strong>{subscriptionStatus.role.toUpperCase()}</strong> subscription
+              {subscriptionStatus.subscriptionEndsAt && (
+                <> until <strong>{new Date(subscriptionStatus.subscriptionEndsAt).toLocaleDateString()}</strong></>
+              )}.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {message && (
+        <div
+          className={`w-full max-w-2xl p-4 rounded-md border ${
+            message.type === "success"
+              ? "border-green-500/50 bg-green-500/10 text-green-600 dark:text-green-400"
+              : "border-red-500/50 bg-red-500/10 text-red-600 dark:text-red-400"
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
+
       <Card className="w-full max-w-2xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -58,11 +173,7 @@ export default function SubscriptionPage() {
           <CardDescription>
             Enter a gift or promotional code to activate your subscription.
             <br />
-            You can buy gift codes from your clases seller.
-            <br />A list of sellers can be found{" "}
-            <Link href={"/app/sellers"} className="underline">
-              here
-            </Link>
+            You can buy gift codes from your class seller.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleRedeemCode}>
@@ -81,6 +192,48 @@ export default function SubscriptionPage() {
           </CardContent>
         </form>
       </Card>
+
+      {isPro && (
+        <Card className="w-full max-w-2xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Gift className="size-5" />
+              Trial Code for Friends
+            </CardTitle>
+            <CardDescription>
+              Generate a 7-day trial code to share with a friend. You can generate one trial code per month.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {trialCode ? (
+              <div className="flex items-center gap-2">
+                <div className="flex-1 p-3 bg-muted rounded-md font-mono text-lg">
+                  {trialCode}
+                </div>
+                <Button variant="outline" size="icon" onClick={copyTrialCode}>
+                  <Copy className="size-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                onClick={handleGenerateTrialCode}
+                disabled={isGeneratingTrial || !canGenerateTrial}
+              >
+                {isGeneratingTrial ? (
+                  <>
+                    <Loader2 className="size-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : canGenerateTrial ? (
+                  "Generate Trial Code"
+                ) : (
+                  `Available in ${daysUntilNextTrial} day(s)`
+                )}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="w-full max-w-2xl overflow-x-auto">
         <table className="w-full border-collapse">

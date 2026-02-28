@@ -25,6 +25,8 @@ export const user = pgTable("user", {
   lastTrial: timestamp("last_trial"),
   balance: numeric("balance", { precision: 10, scale: 2 }).default("0").notNull(),
   maxDebt: numeric("max_debt", { precision: 10, scale: 2 }).default("0").notNull(),
+  subscriptionEndsAt: timestamp("subscription_ends_at"),
+  lastTrialCodeGenerated: timestamp("last_trial_code_generated"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

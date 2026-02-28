@@ -8,6 +8,8 @@ import {
   getUserClass,
   getUsersByRole,
   getAllPushSubscriptions,
+  getExpiredSubscriptions,
+  downgradeExpiredUser,
 } from "@/db";
 
 webpush.setVapidDetails(
@@ -89,6 +91,30 @@ export async function syncNewExamsAction(userId: string) {
   return result;
 }
 
+export async function processExpiredSubscriptionsAction() {
+  const expiredUsers = await getExpiredSubscriptions();
+
+  const results = {
+    processed: 0,
+    downgraded: 0,
+    errors: 0,
+  };
+
+  for (const user of expiredUsers) {
+    results.processed++;
+    try {
+      await downgradeExpiredUser(user.id);
+      results.downgraded++;
+      console.log(`[Subscription] Downgraded user ${user.id} (${user.name}) from ${user.role} to free`);
+    } catch (error) {
+      console.error(`[Subscription] Error downgrading user ${user.id}:`, error);
+      results.errors++;
+    }
+  }
+
+  return results;
+}
+
 export async function runCronJobAction() {
   console.log("[Cron] Starting notification processing...");
 
@@ -96,8 +122,13 @@ export async function runCronJobAction() {
 
   console.log("[Cron] Notification processing complete:", notificationResults);
 
+  console.log("[Cron] Starting subscription expiration check...");
+  const subscriptionResults = await processExpiredSubscriptionsAction();
+  console.log("[Cron] Subscription expiration check complete:", subscriptionResults);
+
   return {
     notifications: notificationResults,
+    subscriptions: subscriptionResults,
   };
 }
 

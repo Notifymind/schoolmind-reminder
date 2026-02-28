@@ -4,7 +4,7 @@ import { passkey } from "@better-auth/passkey";
 import { admin } from "better-auth/plugins";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { ac, sellerRole, adminRole } from "./permissions";
+import { ac, proRole, sellerRole, adminRole } from "./permissions";
 
 export const roleNames = ["free", "basic", "pro", "seller", "admin"] as const;
 export type Role = (typeof roleNames)[number];
@@ -23,6 +23,7 @@ export const auth = betterAuth({
       defaultRole: "free",
       ac,
       roles: {
+        pro: proRole,
         seller: sellerRole,
         admin: adminRole,
       },
@@ -31,6 +32,14 @@ export const auth = betterAuth({
   user: {
     additionalFields: {
       lastTrial: {
+        type: "date",
+        required: false,
+      },
+      subscriptionEndsAt: {
+        type: "date",
+        required: false,
+      },
+      lastTrialCodeGenerated: {
         type: "date",
         required: false,
       },
