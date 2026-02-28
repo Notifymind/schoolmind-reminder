@@ -211,6 +211,7 @@ export const notificationPresets = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 100 }).notNull(),
     isActive: boolean("is_active").default(false).notNull(),
+    isOneTime: boolean("is_one_time").default(false).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { eq, desc, and, lt, notInArray } from "drizzle-orm";
+import { eq, desc, and, lt, notInArray, inArray } from "drizzle-orm";
 import {
   user,
   exams,
@@ -86,8 +86,15 @@ export async function getNotificationPresetById(presetId: number, userId: string
   return result[0] ?? null;
 }
 
-export async function createNotificationPreset(userId: string, name: string) {
-  const result = await db.insert(notificationPresets).values({ userId, name }).returning();
+export async function createNotificationPreset(
+  userId: string,
+  name: string,
+  isOneTime = false
+) {
+  const result = await db
+    .insert(notificationPresets)
+    .values({ userId, name, isOneTime })
+    .returning();
   return result[0];
 }
 
@@ -145,7 +152,15 @@ export async function getActivePreset(userId: string) {
 }
 
 export async function countUserPresets(userId: string) {
-  const result = await db.select({ id: notificationPresets.id }).from(notificationPresets).where(eq(notificationPresets.userId, userId));
+  const result = await db
+    .select({ id: notificationPresets.id })
+    .from(notificationPresets)
+    .where(
+      and(
+        eq(notificationPresets.userId, userId),
+        eq(notificationPresets.isOneTime, false)
+      )
+    );
   return result.length;
 }
 
@@ -212,10 +227,24 @@ export async function markNotificationSent(notificationId: number) {
     .where(eq(scheduledNotifications.id, notificationId));
 }
 
-export async function applyPresetToExam(userId: string, examId: number, presetId: number) {
+export async function applyPresetToExam(
+  userId: string,
+  examId: number,
+  presetId: number
+) {
   const times = await getNotificationTimes(presetId);
   const exam = await db.select().from(exams).where(eq(exams.id, examId));
   if (exam.length === 0 || !exam[0].dueDate) return false;
+
+  await deleteScheduledNotificationsForExam(userId, examId);
+  await db
+    .delete(examNotificationMeta)
+    .where(
+      and(
+        eq(examNotificationMeta.userId, userId),
+        eq(examNotificationMeta.examId, examId)
+      )
+    );
 
   const examDate = exam[0].dueDate;
 
@@ -247,6 +276,90 @@ export async function applyPresetToNewExams(userId: string) {
   }
 
   return { applied: examsWithoutPreset.length };
+}
+
+export async function getExamNotificationMeta(
+  userId: string,
+  examId: number
+) {
+  const result = await db
+    .select()
+    .from(examNotificationMeta)
+    .where(
+      and(
+        eq(examNotificationMeta.userId, userId),
+        eq(examNotificationMeta.examId, examId)
+      )
+    );
+  return result[0] ?? null;
+}
+
+export async function getExamNotificationMetas(
+  userId: string,
+  examIds: number[]
+) {
+  if (examIds.length === 0) return [];
+  return db
+    .select()
+    .from(examNotificationMeta)
+    .where(
+      and(
+        eq(examNotificationMeta.userId, userId),
+        inArray(examNotificationMeta.examId, examIds)
+      )
+    );
+}
+
+export async function deleteScheduledNotificationsForExam(
+  userId: string,
+  examId: number
+) {
+  await db
+    .delete(scheduledNotifications)
+    .where(
+      and(
+        eq(scheduledNotifications.userId, userId),
+        eq(scheduledNotifications.examId, examId)
+      )
+    );
+}
+
+export async function deleteExamNotificationMeta(
+  userId: string,
+  examId: number
+) {
+  await deleteScheduledNotificationsForExam(userId, examId);
+  await db
+    .delete(examNotificationMeta)
+    .where(
+      and(
+        eq(examNotificationMeta.userId, userId),
+        eq(examNotificationMeta.examId, examId)
+      )
+    );
+}
+
+export async function getReusablePresets(userId: string) {
+  return db
+    .select()
+    .from(notificationPresets)
+    .where(
+      and(
+        eq(notificationPresets.userId, userId),
+        eq(notificationPresets.isOneTime, false)
+      )
+    );
+}
+
+export async function getReusablePresetsWithTimes(userId: string) {
+  const presets = await getReusablePresets(userId);
+  const presetsWithTimes = await Promise.all(
+    presets.map(async (preset) => {
+      const times = await getNotificationTimes(preset.id);
+      return { ...preset, times };
+    })
+  );
+  return presetsWithTimes;
 }
 
 export { db };

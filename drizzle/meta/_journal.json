@@ -15,6 +15,13 @@
       "when": 1772227551638,
       "tag": "0001_heavy_stardust",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772278063282,
+      "tag": "0002_sharp_dagger",
+      "breakpoints": true
     }
   ]
 }
