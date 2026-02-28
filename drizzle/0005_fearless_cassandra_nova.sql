@@ -1,0 +1,2 @@
+ALTER TABLE "codes" ADD COLUMN "class_name" varchar(50);--> statement-breakpoint
+ALTER TABLE "codes" ADD CONSTRAINT "codes_class_name_schoolclass_name_fk" FOREIGN KEY ("class_name") REFERENCES "public"."schoolclass"("name") ON DELETE no action ON UPDATE no action;

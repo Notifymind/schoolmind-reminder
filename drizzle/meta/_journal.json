@@ -36,6 +36,20 @@
       "when": 1772293498546,
       "tag": "0004_mysterious_violations",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1772308970300,
+      "tag": "0005_fearless_cassandra_nova",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1772315921688,
+      "tag": "0006_equal_logan",
+      "breakpoints": true
     }
   ]
 }

@@ -11,6 +11,19 @@ import {
   getExpiredSubscriptions,
   downgradeExpiredUser,
 } from "@/db";
+import { exams, assignments } from "@/db/schema";
+
+type Exam = typeof exams.$inferSelect;
+type Assignment = typeof assignments.$inferSelect;
+
+type PendingNotificationItem = {
+  notification: { id: number };
+  notificationTime: { daysBefore: number };
+  preset: { id: number; name: string };
+  exam: Exam | null;
+  assignment: Assignment | null;
+  user: { id: string; name: string; email: string };
+};
 
 webpush.setVapidDetails(
   "mailto:schoolmind@example.com",
@@ -19,7 +32,7 @@ webpush.setVapidDetails(
 );
 
 export async function processNotificationsAction() {
-  const pendingNotifications = await getPendingNotifications();
+  const pendingNotifications = await getPendingNotifications() as PendingNotificationItem[];
 
   const results = {
     processed: 0,
@@ -31,13 +44,28 @@ export async function processNotificationsAction() {
     results.processed++;
 
     try {
-      const { user, exam, notification, notificationTime } = item;
+      const { user, exam, assignment, notification, notificationTime } = item;
 
-      const title = "📚 Exam Reminder";
-      const body =
-        `${exam.title || exam.subject || "Untitled Exam"}\n` +
-        `📅 ${exam.date || "TBD"} at ${exam.time || "TBD"}\n` +
-        `This exam is in ${notificationTime.daysBefore} day(s)!`;
+      let title: string;
+      let body: string;
+
+      if (assignment) {
+        title = "📝 Assignment Reminder";
+        body =
+          `${assignment.title || assignment.subject || "Untitled Assignment"}\n` +
+          `📅 ${assignment.date || "TBD"} at ${assignment.time || "TBD"}\n` +
+          `This assignment is due in ${notificationTime.daysBefore} day(s)!`;
+      } else if (exam) {
+        title = "📚 Exam Reminder";
+        body =
+          `${exam.title || exam.subject || "Untitled Exam"}\n` +
+          `📅 ${exam.date || "TBD"} at ${exam.time || "TBD"}\n` +
+          `This exam is in ${notificationTime.daysBefore} day(s)!`;
+      } else {
+        console.error("[Notification] No exam or assignment found");
+        results.errors++;
+        continue;
+      }
 
       const subscriptions = await getAllPushSubscriptions();
       const userSubs = subscriptions.filter((s) => s.userId === user.id);

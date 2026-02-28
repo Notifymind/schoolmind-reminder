@@ -128,9 +128,12 @@ export const userRelations = relations(user, ({ many, one }) => ({
   notificationPresets: many(notificationPresets),
   scheduledNotifications: many(scheduledNotifications),
   examNotificationMeta: many(examNotificationMeta),
+  assignmentNotificationMeta: many(assignmentNotificationMeta),
   pushSubscriptions: many(pushSubscriptions),
   sellerCodes: many(codes, { relationName: "seller" }),
   redeemedCodes: many(codes, { relationName: "redeemedBy" }),
+  sellerBalanceHistory: many(balanceHistory, { relationName: "sellerBalanceHistory" }),
+  adminBalanceHistory: many(balanceHistory, { relationName: "adminBalanceHistory" }),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -206,11 +209,13 @@ export const examsRelations = relations(exams, ({ one, many }) => ({
   examNotificationMeta: many(examNotificationMeta),
 }));
 
-export const assignmentsRelations = relations(assignments, ({ one }) => ({
+export const assignmentsRelations = relations(assignments, ({ one, many }) => ({
   class: one(schoolclass, {
     fields: [assignments.className],
     references: [schoolclass.name],
   }),
+  scheduledNotifications: many(scheduledNotifications),
+  assignmentNotificationMeta: many(assignmentNotificationMeta),
 }));
 
 export const notificationPresets = pgTable(
@@ -222,6 +227,8 @@ export const notificationPresets = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 100 }).notNull(),
     isActive: boolean("is_active").default(false).notNull(),
+    isActiveForExams: boolean("is_active_for_exams").default(false).notNull(),
+    isActiveForAssignments: boolean("is_active_for_assignments").default(false).notNull(),
     isOneTime: boolean("is_one_time").default(false).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
@@ -251,8 +258,9 @@ export const scheduledNotifications = pgTable(
   {
     id: serial("id").primaryKey(),
     examId: integer("exam_id")
-      .notNull()
       .references(() => exams.id, { onDelete: "cascade" }),
+    assignmentId: integer("assignment_id")
+      .references(() => assignments.id, { onDelete: "cascade" }),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -266,6 +274,7 @@ export const scheduledNotifications = pgTable(
   },
   (table) => [
     index("scheduled_notifications_examId_idx").on(table.examId),
+    index("scheduled_notifications_assignmentId_idx").on(table.assignmentId),
     index("scheduled_notifications_userId_idx").on(table.userId),
     index("scheduled_notifications_scheduledFor_idx").on(table.scheduledFor),
   ],
@@ -289,6 +298,27 @@ export const examNotificationMeta = pgTable(
   (table) => [
     index("exam_notification_meta_examId_idx").on(table.examId),
     index("exam_notification_meta_userId_idx").on(table.userId),
+  ],
+);
+
+export const assignmentNotificationMeta = pgTable(
+  "assignment_notification_meta",
+  {
+    id: serial("id").primaryKey(),
+    assignmentId: integer("assignment_id")
+      .notNull()
+      .references(() => assignments.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    presetId: integer("preset_id")
+      .notNull()
+      .references(() => notificationPresets.id, { onDelete: "cascade" }),
+    appliedAt: timestamp("applied_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("assignment_notification_meta_assignmentId_idx").on(table.assignmentId),
+    index("assignment_notification_meta_userId_idx").on(table.userId),
   ],
 );
 
@@ -388,6 +418,7 @@ export const codes = pgTable(
     sellerId: text("seller_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    className: varchar("class_name", { length: 50 }).references(() => schoolclass.name),
     redeemedBy: text("redeemed_by").references(() => user.id, { onDelete: "set null" }),
     redeemedAt: timestamp("redeemed_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -409,5 +440,41 @@ export const codesRelations = relations(codes, ({ one }) => ({
     fields: [codes.redeemedBy],
     references: [user.id],
     relationName: "redeemedBy",
+  }),
+}));
+
+export const balanceHistory = pgTable(
+  "balance_history",
+  {
+    id: serial("id").primaryKey(),
+    sellerId: text("seller_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    adminId: text("admin_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    type: varchar("type", { length: 10 }).notNull(),
+    amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+    previousBalance: numeric("previous_balance", { precision: 10, scale: 2 }).notNull(),
+    newBalance: numeric("new_balance", { precision: 10, scale: 2 }).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("balance_history_sellerId_idx").on(table.sellerId),
+    index("balance_history_adminId_idx").on(table.adminId),
+    index("balance_history_createdAt_idx").on(table.createdAt),
+  ],
+);
+
+export const balanceHistoryRelations = relations(balanceHistory, ({ one }) => ({
+  seller: one(user, {
+    fields: [balanceHistory.sellerId],
+    references: [user.id],
+    relationName: "sellerBalanceHistory",
+  }),
+  admin: one(user, {
+    fields: [balanceHistory.adminId],
+    references: [user.id],
+    relationName: "adminBalanceHistory",
   }),
 }));

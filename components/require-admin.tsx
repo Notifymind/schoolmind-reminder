@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 
-export function RequireSeller({ children }: { children: React.ReactNode }) {
+export function RequireAdmin({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
   const [canAccess, setCanAccess] = useState(false);
@@ -15,7 +15,7 @@ export function RequireSeller({ children }: { children: React.ReactNode }) {
       if (!isPending && session) {
         const result = await authClient.admin.hasPermission({
           permission: {
-            seller: ["access"],
+            admin: ["access"],
           },
         });
         setCanAccess(result.data?.success ?? false);

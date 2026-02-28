@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth"
 import { getUserClass, getAssignmentsByClass, getReusablePresetsWithTimes, getAssignmentNotificationMetas, getNotificationPresetById, getNotificationTimes } from "@/db"
 import { assignments } from "@/db/schema"
-import { AssignmentsClient } from "./client"
+import { AssignmentsClient } from "../client"
 
 type Assignment = typeof assignments.$inferSelect
 
@@ -12,7 +12,7 @@ type AssignmentPreset = {
   preset: Preset | null
 }
 
-export default async function AssignmentsPage() {
+export default async function UpcomingAssignmentsPage() {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then(m => m.headers()),
   })
@@ -26,12 +26,20 @@ export default async function AssignmentsPage() {
     const userClass = await getUserClass(session.user.id)
     if (userClass) {
       hasClass = true
-      assignmentsList = (await getAssignmentsByClass(userClass)).sort((a, b) => {
-        if (!a.dueDate && !b.dueDate) return 0
-        if (!a.dueDate) return 1
-        if (!b.dueDate) return -1
-        return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
-      })
+      const allAssignments = await getAssignmentsByClass(userClass)
+      const now = new Date()
+      const fourteenDaysLater = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
+      
+      assignmentsList = allAssignments
+        .filter((assignment) => {
+          if (!assignment.dueDate) return false
+          const dueDate = new Date(assignment.dueDate)
+          return dueDate >= now && dueDate <= fourteenDaysLater
+        })
+        .sort((a, b) => {
+          if (!a.dueDate || !b.dueDate) return 0
+          return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+        })
 
       presets = await getReusablePresetsWithTimes(session.user.id)
 

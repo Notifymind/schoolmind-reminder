@@ -31,14 +31,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar, Clock, CalendarClock, BookOpen, Bell, Plus, Trash2 } from "lucide-react";
 import {
-  applyPresetToExamAction,
-  createOneTimePresetForExamAction,
+  applyPresetToAssignmentAction,
+  createOneTimePresetForAssignmentAction,
   getPresetsAction,
-  getExamPresetsAction,
+  getAssignmentPresetsAction,
   getLimitsAction,
 } from "@/lib/actions/notifications";
 
-type Exam = {
+type Assignment = {
   id: number;
   className: string;
   subject: string | null;
@@ -64,14 +64,16 @@ type Preset = {
   userId: string;
   name: string;
   isActive: boolean;
+  isActiveForExams: boolean;
+  isActiveForAssignments: boolean;
   isOneTime: boolean;
   createdAt: Date;
   updatedAt: Date;
   times: NotificationTime[];
 };
 
-type ExamPreset = {
-  examId: number;
+type AssignmentPreset = {
+  assignmentId: number;
   preset: Preset | null;
 };
 
@@ -132,13 +134,13 @@ function TimePicker({
 function CustomPresetDialog({
   open,
   onOpenChange,
-  examId,
+  assignmentId,
   limits,
   onCreated,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  examId: number;
+  assignmentId: number;
   limits: Limits;
   onCreated: () => void;
 }) {
@@ -165,7 +167,7 @@ function CustomPresetDialog({
   const handleCreate = async () => {
     if (times.length === 0) return;
     setIsLoading(true);
-    const result = await createOneTimePresetForExamAction(examId, times);
+    const result = await createOneTimePresetForAssignmentAction(assignmentId, times);
     setIsLoading(false);
     if ("error" in result) {
       alert(result.error);
@@ -250,14 +252,14 @@ function CustomPresetDialog({
   );
 }
 
-function ExamCard({
-  exam,
+function AssignmentCard({
+  assignment,
   preset,
   presets,
   limits,
   onPresetChange,
 }: {
-  exam: Exam;
+  assignment: Assignment;
   preset: Preset | null;
   presets: Preset[];
   limits: Limits;
@@ -267,10 +269,10 @@ function ExamCard({
   const [isLoading, setIsLoading] = React.useState(false);
 
   const getDaysText = () => {
-    if (!exam.dueDate) return null;
+    if (!assignment.dueDate) return null;
     const now = new Date();
     now.setHours(0, 0, 0, 0);
-    const due = new Date(exam.dueDate);
+    const due = new Date(assignment.dueDate);
     due.setHours(0, 0, 0, 0);
     const diffDays = Math.floor(
       (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
@@ -290,13 +292,13 @@ function ExamCard({
     } else {
       setIsLoading(true);
       const presetId = parseInt(value, 10);
-      await applyPresetToExamAction(exam.id, presetId);
+      await applyPresetToAssignmentAction(assignment.id, presetId);
       setIsLoading(false);
       onPresetChange();
     }
   };
 
-  const activePreset = presets.find((p) => p.isActive);
+  const activePreset = presets.find((p) => p.isActiveForAssignments);
 
   return (
     <>
@@ -305,23 +307,23 @@ function ExamCard({
           <div className="flex items-start justify-between">
             <div>
               <CardTitle className="text-lg">
-                {exam.title || "Untitled Exam"}
+                {assignment.title || "Untitled Assignment"}
               </CardTitle>
               <div className="flex items-center gap-3 mt-1 text-muted-foreground text-sm">
                 <span className="flex items-center gap-1">
                   <BookOpen className="size-4" />
-                  {exam.subject || "No subject"}
+                  {assignment.subject || "No subject"}
                 </span>
-                {exam.date && (
+                {assignment.date && (
                   <span className="flex items-center gap-1">
                     <Calendar className="size-4" />
-                    {exam.date}
+                    {assignment.date}
                   </span>
                 )}
-                {exam.time && (
+                {assignment.time && (
                   <span className="flex items-center gap-1">
                     <Clock className="size-4" />
-                    {exam.time}
+                    {assignment.time}
                   </span>
                 )}
                 {daysText && (
@@ -330,9 +332,9 @@ function ExamCard({
                     {daysText}
                   </span>
                 )}
-                {exam.type && (
+                {assignment.type && (
                   <span className="text-xs bg-primary/10 text-primary px-2 rounded-full">
-                    {exam.type}
+                    {assignment.type}
                   </span>
                 )}
               </div>
@@ -362,7 +364,7 @@ function ExamCard({
                     {presets.map((p) => (
                       <DropdownMenuRadioItem key={p.id} value={String(p.id)}>
                         {p.name}
-                        {p.isActive && (
+                        {p.isActiveForAssignments && (
                           <span className="text-xs text-muted-foreground ml-1">
                             (default)
                           </span>
@@ -380,9 +382,9 @@ function ExamCard({
             </CardAction>
           </div>
         </CardHeader>
-        {exam.description && (
+        {assignment.description && (
           <CardContent>
-            <p className="text-sm text-muted-foreground">{exam.description}</p>
+            <p className="text-sm text-muted-foreground">{assignment.description}</p>
           </CardContent>
         )}
       </Card>
@@ -390,7 +392,7 @@ function ExamCard({
       <CustomPresetDialog
         open={isCustomDialogOpen}
         onOpenChange={setIsCustomDialogOpen}
-        examId={exam.id}
+        assignmentId={assignment.id}
         limits={limits}
         onCreated={onPresetChange}
       />
@@ -398,24 +400,24 @@ function ExamCard({
   );
 }
 
-export function ExamsClient({
-  exams,
+export function AssignmentsClient({
+  assignments,
   hasClass,
   isLoggedIn,
   presets: initialPresets,
-  examPresets: initialExamPresets,
+  assignmentPresets: initialAssignmentPresets,
 }: {
-  exams: Exam[];
+  assignments: Assignment[];
   hasClass: boolean;
   isLoggedIn: boolean;
   presets: Preset[];
-  examPresets: ExamPreset[];
+  assignmentPresets: AssignmentPreset[];
 }) {
-  usePageTitle("Exams");
+  usePageTitle("Assignments");
 
   const [presets, setPresets] = React.useState<Preset[]>(initialPresets);
-  const [examPresets, setExamPresets] =
-    React.useState<ExamPreset[]>(initialExamPresets);
+  const [assignmentPresets, setAssignmentPresets] =
+    React.useState<AssignmentPreset[]>(initialAssignmentPresets);
   const [limits, setLimits] = React.useState<Limits>({
     presets: 1,
     timesPerPreset: 2,
@@ -426,24 +428,24 @@ export function ExamsClient({
   }, []);
 
   const refreshData = async () => {
-    const [presetsResult, examPresetsResult] = await Promise.all([
+    const [presetsResult, assignmentPresetsResult] = await Promise.all([
       getPresetsAction(),
-      getExamPresetsAction(exams.map((e) => e.id)),
+      getAssignmentPresetsAction(assignments.map((a) => a.id)),
     ]);
     setPresets(presetsResult.presets as Preset[]);
-    setExamPresets(examPresetsResult.examPresets as ExamPreset[]);
+    setAssignmentPresets(assignmentPresetsResult.assignmentPresets as AssignmentPreset[]);
   };
 
-  const getPresetForExam = (examId: number): Preset | null => {
-    const meta = examPresets.find((ep) => ep.examId === examId);
+  const getPresetForAssignment = (assignmentId: number): Preset | null => {
+    const meta = assignmentPresets.find((ap) => ap.assignmentId === assignmentId);
     return meta?.preset ?? null;
   };
 
   return (
-    <SubscriptionGate permission={{ exams: ["access"] }}>
+    <SubscriptionGate permission={{ assignments: ["access"] }}>
       <div className="grid gap-4 w-full max-w-2xl mx-auto">
         {!isLoggedIn && (
-          <p className="text-muted-foreground">Please log in to view exams.</p>
+          <p className="text-muted-foreground">Please log in to view assignments.</p>
         )}
         {isLoggedIn && !hasClass && (
           <div className="text-center py-8">
@@ -451,20 +453,20 @@ export function ExamsClient({
               You haven&apos;t joined a class yet.
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              Join a class to see your exams.
+              Join a class to see your assignments.
             </p>
           </div>
         )}
-        {isLoggedIn && hasClass && exams.length === 0 && (
+        {isLoggedIn && hasClass && assignments.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">No exams scheduled yet.</p>
+            <p className="text-muted-foreground">No assignments scheduled yet.</p>
           </div>
         )}
-        {exams.map((exam) => (
-          <ExamCard
-            key={exam.id}
-            exam={exam}
-            preset={getPresetForExam(exam.id)}
+        {assignments.map((assignment) => (
+          <AssignmentCard
+            key={assignment.id}
+            assignment={assignment}
+            preset={getPresetForAssignment(assignment.id)}
             presets={presets}
             limits={limits}
             onPresetChange={refreshData}

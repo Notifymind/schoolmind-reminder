@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { useTheme } from "next-themes"
-import { Home, FileText, ClipboardList, User, LogOut, Sun, Moon, DollarSign, Bell, LayoutDashboard, Ticket, Receipt } from "lucide-react"
+import { Home, FileText, ClipboardList, User, LogOut, Sun, Moon, DollarSign, Bell, Ticket, BarChart3, Users, Wallet, GraduationCap } from "lucide-react"
 
 import {
   Sidebar,
@@ -53,6 +53,11 @@ const navItems = [
     title: "Assignments",
     url: "/app/assignments",
     icon: ClipboardList,
+    subItems: [
+      { title: "All Assignments", url: "/app/assignments" },
+      { title: "Upcoming Assignments", url: "/app/assignments/upcoming" },
+      { title: "Notifications", url: "/app/assignments/notifications" },
+    ],
   },
 ]
 
@@ -66,7 +71,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     ? authClient.admin.checkRolePermission({
         role: userRole,
         permission: {
-          code: ["generate"],
+          seller: ["access"],
+        },
+      })
+    : false
+
+  const canAccessAdminPlatform = userRole
+    ? authClient.admin.checkRolePermission({
+        role: userRole,
+        permission: {
+          admin: ["access"],
         },
       })
     : false
@@ -144,14 +158,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Overview">
-                    <Link href="/app/seller">
-                      <LayoutDashboard />
-                      <span>Overview</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
                   <SidebarMenuButton asChild tooltip="Codes">
                     <Link href="/app/seller/codes">
                       <Ticket />
@@ -159,11 +165,44 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+        {canAccessAdminPlatform && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Transaction History">
-                    <Link href="/app/seller/transactions">
-                      <Receipt />
-                      <span>Transaction History</span>
+                  <SidebarMenuButton asChild tooltip="Overview">
+                    <Link href="/app/admin/overview">
+                      <BarChart3 />
+                      <span>Overview</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Sellers">
+                    <Link href="/app/admin/sellers">
+                      <Users />
+                      <span>Sellers</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Balance">
+                    <Link href="/app/admin/balance">
+                      <Wallet />
+                      <span>Balance</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Classes">
+                    <Link href="/app/admin/classes">
+                      <GraduationCap />
+                      <span>Classes</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

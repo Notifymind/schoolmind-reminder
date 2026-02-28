@@ -12,8 +12,7 @@ import {
 
 const DURATION_DAYS: Record<string, number> = {
   month: 30,
-  quarter: 90,
-  school_year: 210,
+  school_year: 365,
   trial: 7,
 };
 
@@ -75,25 +74,25 @@ export async function redeemCodeAction(code: string) {
 
   switch (codeRecord.type) {
     case "basic":
-      await setUserSubscription(session.user.id, "basic", newEndsAt);
+      await setUserSubscription(session.user.id, "basic", newEndsAt, codeRecord.className);
       break;
 
     case "pro":
-      await setUserSubscription(session.user.id, "pro", newEndsAt);
+      await setUserSubscription(session.user.id, "pro", newEndsAt, codeRecord.className);
       break;
 
     case "upgrade":
       if (currentRole !== "basic") {
         return { error: "Upgrade codes can only be used by basic users" };
       }
-      await extendSubscription(session.user.id, newEndsAt, "pro");
+      await extendSubscription(session.user.id, newEndsAt, "pro", codeRecord.className);
       break;
 
     case "trial":
       if (currentRole === "free") {
-        await setUserSubscription(session.user.id, "basic", newEndsAt);
+        await setUserSubscription(session.user.id, "basic", newEndsAt, codeRecord.className);
       } else {
-        await extendSubscription(session.user.id, newEndsAt);
+        await extendSubscription(session.user.id, newEndsAt, undefined, codeRecord.className);
       }
       break;
 
@@ -171,7 +170,7 @@ export async function generateTrialCodeAction() {
     }
   }
 
-  const code = await createCode(codeString, "trial", "trial", "0", session.user.id);
+  const code = await createCode(codeString, "trial", "trial", "0", session.user.id, session.user.class);
   await updateLastTrialCodeGenerated(session.user.id);
 
   return { code };

@@ -20,20 +20,14 @@ import {
 } from "@/lib/actions/subscription";
 
 const features = [
-  { name: "Test Reminders", basic: true, pro: true },
-  { name: "Assignment Reminders", basic: false, pro: true },
-  { name: "Email Reminders", basic: false, pro: true },
-  {
-    name: "Discord, Telegram, Viber, Whatsapp Reminders",
-    basic: true,
-    pro: true,
-  },
-  { name: "Trial Codes for friends", basic: "0", pro: "1/month" },
+  { name: "Exam Access", basic: true, pro: true },
+  { name: "Assignment Access", basic: false, pro: true },
+  { name: "App Notifications", basic: true, pro: true },
   { name: "Max. notifications", basic: "2", pro: "5" },
   { name: "Notification Presets", basic: "1", pro: "3" },
+  { name: "Trial Code for Friend", basic: false, pro: true },
   { name: "Price/Month", basic: "3KM", pro: "5KM" },
-  { name: "Price/Quarter", basic: "9KM", pro: "15KM" },
-  { name: "Price/Schoolyear", basic: "21KM", pro: "30KM (-5KM)" },
+  { name: "Price/Schoolyear (8 months)", basic: "24KM", pro: "40KM" },
 ];
 
 export default function SubscriptionPage() {
@@ -43,7 +37,10 @@ export default function SubscriptionPage() {
   const [code, setCode] = React.useState("");
   const [isRedeeming, setIsRedeeming] = React.useState(false);
   const [isGeneratingTrial, setIsGeneratingTrial] = React.useState(false);
-  const [message, setMessage] = React.useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = React.useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = React.useState<{
     role: string;
     subscriptionEndsAt: Date | null;
@@ -95,7 +92,10 @@ export default function SubscriptionPage() {
       setMessage({ type: "error", text: result.error });
     } else if (result.code) {
       setTrialCode(result.code.code);
-      setMessage({ type: "success", text: "Trial code generated! Share it with a friend." });
+      setMessage({
+        type: "success",
+        text: "Trial code generated! Share it with a friend.",
+      });
       const status = await getSubscriptionStatusAction();
       setSubscriptionStatus(status);
     }
@@ -126,14 +126,14 @@ export default function SubscriptionPage() {
       return;
     }
     const daysSince = Math.floor(
-      (Date.now() - new Date(lastGenerated).getTime()) / (1000 * 60 * 60 * 24)
+      (Date.now() - new Date(lastGenerated).getTime()) / (1000 * 60 * 60 * 24),
     );
     setCanGenerateTrial(daysSince >= 30);
     setDaysUntilNextTrial(Math.max(0, 30 - daysSince));
   }, [isPro, subscriptionStatus]);
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center -mt-16 gap-6">
+    <div className="flex flex-1 flex-col items-center justify-center gap-6">
       {subscriptionStatus?.isActive && (
         <Card className="w-full max-w-2xl border-green-500/50 bg-green-500/5">
           <CardHeader>
@@ -143,10 +143,21 @@ export default function SubscriptionPage() {
           </CardHeader>
           <CardContent>
             <p>
-              You have an active <strong>{subscriptionStatus.role.toUpperCase()}</strong> subscription
+              You have an active{" "}
+              <strong>{subscriptionStatus.role.toUpperCase()}</strong>{" "}
+              subscription
               {subscriptionStatus.subscriptionEndsAt && (
-                <> until <strong>{new Date(subscriptionStatus.subscriptionEndsAt).toLocaleDateString()}</strong></>
-              )}.
+                <>
+                  {" "}
+                  until{" "}
+                  <strong>
+                    {new Date(
+                      subscriptionStatus.subscriptionEndsAt,
+                    ).toLocaleDateString()}
+                  </strong>
+                </>
+              )}
+              .
             </p>
           </CardContent>
         </Card>
@@ -173,7 +184,7 @@ export default function SubscriptionPage() {
           <CardDescription>
             Enter a gift or promotional code to activate your subscription.
             <br />
-            You can buy gift codes from your class seller.
+            You can buy gift codes from your classes seller.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleRedeemCode}>
@@ -201,7 +212,8 @@ export default function SubscriptionPage() {
               Trial Code for Friends
             </CardTitle>
             <CardDescription>
-              Generate a 7-day trial code to share with a friend. You can generate one trial code per month.
+              Generate a 7-day trial code to share with a friend. You can
+              generate one trial code per month.
             </CardDescription>
           </CardHeader>
           <CardContent>

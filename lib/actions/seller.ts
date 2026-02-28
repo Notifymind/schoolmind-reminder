@@ -11,12 +11,12 @@ import {
 } from "@/db";
 
 export type CodeType = "basic" | "pro" | "upgrade";
-export type CodeDuration = "month" | "quarter" | "school_year";
+export type CodeDuration = "month" | "school_year";
 
 const PRICING = {
-  basic: { month: 3, quarter: 9, school_year: 21 },
-  pro: { month: 5, quarter: 15, school_year: 30 },
-  upgrade: { month: 2, quarter: 6, school_year: 9 },
+  basic: { month: 3, school_year: 24 },
+  pro: { month: 5, school_year: 40 },
+  upgrade: { month: 2, school_year: 16 },
 } as const;
 
 async function hasCodePermission(userId: string): Promise<boolean> {
@@ -24,7 +24,7 @@ async function hasCodePermission(userId: string): Promise<boolean> {
     body: {
       userId,
       permission: {
-        code: ["generate"],
+        seller: ["access"],
       },
     },
   });
@@ -47,7 +47,10 @@ function generateCodeString(): string {
   return `${generatePart()}-${generatePart()}`;
 }
 
-export async function generateCodeAction(type: CodeType, duration: CodeDuration) {
+export async function generateCodeAction(
+  type: CodeType,
+  duration: CodeDuration,
+) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
   });
@@ -67,7 +70,9 @@ export async function generateCodeAction(type: CodeType, duration: CodeDuration)
   const newBalance = currentBalance - price;
 
   if (newBalance < -maxDebtValue) {
-    return { error: `Insufficient balance. Generating this code would exceed your maximum debt of ${maxDebtValue} KM.` };
+    return {
+      error: `Insufficient balance. Generating this code would exceed your maximum debt of ${maxDebtValue} KM.`,
+    };
   }
 
   let codeString = generateCodeString();
@@ -80,7 +85,14 @@ export async function generateCodeAction(type: CodeType, duration: CodeDuration)
     }
   }
 
-  const code = await createCode(codeString, type, duration, price.toString(), session.user.id);
+  const code = await createCode(
+    codeString,
+    type,
+    duration,
+    price.toString(),
+    session.user.id,
+    session.user.class,
+  );
   await updateSellerBalance(session.user.id, newBalance.toString());
 
   return { code };

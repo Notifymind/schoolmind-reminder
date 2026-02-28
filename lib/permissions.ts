@@ -3,22 +3,36 @@ import { defaultStatements, adminAc } from "better-auth/plugins/admin/access";
 
 export const statement = {
   ...defaultStatements,
-  code: ["generate", "delete", "list"],
   trialCode: ["generate"],
+  assignments: ["access"],
+  exams: ["access"],
+  seller: ["access"],
+  admin: ["access"],
 } as const;
 
 export const ac = createAccessControl(statement);
 
-export const proRole = ac.newRole({
+export const basicRole = ac.newRole({
+  exams: ["access"],
   trialCode: ["generate"],
 });
 
+export const proRole = ac.newRole({
+  ...basicRole.statements,
+  assignments: ["access"],
+});
+
 export const sellerRole = ac.newRole({
-  code: ["generate", "delete", "list"],
+  seller: ["access"],
+  exams: ["access"],
+  assignments: ["access"],
 });
 
 export const adminRole = ac.newRole({
   ...adminAc.statements,
-  code: ["generate", "delete", "list"],
+  seller: ["access"],
+  assignments: ["access"],
+  exams: ["access"],
+  admin: ["access"],
   trialCode: ["generate"],
 });

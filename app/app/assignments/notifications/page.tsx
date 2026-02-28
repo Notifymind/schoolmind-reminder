@@ -28,12 +28,11 @@ import {
   Calendar,
   Edit2,
   Smartphone,
-  Send,
 } from "lucide-react";
 import {
   createPresetAction,
   deletePresetAction,
-  activatePresetForExamsAction,
+  activatePresetForAssignmentsAction,
   getPresetsAction,
   addNotificationTimeAction,
   removeNotificationTimeAction,
@@ -43,7 +42,6 @@ import {
   unsubscribeFromPushAction,
   getPushSubscriptionStatusAction,
 } from "@/lib/actions/notifications";
-import { testNotificationToAdminsAction } from "@/lib/actions/cron";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -133,7 +131,7 @@ type Limits = {
 function PresetCard({
   preset,
   limits,
-  onActivate,
+  onActivateForAssignments,
   onDelete,
   onEdit,
   onAddTime,
@@ -141,7 +139,7 @@ function PresetCard({
 }: {
   preset: Preset;
   limits: Limits;
-  onActivate: () => void;
+  onActivateForAssignments: () => void;
   onDelete: () => void;
   onEdit: (name: string) => void;
   onAddTime: (daysBefore: number, time: string) => void;
@@ -170,7 +168,7 @@ function PresetCard({
   };
 
   return (
-    <Card className={preset.isActiveForExams ? "border-primary" : ""}>
+    <Card className={preset.isActiveForAssignments ? "border-primary" : ""}>
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -195,7 +193,7 @@ function PresetCard({
             ) : (
               <CardTitle className="flex items-center gap-2">
                 {preset.name}
-                {preset.isActiveForExams && (
+                {preset.isActiveForAssignments && (
                   <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
                     Active
                   </span>
@@ -207,12 +205,12 @@ function PresetCard({
             </CardDescription>
           </div>
           <div className="flex gap-1">
-            {!preset.isActiveForExams && (
+            {!preset.isActiveForAssignments && (
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={onActivate}
-                title="Set as active for exams"
+                onClick={onActivateForAssignments}
+                title="Set as active for assignments"
               >
                 <Check className="size-4" />
               </Button>
@@ -431,7 +429,7 @@ function PushNotificationManager() {
   );
 }
 
-export default function NotificationsPage() {
+export default function AssignmentsNotificationsPage() {
   const { data: session } = authClient.useSession();
   const [presets, setPresets] = React.useState<Preset[]>([]);
   const [limits, setLimits] = React.useState<Limits>({
@@ -440,7 +438,6 @@ export default function NotificationsPage() {
   });
   const [newPresetName, setNewPresetName] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
-  const [isTestLoading, setIsTestLoading] = React.useState(false);
   const [isInitialLoading, setIsInitialLoading] = React.useState(true);
 
   const role = session?.user?.role as "free" | "pro" | "admin" | undefined;
@@ -479,8 +476,8 @@ export default function NotificationsPage() {
     await loadPresets();
   }
 
-  async function handleActivatePreset(presetId: number) {
-    await activatePresetForExamsAction(presetId);
+  async function handleActivateForAssignments(presetId: number) {
+    await activatePresetForAssignmentsAction(presetId);
     await loadPresets();
   }
 
@@ -507,19 +504,10 @@ export default function NotificationsPage() {
     await loadPresets();
   }
 
-  async function handleTestNotification() {
-    setIsTestLoading(true);
-    const result = await testNotificationToAdminsAction();
-    setIsTestLoading(false);
-    alert(
-      `Sent: ${result.sent}/${result.total}\n${result.details.map((d) => `${d.user}: ${d.message}`).join("\n")}`,
-    );
-  }
-
   const canAddPreset = presets.length < limits.presets;
 
   return (
-    <SubscriptionGate permission={{ exams: ["access"] }}>
+    <SubscriptionGate permission={{ assignments: ["access"] }}>
       <div className="flex flex-1 flex-col gap-6 items-center">
         <div className="grid gap-6 w-full max-w-2xl">
           <div className="flex items-center justify-between">
@@ -529,20 +517,9 @@ export default function NotificationsPage() {
                 Notifications
               </h1>
               <p className="text-muted-foreground">
-                Configure when you want to be notified about exams
+                Configure when you want to be notified about assignments
               </p>
             </div>
-            {role === "admin" && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleTestNotification}
-                disabled={isTestLoading}
-              >
-                <Send className="size-4" />
-                {isTestLoading ? "Sending..." : "Test"}
-              </Button>
-            )}
           </div>
 
           <PushNotificationManager />
@@ -575,7 +552,7 @@ export default function NotificationsPage() {
                   key={preset.id}
                   preset={preset}
                   limits={limits}
-                  onActivate={() => handleActivatePreset(preset.id)}
+                  onActivateForAssignments={() => handleActivateForAssignments(preset.id)}
                   onDelete={() => handleDeletePreset(preset.id)}
                   onEdit={(name) => handleEditPreset(preset.id, name)}
                   onAddTime={(days, time) =>
@@ -593,7 +570,7 @@ export default function NotificationsPage() {
                   No presets configured yet.
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Create a preset to set up your exam notifications.
+                  Create a preset to set up your assignment notifications.
                 </p>
               </CardContent>
             </Card>

@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { eq, desc, and, lt, notInArray, inArray, isNull, or } from "drizzle-orm";
+import { eq, desc, and, lt, notInArray, inArray, isNull, or, isNotNull, sql, like } from "drizzle-orm";
 import {
   user,
   exams,
@@ -9,8 +9,11 @@ import {
   notificationTimes,
   scheduledNotifications,
   examNotificationMeta,
+  assignmentNotificationMeta,
   pushSubscriptions,
   codes,
+  schoolclass,
+  balanceHistory,
 } from "./schema";
 
 const db = drizzle(process.env.DATABASE_URL!);
@@ -124,6 +127,26 @@ export async function setActivePreset(userId: string, presetId: number) {
   return result[0] ?? null;
 }
 
+export async function setActivePresetForExams(userId: string, presetId: number) {
+  await db.update(notificationPresets).set({ isActiveForExams: false }).where(eq(notificationPresets.userId, userId));
+  const result = await db
+    .update(notificationPresets)
+    .set({ isActiveForExams: true })
+    .where(and(eq(notificationPresets.id, presetId), eq(notificationPresets.userId, userId)))
+    .returning();
+  return result[0] ?? null;
+}
+
+export async function setActivePresetForAssignments(userId: string, presetId: number) {
+  await db.update(notificationPresets).set({ isActiveForAssignments: false }).where(eq(notificationPresets.userId, userId));
+  const result = await db
+    .update(notificationPresets)
+    .set({ isActiveForAssignments: true })
+    .where(and(eq(notificationPresets.id, presetId), eq(notificationPresets.userId, userId)))
+    .returning();
+  return result[0] ?? null;
+}
+
 export async function getNotificationTimes(presetId: number) {
   return db.select().from(notificationTimes).where(eq(notificationTimes.presetId, presetId));
 }
@@ -149,6 +172,22 @@ export async function getActivePreset(userId: string) {
     .select()
     .from(notificationPresets)
     .where(and(eq(notificationPresets.userId, userId), eq(notificationPresets.isActive, true)));
+  return result[0] ?? null;
+}
+
+export async function getActivePresetForExams(userId: string) {
+  const result = await db
+    .select()
+    .from(notificationPresets)
+    .where(and(eq(notificationPresets.userId, userId), eq(notificationPresets.isActiveForExams, true)));
+  return result[0] ?? null;
+}
+
+export async function getActivePresetForAssignments(userId: string) {
+  const result = await db
+    .select()
+    .from(notificationPresets)
+    .where(and(eq(notificationPresets.userId, userId), eq(notificationPresets.isActiveForAssignments, true)));
   return result[0] ?? null;
 }
 
@@ -205,12 +244,14 @@ export async function createScheduledNotification(
 
 export async function getPendingNotifications() {
   const now = new Date();
-  return db
+  
+  const examNotifications = await db
     .select({
       notification: scheduledNotifications,
       notificationTime: notificationTimes,
       preset: notificationPresets,
       exam: exams,
+      assignment: sql`NULL::assignments`.as("assignment"),
       user: user,
     })
     .from(scheduledNotifications)
@@ -218,7 +259,25 @@ export async function getPendingNotifications() {
     .innerJoin(notificationPresets, eq(notificationTimes.presetId, notificationPresets.id))
     .innerJoin(exams, eq(scheduledNotifications.examId, exams.id))
     .innerJoin(user, eq(scheduledNotifications.userId, user.id))
-    .where(and(eq(scheduledNotifications.sent, false), lt(scheduledNotifications.scheduledFor, now)));
+    .where(and(eq(scheduledNotifications.sent, false), lt(scheduledNotifications.scheduledFor, now), isNotNull(scheduledNotifications.examId)));
+
+  const assignmentNotifications = await db
+    .select({
+      notification: scheduledNotifications,
+      notificationTime: notificationTimes,
+      preset: notificationPresets,
+      exam: sql`NULL::exams`.as("exam"),
+      assignment: assignments,
+      user: user,
+    })
+    .from(scheduledNotifications)
+    .innerJoin(notificationTimes, eq(scheduledNotifications.notificationTimeId, notificationTimes.id))
+    .innerJoin(notificationPresets, eq(notificationTimes.presetId, notificationPresets.id))
+    .innerJoin(assignments, eq(scheduledNotifications.assignmentId, assignments.id))
+    .innerJoin(user, eq(scheduledNotifications.userId, user.id))
+    .where(and(eq(scheduledNotifications.sent, false), lt(scheduledNotifications.scheduledFor, now), isNotNull(scheduledNotifications.assignmentId)));
+
+  return [...examNotifications, ...assignmentNotifications];
 }
 
 export async function markNotificationSent(notificationId: number) {
@@ -380,9 +439,10 @@ export async function createCode(
   type: string,
   duration: string,
   value: string,
-  sellerId: string
+  sellerId: string,
+  className?: string | null
 ) {
-  const result = await db.insert(codes).values({ code, type, duration, value, sellerId }).returning();
+  const result = await db.insert(codes).values({ code, type, duration, value, sellerId, className }).returning();
   return result[0];
 }
 
@@ -418,18 +478,26 @@ export async function getUserSubscription(userId: string) {
 export async function setUserSubscription(
   userId: string,
   role: string,
-  subscriptionEndsAt: Date
+  subscriptionEndsAt: Date,
+  className?: string | null
 ) {
+  const updateData: { role: string; subscriptionEndsAt: Date; class?: string | null } = { role, subscriptionEndsAt };
+  if (className !== undefined) {
+    updateData.class = className;
+  }
   await db
     .update(user)
-    .set({ role, subscriptionEndsAt })
+    .set(updateData)
     .where(eq(user.id, userId));
 }
 
-export async function extendSubscription(userId: string, newEndsAt: Date, newRole?: string) {
-  const updateData: { subscriptionEndsAt: Date; role?: string } = { subscriptionEndsAt: newEndsAt };
+export async function extendSubscription(userId: string, newEndsAt: Date, newRole?: string, className?: string | null) {
+  const updateData: { subscriptionEndsAt: Date; role?: string; class?: string | null } = { subscriptionEndsAt: newEndsAt };
   if (newRole) {
     updateData.role = newRole;
+  }
+  if (className !== undefined) {
+    updateData.class = className;
   }
   await db.update(user).set(updateData).where(eq(user.id, userId));
 }
@@ -468,6 +536,321 @@ export async function updateLastTrialCodeGenerated(userId: string) {
     .update(user)
     .set({ lastTrialCodeGenerated: new Date() })
     .where(eq(user.id, userId));
+}
+
+export async function getAssignmentsWithoutPreset(userId: string, className: string) {
+  const existingMeta = await db
+    .select({ assignmentId: assignmentNotificationMeta.assignmentId })
+    .from(assignmentNotificationMeta)
+    .where(eq(assignmentNotificationMeta.userId, userId));
+
+  const existingAssignmentIds = existingMeta.map((m) => m.assignmentId);
+
+  if (existingAssignmentIds.length === 0) {
+    return db.select().from(assignments).where(eq(assignments.className, className));
+  }
+
+  return db
+    .select()
+    .from(assignments)
+    .where(and(eq(assignments.className, className), notInArray(assignments.id, existingAssignmentIds)));
+}
+
+export async function createAssignmentNotificationMeta(userId: string, assignmentId: number, presetId: number) {
+  const result = await db.insert(assignmentNotificationMeta).values({ userId, assignmentId, presetId }).returning();
+  return result[0];
+}
+
+export async function getAssignmentNotificationMetas(
+  userId: string,
+  assignmentIds: number[]
+) {
+  if (assignmentIds.length === 0) return [];
+  return db
+    .select()
+    .from(assignmentNotificationMeta)
+    .where(
+      and(
+        eq(assignmentNotificationMeta.userId, userId),
+        inArray(assignmentNotificationMeta.assignmentId, assignmentIds)
+      )
+    );
+}
+
+export async function deleteScheduledNotificationsForAssignment(
+  userId: string,
+  assignmentId: number
+) {
+  await db
+    .delete(scheduledNotifications)
+    .where(
+      and(
+        eq(scheduledNotifications.userId, userId),
+        eq(scheduledNotifications.assignmentId, assignmentId)
+      )
+    );
+}
+
+export async function deleteAssignmentNotificationMeta(
+  userId: string,
+  assignmentId: number
+) {
+  await deleteScheduledNotificationsForAssignment(userId, assignmentId);
+  await db
+    .delete(assignmentNotificationMeta)
+    .where(
+      and(
+        eq(assignmentNotificationMeta.userId, userId),
+        eq(assignmentNotificationMeta.assignmentId, assignmentId)
+      )
+    );
+}
+
+export async function applyPresetToAssignment(
+  userId: string,
+  assignmentId: number,
+  presetId: number
+) {
+  const times = await getNotificationTimes(presetId);
+  const assignment = await db.select().from(assignments).where(eq(assignments.id, assignmentId));
+  if (assignment.length === 0 || !assignment[0].dueDate) return false;
+
+  await deleteScheduledNotificationsForAssignment(userId, assignmentId);
+  await db
+    .delete(assignmentNotificationMeta)
+    .where(
+      and(
+        eq(assignmentNotificationMeta.userId, userId),
+        eq(assignmentNotificationMeta.assignmentId, assignmentId)
+      )
+    );
+
+  const assignmentDate = assignment[0].dueDate;
+
+  await createAssignmentNotificationMeta(userId, assignmentId, presetId);
+
+  for (const time of times) {
+    const scheduledFor = new Date(assignmentDate);
+    scheduledFor.setDate(scheduledFor.getDate() - time.daysBefore);
+    const [hours, minutes] = time.time.split(":").map(Number);
+    scheduledFor.setHours(hours, minutes, 0, 0);
+
+    await db.insert(scheduledNotifications).values({
+      assignmentId,
+      userId,
+      notificationTimeId: time.id,
+      scheduledFor,
+    });
+  }
+
+  return true;
+}
+
+export async function applyPresetToNewAssignments(userId: string) {
+  const activePreset = await getActivePresetForAssignments(userId);
+  if (!activePreset) return { applied: 0 };
+
+  const userClass = await getUserClass(userId);
+  if (!userClass) return { applied: 0 };
+
+  const assignmentsWithoutPreset = await getAssignmentsWithoutPreset(userId, userClass);
+
+  for (const assignment of assignmentsWithoutPreset) {
+    await applyPresetToAssignment(userId, assignment.id, activePreset.id);
+  }
+
+  return { applied: assignmentsWithoutPreset.length };
+}
+
+export async function getTotalDebt() {
+  const result = await db
+    .select({ total: sql<string>`SUM(CASE WHEN ${user.balance}::numeric < 0 THEN ABS(${user.balance}::numeric) ELSE 0 END)` })
+    .from(user)
+    .where(eq(user.role, "seller"));
+  return result[0]?.total ?? "0";
+}
+
+export async function getTotalRevenue() {
+  const result = await db
+    .select({ total: sql<string>`SUM(${codes.value}::numeric)` })
+    .from(codes)
+    .where(isNotNull(codes.redeemedAt));
+  return result[0]?.total ?? "0";
+}
+
+export async function getSellersWithDebt() {
+  return db
+    .select({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      balance: user.balance,
+      class: user.class,
+    })
+    .from(user)
+    .where(and(eq(user.role, "seller"), sql`${user.balance}::numeric < 0`))
+    .orderBy(desc(user.balance));
+}
+
+export async function searchUsers(query: string) {
+  const searchTerm = `%${query.toLowerCase()}%`;
+  return db
+    .select({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      class: user.class,
+    })
+    .from(user)
+    .where(or(like(sql`LOWER(${user.name})`, searchTerm), like(sql`LOWER(${user.email})`, searchTerm)))
+    .limit(10);
+}
+
+export async function searchSellers(query: string) {
+  const searchTerm = `%${query.toLowerCase()}%`;
+  return db
+    .select({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      balance: user.balance,
+      maxDebt: user.maxDebt,
+      class: user.class,
+    })
+    .from(user)
+    .where(and(eq(user.role, "seller"), or(like(sql`LOWER(${user.name})`, searchTerm), like(sql`LOWER(${user.email})`, searchTerm))))
+    .limit(10);
+}
+
+export async function getAllSellers() {
+  return db
+    .select({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      balance: user.balance,
+      maxDebt: user.maxDebt,
+      class: user.class,
+      createdAt: user.createdAt,
+    })
+    .from(user)
+    .where(eq(user.role, "seller"))
+    .orderBy(desc(user.createdAt));
+}
+
+export async function getUserById(userId: string) {
+  const result = await db.select().from(user).where(eq(user.id, userId));
+  return result[0] ?? null;
+}
+
+export async function upgradeUserToSeller(userId: string, maxDebt: string, className: string | null) {
+  const updateData: { role: string; maxDebt: string; class?: string | null } = { role: "seller", maxDebt };
+  if (className !== undefined) {
+    updateData.class = className;
+  }
+  const result = await db.update(user).set(updateData).where(eq(user.id, userId)).returning();
+  return result[0] ?? null;
+}
+
+export async function updateSellerInfo(userId: string, maxDebt: string, className: string | null) {
+  const result = await db
+    .update(user)
+    .set({ maxDebt, class: className })
+    .where(eq(user.id, userId))
+    .returning();
+  return result[0] ?? null;
+}
+
+export async function removeSellerRole(userId: string) {
+  const result = await db
+    .update(user)
+    .set({ role: "free", maxDebt: "0", balance: "0" })
+    .where(eq(user.id, userId))
+    .returning();
+  return result[0] ?? null;
+}
+
+export async function updateSellerBalanceWithLog(
+  sellerId: string,
+  adminId: string,
+  type: "add" | "remove" | "set",
+  amount: string
+) {
+  const currentBalance = await getSellerBalance(sellerId);
+  const previousBalance = parseFloat(currentBalance.balance);
+  let newBalance: number;
+
+  switch (type) {
+    case "add":
+      newBalance = previousBalance + parseFloat(amount);
+      break;
+    case "remove":
+      newBalance = previousBalance - parseFloat(amount);
+      break;
+    case "set":
+      newBalance = parseFloat(amount);
+      break;
+  }
+
+  await db.update(user).set({ balance: newBalance.toString() }).where(eq(user.id, sellerId));
+
+  await db.insert(balanceHistory).values({
+    sellerId,
+    adminId,
+    type,
+    amount,
+    previousBalance: previousBalance.toString(),
+    newBalance: newBalance.toString(),
+  });
+
+  return { newBalance: newBalance.toString() };
+}
+
+export async function getBalanceHistory(sellerId: string, limit = 50) {
+  return db
+    .select({
+      id: balanceHistory.id,
+      type: balanceHistory.type,
+      amount: balanceHistory.amount,
+      previousBalance: balanceHistory.previousBalance,
+      newBalance: balanceHistory.newBalance,
+      createdAt: balanceHistory.createdAt,
+      admin: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+    })
+    .from(balanceHistory)
+    .innerJoin(user, eq(balanceHistory.adminId, user.id))
+    .where(eq(balanceHistory.sellerId, sellerId))
+    .orderBy(desc(balanceHistory.createdAt))
+    .limit(limit);
+}
+
+export async function getAllClasses() {
+  return db.select().from(schoolclass).orderBy(schoolclass.name);
+}
+
+export async function createClass(name: string, username: string, password: string) {
+  const result = await db.insert(schoolclass).values({ name, username, password }).returning();
+  return result[0];
+}
+
+export async function getClassByName(name: string) {
+  const result = await db.select().from(schoolclass).where(eq(schoolclass.name, name));
+  return result[0] ?? null;
+}
+
+export async function updateClass(oldName: string, name: string, username: string, password: string) {
+  const result = await db.update(schoolclass).set({ name, username, password }).where(eq(schoolclass.name, oldName)).returning();
+  return result[0];
+}
+
+export async function deleteClass(name: string) {
+  const result = await db.delete(schoolclass).where(eq(schoolclass.name, name)).returning();
+  return result[0];
 }
 
 export { db };

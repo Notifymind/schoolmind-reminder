@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { usePageTitle } from "@/app/app/layout";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,9 +20,9 @@ import {
 } from "@/lib/actions/seller";
 
 const PRICING = {
-  basic: { month: 3, quarter: 9, school_year: 21 },
-  pro: { month: 5, quarter: 15, school_year: 30 },
-  upgrade: { month: 2, quarter: 6, school_year: 9 },
+  basic: { month: 3, school_year: 24 },
+  pro: { month: 5, school_year: 40 },
+  upgrade: { month: 2, school_year: 16 },
 } as const;
 
 const CODE_TYPE_LABELS: Record<CodeType, string> = {
@@ -34,7 +33,6 @@ const CODE_TYPE_LABELS: Record<CodeType, string> = {
 
 const DURATION_LABELS: Record<CodeDuration, string> = {
   month: "Month",
-  quarter: "Quarter",
   school_year: "School Year",
 };
 
@@ -51,8 +49,6 @@ interface Code {
 }
 
 export default function CodesPage() {
-  usePageTitle("Codes");
-
   const [codes, setCodes] = React.useState<Code[]>([]);
   const [balance, setBalance] = React.useState("0");
   const [maxDebt, setMaxDebt] = React.useState("0");
@@ -124,7 +120,8 @@ export default function CodesPage() {
             Balance: {currentBalance.toFixed(2)} KM
             {currentBalance < 0 && (
               <span className="text-destructive ml-2">
-                (Debt: {Math.abs(currentBalance).toFixed(2)} KM / Max: {maxDebtValue.toFixed(2)} KM)
+                (Debt: {Math.abs(currentBalance).toFixed(2)} KM / Max:{" "}
+                {maxDebtValue.toFixed(2)} KM)
               </span>
             )}
           </p>
@@ -152,7 +149,8 @@ export default function CodesPage() {
             Generate Code
           </CardTitle>
           <CardDescription>
-            Create a new subscription code. The cost will be deducted from your balance.
+            Create a new subscription code. The cost will be deducted from your
+            balance.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -188,7 +186,9 @@ export default function CodesPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <span className="text-sm text-muted-foreground">Cost: {price} KM</span>
+              <span className="text-sm text-muted-foreground">
+                Cost: {price} KM
+              </span>
               <Button
                 onClick={handleGenerateCode}
                 disabled={isGenerating || wouldExceedDebt}
@@ -200,7 +200,8 @@ export default function CodesPage() {
 
           {wouldExceedDebt && (
             <p className="mt-4 text-sm text-destructive">
-              Cannot generate code: would exceed maximum debt of {maxDebtValue.toFixed(2)} KM
+              Cannot generate code: would exceed maximum debt of{" "}
+              {maxDebtValue.toFixed(2)} KM
             </p>
           )}
         </CardContent>
@@ -210,7 +211,8 @@ export default function CodesPage() {
         <CardHeader>
           <CardTitle>Your Codes</CardTitle>
           <CardDescription>
-            List of all codes you have generated. Unredeemed codes can be deleted for a refund.
+            List of all codes you have generated. Unredeemed codes can be
+            deleted for a refund.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -237,8 +239,13 @@ export default function CodesPage() {
                   {unredeemedCodes.map((code) => (
                     <tr key={code.id} className="border-b">
                       <td className="p-3 font-mono">{code.code}</td>
-                      <td className="p-3">{CODE_TYPE_LABELS[code.type as CodeType] || code.type}</td>
-                      <td className="p-3">{DURATION_LABELS[code.duration as CodeDuration] || code.duration}</td>
+                      <td className="p-3">
+                        {CODE_TYPE_LABELS[code.type as CodeType] || code.type}
+                      </td>
+                      <td className="p-3">
+                        {DURATION_LABELS[code.duration as CodeDuration] ||
+                          code.duration}
+                      </td>
                       <td className="p-3 text-right">{code.value} KM</td>
                       <td className="p-3">
                         <span className="inline-flex items-center rounded-full bg-yellow-500/10 px-2 py-1 text-xs font-medium text-yellow-600 dark:text-yellow-400">
@@ -263,8 +270,13 @@ export default function CodesPage() {
                   {redeemedCodes.map((code) => (
                     <tr key={code.id} className="border-b opacity-60">
                       <td className="p-3 font-mono">{code.code}</td>
-                      <td className="p-3">{CODE_TYPE_LABELS[code.type as CodeType] || code.type}</td>
-                      <td className="p-3">{DURATION_LABELS[code.duration as CodeDuration] || code.duration}</td>
+                      <td className="p-3">
+                        {CODE_TYPE_LABELS[code.type as CodeType] || code.type}
+                      </td>
+                      <td className="p-3">
+                        {DURATION_LABELS[code.duration as CodeDuration] ||
+                          code.duration}
+                      </td>
                       <td className="p-3 text-right">{code.value} KM</td>
                       <td className="p-3">
                         <span className="inline-flex items-center rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-600 dark:text-green-400">
