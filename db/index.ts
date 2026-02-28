@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { eq, desc, and, lt, notInArray, inArray } from "drizzle-orm";
+import { eq, desc, and, lt, notInArray, inArray, isNull } from "drizzle-orm";
 import {
   user,
   exams,
@@ -10,6 +10,7 @@ import {
   scheduledNotifications,
   examNotificationMeta,
   pushSubscriptions,
+  codes,
 } from "./schema";
 
 const db = drizzle(process.env.DATABASE_URL!);
@@ -360,6 +361,46 @@ export async function getReusablePresetsWithTimes(userId: string) {
     })
   );
   return presetsWithTimes;
+}
+
+export async function getSellerBalance(userId: string) {
+  const result = await db.select({ balance: user.balance, maxDebt: user.maxDebt }).from(user).where(eq(user.id, userId));
+  return {
+    balance: result[0]?.balance ?? "0",
+    maxDebt: result[0]?.maxDebt ?? "0",
+  };
+}
+
+export async function updateSellerBalance(userId: string, newBalance: string) {
+  await db.update(user).set({ balance: newBalance }).where(eq(user.id, userId));
+}
+
+export async function createCode(
+  code: string,
+  type: string,
+  duration: string,
+  value: string,
+  sellerId: string
+) {
+  const result = await db.insert(codes).values({ code, type, duration, value, sellerId }).returning();
+  return result[0];
+}
+
+export async function getCodesBySeller(sellerId: string) {
+  return db.select().from(codes).where(eq(codes.sellerId, sellerId)).orderBy(desc(codes.createdAt));
+}
+
+export async function getCodeByCode(codeString: string) {
+  const result = await db.select().from(codes).where(eq(codes.code, codeString));
+  return result[0] ?? null;
+}
+
+export async function deleteCodeById(codeId: number, sellerId: string) {
+  const result = await db
+    .delete(codes)
+    .where(and(eq(codes.id, codeId), eq(codes.sellerId, sellerId), isNull(codes.redeemedBy)))
+    .returning();
+  return result[0] ?? null;
 }
 
 export { db };

@@ -7,6 +7,7 @@ import {
   boolean,
   index,
   integer,
+  numeric,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -22,6 +23,8 @@ export const user = pgTable("user", {
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
   lastTrial: timestamp("last_trial"),
+  balance: numeric("balance", { precision: 10, scale: 2 }).default("0").notNull(),
+  maxDebt: numeric("max_debt", { precision: 10, scale: 2 }).default("0").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -124,6 +127,8 @@ export const userRelations = relations(user, ({ many, one }) => ({
   scheduledNotifications: many(scheduledNotifications),
   examNotificationMeta: many(examNotificationMeta),
   pushSubscriptions: many(pushSubscriptions),
+  sellerCodes: many(codes, { relationName: "seller" }),
+  redeemedCodes: many(codes, { relationName: "redeemedBy" }),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -369,3 +374,38 @@ export const pushSubscriptionsRelations = relations(
     }),
   }),
 );
+
+export const codes = pgTable(
+  "codes",
+  {
+    id: serial("id").primaryKey(),
+    code: varchar("code", { length: 11 }).notNull().unique(),
+    type: varchar("type", { length: 20 }).notNull(),
+    duration: varchar("duration", { length: 20 }).notNull(),
+    value: numeric("value", { precision: 10, scale: 2 }).notNull(),
+    sellerId: text("seller_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    redeemedBy: text("redeemed_by").references(() => user.id, { onDelete: "set null" }),
+    redeemedAt: timestamp("redeemed_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("codes_sellerId_idx").on(table.sellerId),
+    index("codes_code_idx").on(table.code),
+    index("codes_redeemedBy_idx").on(table.redeemedBy),
+  ],
+);
+
+export const codesRelations = relations(codes, ({ one }) => ({
+  seller: one(user, {
+    fields: [codes.sellerId],
+    references: [user.id],
+    relationName: "seller",
+  }),
+  redeemedByUser: one(user, {
+    fields: [codes.redeemedBy],
+    references: [user.id],
+    relationName: "redeemedBy",
+  }),
+}));
