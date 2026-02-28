@@ -18,6 +18,9 @@ export const user = pgTable("user", {
   image: text("image"),
   class: varchar("class", { length: 50 }).references(() => schoolclass.name),
   role: varchar("role", { length: 50 }).default("free").notNull(),
+  banned: boolean("banned").default(false),
+  banReason: text("ban_reason"),
+  banExpires: timestamp("ban_expires"),
   lastTrial: timestamp("last_trial"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
@@ -41,6 +44,7 @@ export const session = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    impersonatedBy: text("impersonated_by"),
   },
   (table) => [index("session_userId_idx").on(table.userId)],
 );
