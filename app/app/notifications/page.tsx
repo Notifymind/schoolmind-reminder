@@ -324,16 +324,16 @@ function PushNotificationManager() {
   async function subscribeToPush() {
     setIsLoading(true);
     try {
-      const registration = await navigator.serviceWorker.register("/sw.js", {
-        scope: "/",
-        updateViaCache: "none",
-      });
-      const sub = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
-        ),
-      });
+      const registration = await navigator.serviceWorker.ready;
+      let sub = await registration.pushManager.getSubscription();
+      if (!sub) {
+        sub = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(
+            process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
+          ),
+        });
+      }
       const serializedSub = JSON.parse(JSON.stringify(sub));
       await subscribeToPushAction({
         endpoint: serializedSub.endpoint,
@@ -342,7 +342,7 @@ function PushNotificationManager() {
       setIsSubscribed(true);
     } catch (error) {
       console.error("Failed to subscribe:", error);
-      alert("Failed to subscribe to push notifications");
+      alert("Failed to subscribe to push notifications. Make sure you've added this app to your home screen and granted notification permission.");
     }
     setIsLoading(false);
   }
