@@ -37,8 +37,8 @@ export function SubscriptionGate({
 
   if (isPending || hasPermission === null) {
     return (
-      <div className="flex flex-1 flex-col gap-6 items-center justify-center">
-        <Spinner className="size-8" />
+      <div className="flex flex-1 items-center justify-center -mt-16">
+        <Spinner className="size-12" />
       </div>
     )
   }
