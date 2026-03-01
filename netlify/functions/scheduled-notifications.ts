@@ -21,5 +21,5 @@ export default async function handler(req: Request) {
 }
 
 export const config = {
-  schedule: "@hourly",
+  schedule: "*/15 * * * *",
 };
