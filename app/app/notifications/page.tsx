@@ -289,9 +289,9 @@ function PresetCard({
             <FieldGroup>
               <Field>
                 <FieldLabel>Add notification time</FieldLabel>
-                <div className="flex gap-2">
-                  <div className="flex items-center gap-2">
-                    <Input
+<div className="flex flex-wrap gap-2">
+                   <div className="flex items-center gap-2">
+                     <Input
                       type="number"
                       min="0"
                       max="30"
