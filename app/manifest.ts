@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "SchoolMind Reminder",
-    short_name: "SchoolMind",
+    short_name: "School Rem.",
     description: "Get reminders for your school exams",
     start_url: "/app/exams",
     display: "standalone",
