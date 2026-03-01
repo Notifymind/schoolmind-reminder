@@ -24,7 +24,7 @@ const features = [
   { name: "Assignment Access", basic: false, pro: true },
   { name: "App Notifications", basic: true, pro: true },
   { name: "Max. notifications", basic: "2", pro: "5" },
-  { name: "Notification Presets", basic: "1", pro: "3" },
+  { name: "Notification Presets", basic: "1", pro: "5" },
   { name: "Trial Code for Friend", basic: false, pro: true },
   { name: "Price/Month", basic: "3KM", pro: "6KM" },
   { name: "Price/Year:", basic: "24KM", pro: "40KM (saves 8KM)" },
