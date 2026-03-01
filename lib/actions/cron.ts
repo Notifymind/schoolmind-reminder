@@ -10,6 +10,7 @@ import {
   getAllPushSubscriptions,
   getExpiredSubscriptions,
   downgradeExpiredUser,
+  createUserNotification,
 } from "@/db";
 import { exams, assignments } from "@/db/schema";
 
@@ -67,10 +68,14 @@ export async function processNotificationsAction() {
         continue;
       }
 
+      const notificationType = assignment ? "assignment_reminder" : "exam_reminder";
+      await createUserNotification(user.id, title, body, notificationType);
+      await markNotificationSent(notification.id);
+
       const subscriptions = await getAllPushSubscriptions();
       const userSubs = subscriptions.filter((s) => s.userId === user.id);
 
-      let sent = false;
+      let pushSent = false;
       for (const sub of userSubs) {
         try {
           await webpush.sendNotification(
@@ -87,18 +92,16 @@ export async function processNotificationsAction() {
               icon: "/icon-192x192.png",
             })
           );
-          sent = true;
+          pushSent = true;
         } catch (error) {
           console.error("[Push] Error sending to subscription:", error);
         }
       }
 
-      if (sent) {
-        await markNotificationSent(notification.id);
+      if (pushSent) {
         results.sent++;
       } else {
         console.log(`[Notification] No push subscriptions for user ${user.id}`);
-        results.errors++;
       }
     } catch (error) {
       console.error(`[Notification] Error processing notification:`, error);
