@@ -14,6 +14,7 @@ import {
   codes,
   schoolclass,
   balanceHistory,
+  userNotifications,
 } from "./schema";
 
 const db = drizzle(process.env.DATABASE_URL!);
@@ -850,6 +851,43 @@ export async function updateClass(oldName: string, name: string, username: strin
 
 export async function deleteClass(name: string) {
   const result = await db.delete(schoolclass).where(eq(schoolclass.name, name)).returning();
+  return result[0];
+}
+
+export async function getUserNotifications(userId: string) {
+  return db
+    .select()
+    .from(userNotifications)
+    .where(eq(userNotifications.userId, userId))
+    .orderBy(desc(userNotifications.createdAt))
+    .limit(50);
+}
+
+export async function getUnreadNotificationCount(userId: string) {
+  const result = await db
+    .select({ id: userNotifications.id })
+    .from(userNotifications)
+    .where(and(eq(userNotifications.userId, userId), eq(userNotifications.read, false)));
+  return result.length;
+}
+
+export async function markAllNotificationsRead(userId: string) {
+  await db
+    .update(userNotifications)
+    .set({ read: true })
+    .where(and(eq(userNotifications.userId, userId), eq(userNotifications.read, false)));
+}
+
+export async function createUserNotification(
+  userId: string,
+  title: string,
+  message: string,
+  type: string
+) {
+  const result = await db
+    .insert(userNotifications)
+    .values({ userId, title, message, type })
+    .returning();
   return result[0];
 }
 

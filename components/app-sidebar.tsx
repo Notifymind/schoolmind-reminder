@@ -32,6 +32,113 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { authClient } from "@/lib/auth-client"
+import { getUserNotificationsAction, getUnreadNotificationCountAction, markAllNotificationsReadAction } from "@/lib/actions/notifications"
+import { Separator } from "@/components/ui/separator"
+
+type UserNotification = {
+  id: number;
+  title: string;
+  message: string;
+  type: string;
+  read: boolean;
+  createdAt: Date;
+}
+
+function NotificationDropdown() {
+  const [notifications, setNotifications] = React.useState<UserNotification[]>([])
+  const [unreadCount, setUnreadCount] = React.useState(0)
+  const [open, setOpen] = React.useState(false)
+
+  React.useEffect(() => {
+    getUnreadNotificationCountAction().then((result) => {
+      setUnreadCount(result.count)
+    })
+  }, [])
+
+  React.useEffect(() => {
+    if (open) {
+      getUserNotificationsAction().then((result) => {
+        setNotifications(result.notifications as UserNotification[])
+        markAllNotificationsReadAction().then(() => {
+          setUnreadCount(0)
+        })
+      })
+    }
+  }, [open])
+
+  const unreadNotifications = notifications.filter((n) => !n.read)
+  const readNotifications = notifications.filter((n) => n.read)
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <SidebarMenuButton
+          size="lg"
+          className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+        >
+          <div className="relative">
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </div>
+          <span className="truncate">Notifications</span>
+        </SidebarMenuButton>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        className="w-80 rounded-lg"
+        side="top"
+        align="start"
+        sideOffset={4}
+      >
+        <div className="max-h-80 overflow-y-auto">
+          {notifications.length === 0 ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              No notifications
+            </div>
+          ) : (
+            <>
+              {unreadNotifications.length > 0 && (
+                <>
+                  <div className="flex items-center gap-2 px-2 py-1.5">
+                    <Separator className="flex-1 bg-destructive" />
+                    <span className="text-xs font-medium text-destructive">NEW</span>
+                    <Separator className="flex-1 bg-destructive" />
+                  </div>
+                  {unreadNotifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className="flex flex-col gap-1 px-2 py-2 hover:bg-accent"
+                    >
+                      <span className="text-sm font-medium">{notification.title}</span>
+                      <span className="text-xs text-muted-foreground">{notification.message}</span>
+                    </div>
+                  ))}
+                </>
+              )}
+              {readNotifications.length > 0 && (
+                <>
+                  {unreadNotifications.length > 0 && <DropdownMenuSeparator />}
+                  {readNotifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className="flex flex-col gap-1 px-2 py-2 hover:bg-accent opacity-60"
+                    >
+                      <span className="text-sm font-medium">{notification.title}</span>
+                      <span className="text-xs text-muted-foreground">{notification.message}</span>
+                    </div>
+                  ))}
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
 
 const navItems = [
   {
@@ -213,6 +320,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <NotificationDropdown />
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

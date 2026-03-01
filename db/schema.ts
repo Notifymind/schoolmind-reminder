@@ -130,6 +130,7 @@ export const userRelations = relations(user, ({ many, one }) => ({
   examNotificationMeta: many(examNotificationMeta),
   assignmentNotificationMeta: many(assignmentNotificationMeta),
   pushSubscriptions: many(pushSubscriptions),
+  userNotifications: many(userNotifications),
   sellerCodes: many(codes, { relationName: "seller" }),
   redeemedCodes: many(codes, { relationName: "redeemedBy" }),
   sellerBalanceHistory: many(balanceHistory, { relationName: "sellerBalanceHistory" }),
@@ -402,6 +403,35 @@ export const pushSubscriptionsRelations = relations(
   ({ one }) => ({
     user: one(user, {
       fields: [pushSubscriptions.userId],
+      references: [user.id],
+    }),
+  }),
+);
+
+export const userNotifications = pgTable(
+  "user_notifications",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    title: varchar("title", { length: 255 }).notNull(),
+    message: text("message").notNull(),
+    type: varchar("type", { length: 50 }).notNull(),
+    read: boolean("read").default(false).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("user_notifications_userId_idx").on(table.userId),
+    index("user_notifications_read_idx").on(table.read),
+  ],
+);
+
+export const userNotificationsRelations = relations(
+  userNotifications,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [userNotifications.userId],
       references: [user.id],
     }),
   }),

@@ -26,6 +26,9 @@ import {
   getAssignmentNotificationMetas,
   getReusablePresetsWithTimes,
   getNotificationTimes,
+  getUserNotifications,
+  getUnreadNotificationCount,
+  markAllNotificationsRead,
 } from "@/db";
 
 const PRESET_LIMITS = {
@@ -495,4 +498,43 @@ export async function getAssignmentPresetsAction(assignmentIds: number[]) {
   }));
 
   return { assignmentPresets };
+}
+
+export async function getUserNotificationsAction() {
+  const session = await auth.api.getSession({
+    headers: await import("next/headers").then((m) => m.headers()),
+  });
+
+  if (!session?.user?.id) {
+    return { notifications: [] };
+  }
+
+  const notifications = await getUserNotifications(session.user.id);
+  return { notifications };
+}
+
+export async function getUnreadNotificationCountAction() {
+  const session = await auth.api.getSession({
+    headers: await import("next/headers").then((m) => m.headers()),
+  });
+
+  if (!session?.user?.id) {
+    return { count: 0 };
+  }
+
+  const count = await getUnreadNotificationCount(session.user.id);
+  return { count };
+}
+
+export async function markAllNotificationsReadAction() {
+  const session = await auth.api.getSession({
+    headers: await import("next/headers").then((m) => m.headers()),
+  });
+
+  if (!session?.user?.id) {
+    return { error: "Not authenticated" };
+  }
+
+  await markAllNotificationsRead(session.user.id);
+  return { success: true };
 }
