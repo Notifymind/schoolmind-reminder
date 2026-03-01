@@ -174,6 +174,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
   const { data: session } = authClient.useSession()
+  const [isSmallScreen, setIsSmallScreen] = React.useState(false)
+
+  React.useEffect(() => {
+    const checkScreenSize = () => setIsSmallScreen(window.innerWidth < 768)
+    checkScreenSize()
+    window.addEventListener("resize", checkScreenSize)
+    return () => window.removeEventListener("resize", checkScreenSize)
+  }, [])
 
   const userRole = session?.user?.role as "admin" | "seller" | undefined
   const canAccessSellerPlatform = userRole
@@ -204,7 +212,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/app">
+              <Link href={isSmallScreen ? "/app/exams" : "/app"}>
                 <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                   <Bell className="size-4" />
                 </div>

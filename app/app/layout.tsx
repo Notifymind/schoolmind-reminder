@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { AppSidebar } from "@/components/app-sidebar"
 import { RequireAuth } from "@/components/require-auth"
 import { MobileNavbar } from "@/components/mobile-navbar"
+import { NotificationFab } from "@/components/notification-fab"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 
@@ -74,6 +75,7 @@ export default function AppLayout({
           </PageTitleContext.Provider>
         </SidebarInset>
         <MobileNavbar />
+        <NotificationFab />
       </SidebarProvider>
     </RequireAuth>
   )
