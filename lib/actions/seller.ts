@@ -47,6 +47,18 @@ function generateCodeString(): string {
   return `${generatePart()}-${generatePart()}`;
 }
 
+async function hasAdminPermission(userId: string): Promise<boolean> {
+  const result = await auth.api.userHasPermission({
+    body: {
+      userId,
+      permission: {
+        admin: ["access"],
+      },
+    },
+  });
+  return result?.success ?? false;
+}
+
 export async function generateCodeAction(
   type: CodeType,
   duration: CodeDuration,
@@ -63,16 +75,20 @@ export async function generateCodeAction(
     return { error: "You don't have permission to generate codes" };
   }
 
+  const isAdmin = await hasAdminPermission(session.user.id);
   const price = getCodePrice(type, duration);
-  const { balance, maxDebt } = await getSellerBalance(session.user.id);
-  const currentBalance = parseFloat(balance);
-  const maxDebtValue = parseFloat(maxDebt);
-  const newBalance = currentBalance - price;
 
-  if (newBalance < -maxDebtValue) {
-    return {
-      error: `Insufficient balance. Generating this code would exceed your maximum debt of ${maxDebtValue} KM.`,
-    };
+  if (!isAdmin) {
+    const { balance, maxDebt } = await getSellerBalance(session.user.id);
+    const currentBalance = parseFloat(balance);
+    const maxDebtValue = parseFloat(maxDebt);
+    const newBalance = currentBalance - price;
+
+    if (newBalance < -maxDebtValue) {
+      return {
+        error: `Insufficient balance. Generating this code would exceed your maximum debt of ${maxDebtValue} KM.`,
+      };
+    }
   }
 
   let codeString = generateCodeString();
@@ -93,7 +109,13 @@ export async function generateCodeAction(
     session.user.id,
     session.user.class,
   );
-  await updateSellerBalance(session.user.id, newBalance.toString());
+
+  if (!isAdmin) {
+    const { balance } = await getSellerBalance(session.user.id);
+    const currentBalance = parseFloat(balance);
+    const newBalance = currentBalance - price;
+    await updateSellerBalance(session.user.id, newBalance.toString());
+  }
 
   return { code };
 }
