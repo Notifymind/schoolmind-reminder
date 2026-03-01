@@ -47,7 +47,7 @@ export default async function UpcomingAssignmentsPage() {
         })
         .sort((a, b) => {
           if (!a.dueDate || !b.dueDate) return 0
-          return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
         })
 
       presets = await getReusablePresetsWithTimes(session.user.id)
