@@ -39,14 +39,14 @@ export default function AdminOverviewPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-1 items-center justify-center p-6">
+      <div className="flex flex-1 items-center justify-center">
         <Spinner className="size-8" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
+    <div className="grid gap-4 w-full max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Admin Overview</h1>

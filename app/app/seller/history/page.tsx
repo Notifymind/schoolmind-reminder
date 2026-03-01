@@ -51,14 +51,14 @@ export default function HistoryPage() {
 
   if (isLoading && currentPage === 1) {
     return (
-      <div className="flex flex-1 items-center justify-center p-6">
+      <div className="flex flex-1 items-center justify-center">
         <Spinner className="size-8" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
+    <div className="grid gap-4 w-full max-w-2xl mx-auto">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

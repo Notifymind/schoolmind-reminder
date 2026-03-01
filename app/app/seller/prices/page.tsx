@@ -13,7 +13,7 @@ export default function PricesPage() {
   usePageTitle("Prices");
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
+    <div className="grid gap-4 w-full max-w-2xl mx-auto">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
