@@ -9,12 +9,12 @@ import { useSidebar } from "@/components/ui/sidebar"
 const navItems = [
   {
     title: "Exams",
-    href: "/app/exams/upcoming",
+    href: "/app/exams",
     icon: FileText,
   },
   {
     title: "Assignments",
-    href: "/app/assignments/upcoming",
+    href: "/app/assignments",
     icon: ClipboardList,
   },
   {
@@ -32,8 +32,7 @@ export function MobileNavbar() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || 
-            (item.href !== "/app/notifications" && pathname.startsWith(item.href.replace("/upcoming", "")))
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
           
           return (
             <Link

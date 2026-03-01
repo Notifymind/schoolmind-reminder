@@ -146,20 +146,20 @@ const navItems = [
   },
   {
     title: "Exams",
-    url: "/app/exams/upcoming",
+    url: "/app/exams",
     icon: FileText,
     subItems: [
-      { title: "Upcoming Exams", url: "/app/exams/upcoming" },
-      { title: "All Exams", url: "/app/exams" },
+      { title: "Upcoming Exams", url: "/app/exams" },
+      { title: "All Exams", url: "/app/exams/all" },
     ],
   },
   {
     title: "Assignments",
-    url: "/app/assignments/upcoming",
+    url: "/app/assignments",
     icon: ClipboardList,
     subItems: [
-      { title: "Upcoming Assignments", url: "/app/assignments/upcoming" },
-      { title: "All Assignments", url: "/app/assignments" },
+      { title: "Upcoming Assignments", url: "/app/assignments" },
+      { title: "All Assignments", url: "/app/assignments/all" },
     ],
   },
   {

@@ -12,12 +12,7 @@ type AssignmentPreset = {
   preset: Preset | null
 }
 
-const ITEMS_PER_PAGE = 10
-
-export default async function AssignmentsPage(props: { searchParams: Promise<{ page?: string }> }) {
-  const searchParams = await props.searchParams
-  const currentPage = Math.max(1, parseInt(searchParams.page || "1", 10))
-
+export default async function UpcomingAssignmentsPage() {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then(m => m.headers()),
   })
@@ -27,7 +22,6 @@ export default async function AssignmentsPage(props: { searchParams: Promise<{ p
   let hasPermission = false
   let presets: Preset[] = []
   let assignmentPresets: AssignmentPreset[] = []
-  let totalCount = 0
 
   if (session?.user?.id) {
     const permissionResult = await auth.api.userHasPermission({
@@ -41,18 +35,20 @@ export default async function AssignmentsPage(props: { searchParams: Promise<{ p
     const userClass = await getUserClass(session.user.id)
     if (userClass) {
       hasClass = true
-      const allAssignments = (await getAssignmentsByClass(userClass)).sort((a, b) => {
-        if (!a.dueDate && !b.dueDate) return 0
-        if (!a.dueDate) return 1
-        if (!b.dueDate) return -1
-        return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
-      })
-
-      totalCount = allAssignments.length
-      assignmentsList = allAssignments.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-      )
+      const allAssignments = await getAssignmentsByClass(userClass)
+      const now = new Date()
+      const fourteenDaysLater = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
+      
+      assignmentsList = allAssignments
+        .filter((assignment) => {
+          if (!assignment.dueDate) return false
+          const dueDate = new Date(assignment.dueDate)
+          return dueDate >= now && dueDate <= fourteenDaysLater
+        })
+        .sort((a, b) => {
+          if (!a.dueDate || !b.dueDate) return 0
+          return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+        })
 
       presets = await getReusablePresetsWithTimes(session.user.id)
 
@@ -83,8 +79,6 @@ export default async function AssignmentsPage(props: { searchParams: Promise<{ p
     }
   }
 
-  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
-
   return (
     <AssignmentsClient 
       assignments={assignmentsList} 
@@ -93,8 +87,7 @@ export default async function AssignmentsPage(props: { searchParams: Promise<{ p
       isLoggedIn={!!session?.user?.id}
       presets={presets}
       assignmentPresets={assignmentPresets}
-      currentPage={currentPage}
-      totalPages={totalPages}
+      title="Upcoming Assignments"
     />
   )
 }
