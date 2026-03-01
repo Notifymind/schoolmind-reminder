@@ -22,9 +22,9 @@ import {
 } from "@/lib/actions/seller";
 
 const PRICING = {
-  basic: { month: 3, school_year: 24 },
-  pro: { month: 5, school_year: 40 },
-  upgrade: { month: 2, school_year: 16 },
+  basic: { month: 2, school_year: 16 },
+  pro: { month: 4, school_year: 24 },
+  upgrade: { month: 2, school_year: 8 },
 } as const;
 
 const CODE_TYPE_LABELS: Record<CodeType, string> = {
