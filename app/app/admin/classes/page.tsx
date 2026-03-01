@@ -3,6 +3,7 @@
 import * as React from "react";
 import { usePageTitle } from "@/app/app/layout";
 import { getClassesAction, deleteClassAction } from "@/lib/actions/admin";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -53,7 +54,7 @@ export default function AdminClassesPage() {
     }
     const result = await deleteClassAction(cls.name);
     if ("error" in result && result.error) {
-      alert(result.error);
+      toast.error(result.error);
       return;
     }
     loadClasses();

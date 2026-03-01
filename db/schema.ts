@@ -126,9 +126,8 @@ export const userRelations = relations(user, ({ many, one }) => ({
     references: [schoolclass.name],
   }),
   notificationPresets: many(notificationPresets),
-  scheduledNotifications: many(scheduledNotifications),
-  examNotificationMeta: many(examNotificationMeta),
-  assignmentNotificationMeta: many(assignmentNotificationMeta),
+  notificationPreferences: many(notificationPreferences),
+  sentNotifications: many(sentNotifications),
   pushSubscriptions: many(pushSubscriptions),
   userNotifications: many(userNotifications),
   sellerCodes: many(codes, { relationName: "seller" }),
@@ -206,8 +205,8 @@ export const examsRelations = relations(exams, ({ one, many }) => ({
     fields: [exams.className],
     references: [schoolclass.name],
   }),
-  scheduledNotifications: many(scheduledNotifications),
-  examNotificationMeta: many(examNotificationMeta),
+  notificationPreferences: many(notificationPreferences),
+  sentNotifications: many(sentNotifications),
 }));
 
 export const assignmentsRelations = relations(assignments, ({ one, many }) => ({
@@ -215,8 +214,8 @@ export const assignmentsRelations = relations(assignments, ({ one, many }) => ({
     fields: [assignments.className],
     references: [schoolclass.name],
   }),
-  scheduledNotifications: many(scheduledNotifications),
-  assignmentNotificationMeta: many(assignmentNotificationMeta),
+  notificationPreferences: many(notificationPreferences),
+  sentNotifications: many(sentNotifications),
 }));
 
 export const notificationPresets = pgTable(
@@ -227,10 +226,10 @@ export const notificationPresets = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 100 }).notNull(),
-    isActive: boolean("is_active").default(false).notNull(),
     isActiveForExams: boolean("is_active_for_exams").default(false).notNull(),
     isActiveForAssignments: boolean("is_active_for_assignments").default(false).notNull(),
-    isOneTime: boolean("is_one_time").default(false).notNull(),
+    activatedForExamsAt: timestamp("activated_for_exams_at"),
+    activatedForAssignmentsAt: timestamp("activated_for_assignments_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -254,72 +253,43 @@ export const notificationTimes = pgTable(
   (table) => [index("notification_times_presetId_idx").on(table.presetId)],
 );
 
-export const scheduledNotifications = pgTable(
-  "scheduled_notifications",
+export const notificationPreferences = pgTable(
+  "notification_preferences",
   {
     id: serial("id").primaryKey(),
-    examId: integer("exam_id")
-      .references(() => exams.id, { onDelete: "cascade" }),
-    assignmentId: integer("assignment_id")
-      .references(() => assignments.id, { onDelete: "cascade" }),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    notificationTimeId: integer("notification_time_id")
+    examId: integer("exam_id").references(() => exams.id, { onDelete: "cascade" }),
+    assignmentId: integer("assignment_id").references(() => assignments.id, { onDelete: "cascade" }),
+    presetId: integer("preset_id")
       .notNull()
-      .references(() => notificationTimes.id, { onDelete: "cascade" }),
-    scheduledFor: timestamp("scheduled_for").notNull(),
-    sent: boolean("sent").default(false).notNull(),
-    sentAt: timestamp("sent_at"),
+      .references(() => notificationPresets.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
-    index("scheduled_notifications_examId_idx").on(table.examId),
-    index("scheduled_notifications_assignmentId_idx").on(table.assignmentId),
-    index("scheduled_notifications_userId_idx").on(table.userId),
-    index("scheduled_notifications_scheduledFor_idx").on(table.scheduledFor),
+    index("notification_preferences_userId_idx").on(table.userId),
+    index("notification_preferences_examId_idx").on(table.examId),
+    index("notification_preferences_assignmentId_idx").on(table.assignmentId),
   ],
 );
 
-export const examNotificationMeta = pgTable(
-  "exam_notification_meta",
+export const sentNotifications = pgTable(
+  "sent_notifications",
   {
     id: serial("id").primaryKey(),
-    examId: integer("exam_id")
-      .notNull()
-      .references(() => exams.id, { onDelete: "cascade" }),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    presetId: integer("preset_id")
-      .notNull()
-      .references(() => notificationPresets.id, { onDelete: "cascade" }),
-    appliedAt: timestamp("applied_at").defaultNow().notNull(),
+    examId: integer("exam_id").references(() => exams.id, { onDelete: "cascade" }),
+    assignmentId: integer("assignment_id").references(() => assignments.id, { onDelete: "cascade" }),
+    daysBefore: integer("days_before").notNull(),
+    sentAt: timestamp("sent_at").defaultNow().notNull(),
   },
   (table) => [
-    index("exam_notification_meta_examId_idx").on(table.examId),
-    index("exam_notification_meta_userId_idx").on(table.userId),
-  ],
-);
-
-export const assignmentNotificationMeta = pgTable(
-  "assignment_notification_meta",
-  {
-    id: serial("id").primaryKey(),
-    assignmentId: integer("assignment_id")
-      .notNull()
-      .references(() => assignments.id, { onDelete: "cascade" }),
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    presetId: integer("preset_id")
-      .notNull()
-      .references(() => notificationPresets.id, { onDelete: "cascade" }),
-    appliedAt: timestamp("applied_at").defaultNow().notNull(),
-  },
-  (table) => [
-    index("assignment_notification_meta_assignmentId_idx").on(table.assignmentId),
-    index("assignment_notification_meta_userId_idx").on(table.userId),
+    index("sent_notifications_userId_idx").on(table.userId),
+    index("sent_notifications_examId_idx").on(table.examId),
+    index("sent_notifications_assignmentId_idx").on(table.assignmentId),
   ],
 );
 
@@ -331,54 +301,56 @@ export const notificationPresetsRelations = relations(
       references: [user.id],
     }),
     notificationTimes: many(notificationTimes),
-    scheduledNotifications: many(scheduledNotifications),
-    examNotificationMeta: many(examNotificationMeta),
+    notificationPreferences: many(notificationPreferences),
   }),
 );
 
 export const notificationTimesRelations = relations(
   notificationTimes,
-  ({ one, many }) => ({
+  ({ one }) => ({
     preset: one(notificationPresets, {
       fields: [notificationTimes.presetId],
       references: [notificationPresets.id],
     }),
-    scheduledNotifications: many(scheduledNotifications),
   }),
 );
 
-export const scheduledNotificationsRelations = relations(
-  scheduledNotifications,
+export const notificationPreferencesRelations = relations(
+  notificationPreferences,
   ({ one }) => ({
-    exam: one(exams, {
-      fields: [scheduledNotifications.examId],
-      references: [exams.id],
-    }),
     user: one(user, {
-      fields: [scheduledNotifications.userId],
+      fields: [notificationPreferences.userId],
       references: [user.id],
     }),
-    notificationTime: one(notificationTimes, {
-      fields: [scheduledNotifications.notificationTimeId],
-      references: [notificationTimes.id],
-    }),
-  }),
-);
-
-export const examNotificationMetaRelations = relations(
-  examNotificationMeta,
-  ({ one }) => ({
     exam: one(exams, {
-      fields: [examNotificationMeta.examId],
+      fields: [notificationPreferences.examId],
       references: [exams.id],
     }),
-    user: one(user, {
-      fields: [examNotificationMeta.userId],
-      references: [user.id],
+    assignment: one(assignments, {
+      fields: [notificationPreferences.assignmentId],
+      references: [assignments.id],
     }),
     preset: one(notificationPresets, {
-      fields: [examNotificationMeta.presetId],
+      fields: [notificationPreferences.presetId],
       references: [notificationPresets.id],
+    }),
+  }),
+);
+
+export const sentNotificationsRelations = relations(
+  sentNotifications,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [sentNotifications.userId],
+      references: [user.id],
+    }),
+    exam: one(exams, {
+      fields: [sentNotifications.examId],
+      references: [exams.id],
+    }),
+    assignment: one(assignments, {
+      fields: [sentNotifications.assignmentId],
+      references: [assignments.id],
     }),
   }),
 );

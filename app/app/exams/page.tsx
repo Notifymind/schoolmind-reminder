@@ -1,11 +1,11 @@
 import { auth } from "@/lib/auth"
-import { getUserClass, getExamsByClass, getReusablePresetsWithTimes, getExamNotificationMetas, getNotificationPresetById } from "@/db"
+import { getUserClass, getExamsByClass, getPresetsWithTimes, getNotificationPreferencesForExams, getNotificationPresetById, getNotificationTimes } from "@/db"
 import { exams } from "@/db/schema"
 import { ExamsClient } from "./client"
 
 type Exam = typeof exams.$inferSelect
 
-type Preset = Awaited<ReturnType<typeof getReusablePresetsWithTimes>>[number]
+type Preset = Awaited<ReturnType<typeof getPresetsWithTimes>>[number]
 
 type ExamPreset = {
   examId: number
@@ -50,18 +50,18 @@ export default async function UpcomingExamsPage() {
           return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
         })
 
-      presets = await getReusablePresetsWithTimes(session.user.id)
+      presets = await getPresetsWithTimes(session.user.id)
 
       if (examsList.length > 0) {
         const examIds = examsList.map(e => e.id)
-        const metas = await getExamNotificationMetas(session.user.id, examIds)
+        const prefs = await getNotificationPreferencesForExams(session.user.id, examIds)
         
-        const presetIds = [...new Set(metas.map(m => m.presetId))]
+        const presetIds = [...new Set(prefs.map(p => p.presetId))]
         const presetDetails = await Promise.all(
           presetIds.map(async (id) => {
             const preset = await getNotificationPresetById(id, session.user.id)
             if (!preset) return null
-            const times = await (await import("@/db")).getNotificationTimes(id)
+            const times = await getNotificationTimes(id)
             return { ...preset, times }
           })
         )
@@ -71,9 +71,9 @@ export default async function UpcomingExamsPage() {
           if (p) presetMap.set(p.id, p)
         })
 
-        examPresets = metas.map(m => ({
-          examId: m.examId,
-          preset: presetMap.get(m.presetId) ?? null
+        examPresets = prefs.map(p => ({
+          examId: p.examId!,
+          preset: presetMap.get(p.presetId) ?? null
         }))
       }
     }

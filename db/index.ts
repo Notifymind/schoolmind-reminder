@@ -1,15 +1,14 @@
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { eq, desc, and, lt, notInArray, inArray, isNull, or, isNotNull, sql, like } from "drizzle-orm";
+import { eq, desc, and, lt, notInArray, inArray, isNull, or, isNotNull, sql, like, gt } from "drizzle-orm";
 import {
   user,
   exams,
   assignments,
   notificationPresets,
   notificationTimes,
-  scheduledNotifications,
-  examNotificationMeta,
-  assignmentNotificationMeta,
+  notificationPreferences,
+  sentNotifications,
   pushSubscriptions,
   codes,
   schoolclass,
@@ -91,15 +90,8 @@ export async function getNotificationPresetById(presetId: number, userId: string
   return result[0] ?? null;
 }
 
-export async function createNotificationPreset(
-  userId: string,
-  name: string,
-  isOneTime = false
-) {
-  const result = await db
-    .insert(notificationPresets)
-    .values({ userId, name, isOneTime })
-    .returning();
+export async function createNotificationPreset(userId: string, name: string) {
+  const result = await db.insert(notificationPresets).values({ userId, name }).returning();
   return result[0];
 }
 
@@ -118,31 +110,21 @@ export async function deleteNotificationPreset(presetId: number, userId: string)
     .where(and(eq(notificationPresets.id, presetId), eq(notificationPresets.userId, userId)));
 }
 
-export async function setActivePreset(userId: string, presetId: number) {
-  await db.update(notificationPresets).set({ isActive: false }).where(eq(notificationPresets.userId, userId));
-  const result = await db
-    .update(notificationPresets)
-    .set({ isActive: true })
-    .where(and(eq(notificationPresets.id, presetId), eq(notificationPresets.userId, userId)))
-    .returning();
-  return result[0] ?? null;
-}
-
 export async function setActivePresetForExams(userId: string, presetId: number) {
-  await db.update(notificationPresets).set({ isActiveForExams: false }).where(eq(notificationPresets.userId, userId));
+  await db.update(notificationPresets).set({ isActiveForExams: false, activatedForExamsAt: null }).where(eq(notificationPresets.userId, userId));
   const result = await db
     .update(notificationPresets)
-    .set({ isActiveForExams: true })
+    .set({ isActiveForExams: true, activatedForExamsAt: new Date() })
     .where(and(eq(notificationPresets.id, presetId), eq(notificationPresets.userId, userId)))
     .returning();
   return result[0] ?? null;
 }
 
 export async function setActivePresetForAssignments(userId: string, presetId: number) {
-  await db.update(notificationPresets).set({ isActiveForAssignments: false }).where(eq(notificationPresets.userId, userId));
+  await db.update(notificationPresets).set({ isActiveForAssignments: false, activatedForAssignmentsAt: null }).where(eq(notificationPresets.userId, userId));
   const result = await db
     .update(notificationPresets)
-    .set({ isActiveForAssignments: true })
+    .set({ isActiveForAssignments: true, activatedForAssignmentsAt: new Date() })
     .where(and(eq(notificationPresets.id, presetId), eq(notificationPresets.userId, userId)))
     .returning();
   return result[0] ?? null;
@@ -168,14 +150,6 @@ export async function deleteNotificationTime(timeId: number, userId: string) {
   return true;
 }
 
-export async function getActivePreset(userId: string) {
-  const result = await db
-    .select()
-    .from(notificationPresets)
-    .where(and(eq(notificationPresets.userId, userId), eq(notificationPresets.isActive, true)));
-  return result[0] ?? null;
-}
-
 export async function getActivePresetForExams(userId: string) {
   const result = await db
     .select()
@@ -196,12 +170,7 @@ export async function countUserPresets(userId: string) {
   const result = await db
     .select({ id: notificationPresets.id })
     .from(notificationPresets)
-    .where(
-      and(
-        eq(notificationPresets.userId, userId),
-        eq(notificationPresets.isOneTime, false)
-      )
-    );
+    .where(eq(notificationPresets.userId, userId));
   return result.length;
 }
 
@@ -210,210 +179,379 @@ export async function countPresetNotificationTimes(presetId: number) {
   return result.length;
 }
 
-export async function getExamsWithoutPreset(userId: string, className: string) {
-  const existingMeta = await db
-    .select({ examId: examNotificationMeta.examId })
-    .from(examNotificationMeta)
-    .where(eq(examNotificationMeta.userId, userId));
+export async function getExamsWithoutPreference(userId: string, className: string) {
+  const now = new Date();
+  const existingPrefs = await db
+    .select({ examId: notificationPreferences.examId })
+    .from(notificationPreferences)
+    .where(and(eq(notificationPreferences.userId, userId), isNotNull(notificationPreferences.examId)));
 
-  const existingExamIds = existingMeta.map((m) => m.examId);
+  const existingExamIds = existingPrefs.map((p) => p.examId).filter((id): id is number => id !== null);
 
   if (existingExamIds.length === 0) {
-    return db.select().from(exams).where(eq(exams.className, className));
+    return db.select().from(exams).where(and(eq(exams.className, className), gt(exams.dueDate, now)));
   }
 
   return db
     .select()
     .from(exams)
-    .where(and(eq(exams.className, className), notInArray(exams.id, existingExamIds)));
+    .where(and(eq(exams.className, className), notInArray(exams.id, existingExamIds), gt(exams.dueDate, now)));
 }
 
-export async function createExamNotificationMeta(userId: string, examId: number, presetId: number) {
-  const result = await db.insert(examNotificationMeta).values({ userId, examId, presetId }).returning();
-  return result[0];
-}
+export async function getAssignmentsWithoutPreference(userId: string, className: string) {
+  const existingPrefs = await db
+    .select({ assignmentId: notificationPreferences.assignmentId })
+    .from(notificationPreferences)
+    .where(and(eq(notificationPreferences.userId, userId), isNotNull(notificationPreferences.assignmentId)));
 
-export async function createScheduledNotification(
-  examId: number,
-  userId: string,
-  notificationTimeId: number,
-  scheduledFor: Date,
-) {
-  const result = await db.insert(scheduledNotifications).values({ examId, userId, notificationTimeId, scheduledFor }).returning();
-  return result[0];
-}
+  const existingAssignmentIds = existingPrefs.map((p) => p.assignmentId).filter((id): id is number => id !== null);
 
-export async function getPendingNotifications() {
-  const now = new Date();
-  
-  const examNotifications = await db
-    .select({
-      notification: scheduledNotifications,
-      notificationTime: notificationTimes,
-      preset: notificationPresets,
-      exam: exams,
-      assignment: sql`NULL::assignments`.as("assignment"),
-      user: user,
-    })
-    .from(scheduledNotifications)
-    .innerJoin(notificationTimes, eq(scheduledNotifications.notificationTimeId, notificationTimes.id))
-    .innerJoin(notificationPresets, eq(notificationTimes.presetId, notificationPresets.id))
-    .innerJoin(exams, eq(scheduledNotifications.examId, exams.id))
-    .innerJoin(user, eq(scheduledNotifications.userId, user.id))
-    .where(and(eq(scheduledNotifications.sent, false), lt(scheduledNotifications.scheduledFor, now), isNotNull(scheduledNotifications.examId)));
-
-  const assignmentNotifications = await db
-    .select({
-      notification: scheduledNotifications,
-      notificationTime: notificationTimes,
-      preset: notificationPresets,
-      exam: sql`NULL::exams`.as("exam"),
-      assignment: assignments,
-      user: user,
-    })
-    .from(scheduledNotifications)
-    .innerJoin(notificationTimes, eq(scheduledNotifications.notificationTimeId, notificationTimes.id))
-    .innerJoin(notificationPresets, eq(notificationTimes.presetId, notificationPresets.id))
-    .innerJoin(assignments, eq(scheduledNotifications.assignmentId, assignments.id))
-    .innerJoin(user, eq(scheduledNotifications.userId, user.id))
-    .where(and(eq(scheduledNotifications.sent, false), lt(scheduledNotifications.scheduledFor, now), isNotNull(scheduledNotifications.assignmentId)));
-
-  return [...examNotifications, ...assignmentNotifications];
-}
-
-export async function markNotificationSent(notificationId: number) {
-  await db
-    .update(scheduledNotifications)
-    .set({ sent: true, sentAt: new Date() })
-    .where(eq(scheduledNotifications.id, notificationId));
-}
-
-export async function applyPresetToExam(
-  userId: string,
-  examId: number,
-  presetId: number
-) {
-  const times = await getNotificationTimes(presetId);
-  const exam = await db.select().from(exams).where(eq(exams.id, examId));
-  if (exam.length === 0 || !exam[0].dueDate) return false;
-
-  await deleteScheduledNotificationsForExam(userId, examId);
-  await db
-    .delete(examNotificationMeta)
-    .where(
-      and(
-        eq(examNotificationMeta.userId, userId),
-        eq(examNotificationMeta.examId, examId)
-      )
-    );
-
-  const examDate = exam[0].dueDate;
-
-  await createExamNotificationMeta(userId, examId, presetId);
-
-  for (const time of times) {
-    const scheduledFor = new Date(examDate);
-    scheduledFor.setDate(scheduledFor.getDate() - time.daysBefore);
-    const [hours, minutes] = time.time.split(":").map(Number);
-    scheduledFor.setHours(hours, minutes, 0, 0);
-
-    await createScheduledNotification(examId, userId, time.id, scheduledFor);
+  if (existingAssignmentIds.length === 0) {
+    return db.select().from(assignments).where(eq(assignments.className, className));
   }
 
-  return true;
+  return db
+    .select()
+    .from(assignments)
+    .where(and(eq(assignments.className, className), notInArray(assignments.id, existingAssignmentIds)));
 }
 
-export async function applyPresetToNewExams(userId: string) {
-  const activePreset = await getActivePreset(userId);
-  if (!activePreset) return { applied: 0 };
-
-  const userClass = await getUserClass(userId);
-  if (!userClass) return { applied: 0 };
-
-  const examsWithoutPreset = await getExamsWithoutPreset(userId, userClass);
-
-  for (const exam of examsWithoutPreset) {
-    await applyPresetToExam(userId, exam.id, activePreset.id);
-  }
-
-  return { applied: examsWithoutPreset.length };
-}
-
-export async function getExamNotificationMeta(
+export async function createNotificationPreference(
   userId: string,
-  examId: number
+  presetId: number,
+  examId?: number,
+  assignmentId?: number
 ) {
   const result = await db
+    .insert(notificationPreferences)
+    .values({ userId, presetId, examId: examId ?? null, assignmentId: assignmentId ?? null })
+    .returning();
+  return result[0];
+}
+
+export async function getNotificationPreferenceForExam(userId: string, examId: number) {
+  const result = await db
     .select()
-    .from(examNotificationMeta)
-    .where(
-      and(
-        eq(examNotificationMeta.userId, userId),
-        eq(examNotificationMeta.examId, examId)
-      )
-    );
+    .from(notificationPreferences)
+    .where(and(eq(notificationPreferences.userId, userId), eq(notificationPreferences.examId, examId)));
   return result[0] ?? null;
 }
 
-export async function getExamNotificationMetas(
-  userId: string,
-  examIds: number[]
-) {
+export async function getNotificationPreferenceForAssignment(userId: string, assignmentId: number) {
+  const result = await db
+    .select()
+    .from(notificationPreferences)
+    .where(and(eq(notificationPreferences.userId, userId), eq(notificationPreferences.assignmentId, assignmentId)));
+  return result[0] ?? null;
+}
+
+export async function getNotificationPreferencesForExams(userId: string, examIds: number[]) {
   if (examIds.length === 0) return [];
   return db
     .select()
-    .from(examNotificationMeta)
-    .where(
-      and(
-        eq(examNotificationMeta.userId, userId),
-        inArray(examNotificationMeta.examId, examIds)
-      )
-    );
+    .from(notificationPreferences)
+    .where(and(eq(notificationPreferences.userId, userId), inArray(notificationPreferences.examId, examIds)));
 }
 
-export async function deleteScheduledNotificationsForExam(
-  userId: string,
-  examId: number
-) {
-  await db
-    .delete(scheduledNotifications)
-    .where(
-      and(
-        eq(scheduledNotifications.userId, userId),
-        eq(scheduledNotifications.examId, examId)
-      )
-    );
-}
-
-export async function deleteExamNotificationMeta(
-  userId: string,
-  examId: number
-) {
-  await deleteScheduledNotificationsForExam(userId, examId);
-  await db
-    .delete(examNotificationMeta)
-    .where(
-      and(
-        eq(examNotificationMeta.userId, userId),
-        eq(examNotificationMeta.examId, examId)
-      )
-    );
-}
-
-export async function getReusablePresets(userId: string) {
+export async function getNotificationPreferencesForAssignments(userId: string, assignmentIds: number[]) {
+  if (assignmentIds.length === 0) return [];
   return db
     .select()
-    .from(notificationPresets)
-    .where(
-      and(
-        eq(notificationPresets.userId, userId),
-        eq(notificationPresets.isOneTime, false)
-      )
-    );
+    .from(notificationPreferences)
+    .where(and(eq(notificationPreferences.userId, userId), inArray(notificationPreferences.assignmentId, assignmentIds)));
 }
 
-export async function getReusablePresetsWithTimes(userId: string) {
-  const presets = await getReusablePresets(userId);
+export async function deleteNotificationPreferenceForExam(userId: string, examId: number) {
+  await db
+    .delete(notificationPreferences)
+    .where(and(eq(notificationPreferences.userId, userId), eq(notificationPreferences.examId, examId)));
+}
+
+export async function deleteNotificationPreferenceForAssignment(userId: string, assignmentId: number) {
+  await db
+    .delete(notificationPreferences)
+    .where(and(eq(notificationPreferences.userId, userId), eq(notificationPreferences.assignmentId, assignmentId)));
+}
+
+export async function applyPresetToExam(userId: string, examId: number, presetId: number) {
+  const exam = await db.select().from(exams).where(eq(exams.id, examId));
+  if (exam.length === 0) return false;
+
+  await deleteNotificationPreferenceForExam(userId, examId);
+  await createNotificationPreference(userId, presetId, examId, undefined);
+  return true;
+}
+
+export async function applyPresetToAllExams(userId: string, presetId: number) {
+  const userClass = await getUserClass(userId);
+  if (!userClass) return { applied: 0 };
+
+  const now = new Date();
+  const futureExams = await db
+    .select()
+    .from(exams)
+    .where(and(eq(exams.className, userClass), gt(exams.dueDate, now)));
+
+  for (const exam of futureExams) {
+    await deleteNotificationPreferenceForExam(userId, exam.id);
+    await createNotificationPreference(userId, presetId, exam.id, undefined);
+  }
+  return { applied: futureExams.length };
+}
+
+export async function applyPresetToAssignment(userId: string, assignmentId: number, presetId: number) {
+  const assignment = await db.select().from(assignments).where(eq(assignments.id, assignmentId));
+  if (assignment.length === 0) return false;
+
+  await deleteNotificationPreferenceForAssignment(userId, assignmentId);
+  await createNotificationPreference(userId, presetId, undefined, assignmentId);
+  return true;
+}
+
+export async function applyPresetToAllAssignments(userId: string, presetId: number) {
+  const userClass = await getUserClass(userId);
+  if (!userClass) return { applied: 0 };
+
+  const now = new Date();
+  const futureAssignments = await db
+    .select()
+    .from(assignments)
+    .where(and(eq(assignments.className, userClass), gt(assignments.dueDate, now)));
+
+  for (const assignment of futureAssignments) {
+    await deleteNotificationPreferenceForAssignment(userId, assignment.id);
+    await createNotificationPreference(userId, presetId, undefined, assignment.id);
+  }
+  return { applied: futureAssignments.length };
+}
+
+export async function getPendingNotificationsForCron() {
+  const now = new Date();
+  const results: {
+    userId: string;
+    examId: number | null;
+    assignmentId: number | null;
+    daysBefore: number;
+    item: typeof exams.$inferSelect | typeof assignments.$inferSelect;
+    preset: typeof notificationPresets.$inferSelect;
+    time: typeof notificationTimes.$inferSelect;
+  }[] = [];
+
+  const activeExamPresets = await db
+    .select()
+    .from(notificationPresets)
+    .where(and(eq(notificationPresets.isActiveForExams, true), isNotNull(notificationPresets.activatedForExamsAt)));
+
+  for (const preset of activeExamPresets) {
+    const userClass = await getUserClass(preset.userId);
+    if (!userClass) continue;
+
+    const times = await getNotificationTimes(preset.id);
+    if (times.length === 0) continue;
+
+    const classExams = await db
+      .select()
+      .from(exams)
+      .where(and(eq(exams.className, userClass), gt(exams.createdAt, preset.activatedForExamsAt!)));
+
+    for (const exam of classExams) {
+      if (!exam.dueDate) continue;
+
+      for (const time of times) {
+        const notificationTime = new Date(exam.dueDate);
+        notificationTime.setDate(notificationTime.getDate() - time.daysBefore);
+        const [hours, minutes] = time.time.split(":").map(Number);
+        notificationTime.setHours(hours, minutes, 0, 0);
+
+        if (notificationTime <= now) {
+          const alreadySent = await db
+            .select()
+            .from(sentNotifications)
+            .where(
+              and(
+                eq(sentNotifications.userId, preset.userId),
+                eq(sentNotifications.examId, exam.id),
+                eq(sentNotifications.daysBefore, time.daysBefore)
+              )
+            );
+
+          if (alreadySent.length === 0) {
+            results.push({
+              userId: preset.userId,
+              examId: exam.id,
+              assignmentId: null,
+              daysBefore: time.daysBefore,
+              item: exam,
+              preset,
+              time,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  const activeAssignmentPresets = await db
+    .select()
+    .from(notificationPresets)
+    .where(and(eq(notificationPresets.isActiveForAssignments, true), isNotNull(notificationPresets.activatedForAssignmentsAt)));
+
+  for (const preset of activeAssignmentPresets) {
+    const userClass = await getUserClass(preset.userId);
+    if (!userClass) continue;
+
+    const times = await getNotificationTimes(preset.id);
+    if (times.length === 0) continue;
+
+    const classAssignments = await db
+      .select()
+      .from(assignments)
+      .where(and(eq(assignments.className, userClass), gt(assignments.createdAt, preset.activatedForAssignmentsAt!)));
+
+    for (const assignment of classAssignments) {
+      if (!assignment.dueDate) continue;
+
+      for (const time of times) {
+        const notificationTime = new Date(assignment.dueDate);
+        notificationTime.setDate(notificationTime.getDate() - time.daysBefore);
+        const [hours, minutes] = time.time.split(":").map(Number);
+        notificationTime.setHours(hours, minutes, 0, 0);
+
+        if (notificationTime <= now) {
+          const alreadySent = await db
+            .select()
+            .from(sentNotifications)
+            .where(
+              and(
+                eq(sentNotifications.userId, preset.userId),
+                eq(sentNotifications.assignmentId, assignment.id),
+                eq(sentNotifications.daysBefore, time.daysBefore)
+              )
+            );
+
+          if (alreadySent.length === 0) {
+            results.push({
+              userId: preset.userId,
+              examId: null,
+              assignmentId: assignment.id,
+              daysBefore: time.daysBefore,
+              item: assignment,
+              preset,
+              time,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  const prefs = await db.select().from(notificationPreferences);
+
+  for (const pref of prefs) {
+    const preset = await db
+      .select()
+      .from(notificationPresets)
+      .where(eq(notificationPresets.id, pref.presetId));
+    if (preset.length === 0) continue;
+
+    const times = await getNotificationTimes(pref.presetId);
+    if (times.length === 0) continue;
+
+    if (pref.examId) {
+      const exam = await db.select().from(exams).where(eq(exams.id, pref.examId));
+      if (exam.length === 0 || !exam[0].dueDate) continue;
+
+      for (const time of times) {
+        const notificationTime = new Date(exam[0].dueDate);
+        notificationTime.setDate(notificationTime.getDate() - time.daysBefore);
+        const [hours, minutes] = time.time.split(":").map(Number);
+        notificationTime.setHours(hours, minutes, 0, 0);
+
+        if (notificationTime <= now) {
+          const alreadySent = await db
+            .select()
+            .from(sentNotifications)
+            .where(
+              and(
+                eq(sentNotifications.userId, pref.userId),
+                eq(sentNotifications.examId, pref.examId),
+                eq(sentNotifications.daysBefore, time.daysBefore)
+              )
+            );
+
+          if (alreadySent.length === 0) {
+            results.push({
+              userId: pref.userId,
+              examId: pref.examId,
+              assignmentId: null,
+              daysBefore: time.daysBefore,
+              item: exam[0],
+              preset: preset[0],
+              time,
+            });
+          }
+        }
+      }
+    }
+
+    if (pref.assignmentId) {
+      const assignment = await db.select().from(assignments).where(eq(assignments.id, pref.assignmentId));
+      if (assignment.length === 0 || !assignment[0].dueDate) continue;
+
+      for (const time of times) {
+        const notificationTime = new Date(assignment[0].dueDate);
+        notificationTime.setDate(notificationTime.getDate() - time.daysBefore);
+        const [hours, minutes] = time.time.split(":").map(Number);
+        notificationTime.setHours(hours, minutes, 0, 0);
+
+        if (notificationTime <= now) {
+          const alreadySent = await db
+            .select()
+            .from(sentNotifications)
+            .where(
+              and(
+                eq(sentNotifications.userId, pref.userId),
+                eq(sentNotifications.assignmentId, pref.assignmentId),
+                eq(sentNotifications.daysBefore, time.daysBefore)
+              )
+            );
+
+          if (alreadySent.length === 0) {
+            results.push({
+              userId: pref.userId,
+              examId: null,
+              assignmentId: pref.assignmentId,
+              daysBefore: time.daysBefore,
+              item: assignment[0],
+              preset: preset[0],
+              time,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return results;
+}
+
+export async function markNotificationSent(
+  userId: string,
+  examId: number | null,
+  assignmentId: number | null,
+  daysBefore: number
+) {
+  await db.insert(sentNotifications).values({
+    userId,
+    examId,
+    assignmentId,
+    daysBefore,
+    sentAt: new Date(),
+  });
+}
+
+export async function getPresetsWithTimes(userId: string) {
+  const presets = await db.select().from(notificationPresets).where(eq(notificationPresets.userId, userId));
   const presetsWithTimes = await Promise.all(
     presets.map(async (preset) => {
       const times = await getNotificationTimes(preset.id);
@@ -537,130 +675,6 @@ export async function updateLastTrialCodeGenerated(userId: string) {
     .update(user)
     .set({ lastTrialCodeGenerated: new Date() })
     .where(eq(user.id, userId));
-}
-
-export async function getAssignmentsWithoutPreset(userId: string, className: string) {
-  const existingMeta = await db
-    .select({ assignmentId: assignmentNotificationMeta.assignmentId })
-    .from(assignmentNotificationMeta)
-    .where(eq(assignmentNotificationMeta.userId, userId));
-
-  const existingAssignmentIds = existingMeta.map((m) => m.assignmentId);
-
-  if (existingAssignmentIds.length === 0) {
-    return db.select().from(assignments).where(eq(assignments.className, className));
-  }
-
-  return db
-    .select()
-    .from(assignments)
-    .where(and(eq(assignments.className, className), notInArray(assignments.id, existingAssignmentIds)));
-}
-
-export async function createAssignmentNotificationMeta(userId: string, assignmentId: number, presetId: number) {
-  const result = await db.insert(assignmentNotificationMeta).values({ userId, assignmentId, presetId }).returning();
-  return result[0];
-}
-
-export async function getAssignmentNotificationMetas(
-  userId: string,
-  assignmentIds: number[]
-) {
-  if (assignmentIds.length === 0) return [];
-  return db
-    .select()
-    .from(assignmentNotificationMeta)
-    .where(
-      and(
-        eq(assignmentNotificationMeta.userId, userId),
-        inArray(assignmentNotificationMeta.assignmentId, assignmentIds)
-      )
-    );
-}
-
-export async function deleteScheduledNotificationsForAssignment(
-  userId: string,
-  assignmentId: number
-) {
-  await db
-    .delete(scheduledNotifications)
-    .where(
-      and(
-        eq(scheduledNotifications.userId, userId),
-        eq(scheduledNotifications.assignmentId, assignmentId)
-      )
-    );
-}
-
-export async function deleteAssignmentNotificationMeta(
-  userId: string,
-  assignmentId: number
-) {
-  await deleteScheduledNotificationsForAssignment(userId, assignmentId);
-  await db
-    .delete(assignmentNotificationMeta)
-    .where(
-      and(
-        eq(assignmentNotificationMeta.userId, userId),
-        eq(assignmentNotificationMeta.assignmentId, assignmentId)
-      )
-    );
-}
-
-export async function applyPresetToAssignment(
-  userId: string,
-  assignmentId: number,
-  presetId: number
-) {
-  const times = await getNotificationTimes(presetId);
-  const assignment = await db.select().from(assignments).where(eq(assignments.id, assignmentId));
-  if (assignment.length === 0 || !assignment[0].dueDate) return false;
-
-  await deleteScheduledNotificationsForAssignment(userId, assignmentId);
-  await db
-    .delete(assignmentNotificationMeta)
-    .where(
-      and(
-        eq(assignmentNotificationMeta.userId, userId),
-        eq(assignmentNotificationMeta.assignmentId, assignmentId)
-      )
-    );
-
-  const assignmentDate = assignment[0].dueDate;
-
-  await createAssignmentNotificationMeta(userId, assignmentId, presetId);
-
-  for (const time of times) {
-    const scheduledFor = new Date(assignmentDate);
-    scheduledFor.setDate(scheduledFor.getDate() - time.daysBefore);
-    const [hours, minutes] = time.time.split(":").map(Number);
-    scheduledFor.setHours(hours, minutes, 0, 0);
-
-    await db.insert(scheduledNotifications).values({
-      assignmentId,
-      userId,
-      notificationTimeId: time.id,
-      scheduledFor,
-    });
-  }
-
-  return true;
-}
-
-export async function applyPresetToNewAssignments(userId: string) {
-  const activePreset = await getActivePresetForAssignments(userId);
-  if (!activePreset) return { applied: 0 };
-
-  const userClass = await getUserClass(userId);
-  if (!userClass) return { applied: 0 };
-
-  const assignmentsWithoutPreset = await getAssignmentsWithoutPreset(userId, userClass);
-
-  for (const assignment of assignmentsWithoutPreset) {
-    await applyPresetToAssignment(userId, assignment.id, activePreset.id);
-  }
-
-  return { applied: assignmentsWithoutPreset.length };
 }
 
 export async function getTotalDebt() {

@@ -5,6 +5,7 @@ import { usePageTitle } from "@/app/app/layout";
 import { SubscriptionPrompt } from "@/components/subscription-prompt"
 import { ProAdCard } from "@/components/pro-ad-card"
 import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,11 +31,13 @@ import {
   Calendar,
   Edit2,
   Smartphone,
+  List,
 } from "lucide-react";
 import {
   createPresetAction,
   deletePresetAction,
   activatePresetForAssignmentsAction,
+  applyPresetToAllCurrentAssignmentsAction,
   getPresetsAction,
   addNotificationTimeAction,
   removeNotificationTimeAction,
@@ -117,9 +120,10 @@ type Preset = {
   id: number;
   userId: string;
   name: string;
-  isActive: boolean;
   isActiveForExams: boolean;
   isActiveForAssignments: boolean;
+  activatedForExamsAt: Date | null;
+  activatedForAssignmentsAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   times: NotificationTime[];
@@ -133,7 +137,8 @@ type Limits = {
 function PresetCard({
   preset,
   limits,
-  onActivateForAssignments,
+  onActivate,
+  onApplyToAll,
   onDelete,
   onEdit,
   onAddTime,
@@ -141,7 +146,8 @@ function PresetCard({
 }: {
   preset: Preset;
   limits: Limits;
-  onActivateForAssignments: () => void;
+  onActivate: () => void;
+  onApplyToAll: () => void;
   onDelete: () => void;
   onEdit: (name: string) => void;
   onAddTime: (daysBefore: number, time: string) => void;
@@ -211,10 +217,20 @@ function PresetCard({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={onActivateForAssignments}
+                onClick={onActivate}
                 title="Set as active for assignments"
               >
                 <Check className="size-4" />
+              </Button>
+            )}
+            {preset.isActiveForAssignments && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onApplyToAll}
+                title="Apply to all current assignments"
+              >
+                <List className="size-4" />
               </Button>
             )}
             {!isEditing && (
@@ -357,9 +373,7 @@ function PushNotificationManager() {
       setIsSubscribed(true);
     } catch (error) {
       console.error("Failed to subscribe:", error);
-      alert(
-        "Failed to subscribe to push notifications. Make sure you've added this app to your home screen and granted notification permission.",
-      );
+      toast.error("Failed to subscribe to push notifications. Make sure you've added this app to your home screen and granted notification permission.");
     }
     setIsLoading(false);
   }
@@ -476,7 +490,7 @@ export default function AssignmentsNotificationsPage() {
     setIsLoading(true);
     const result = await createPresetAction(newPresetName.trim());
     if ("error" in result) {
-      alert(result.error);
+      toast.error(result.error);
     } else {
       setNewPresetName("");
       await loadPresets();
@@ -490,9 +504,18 @@ export default function AssignmentsNotificationsPage() {
     await loadPresets();
   }
 
-  async function handleActivateForAssignments(presetId: number) {
+  async function handleActivate(presetId: number) {
     await activatePresetForAssignmentsAction(presetId);
     await loadPresets();
+  }
+
+  async function handleApplyToAll(presetId: number) {
+    const result = await applyPresetToAllCurrentAssignmentsAction(presetId);
+    if ("error" in result) {
+      toast.error(result.error);
+    } else {
+      toast.success(`Applied to ${result.applied} assignment(s)`);
+    }
   }
 
   async function handleEditPreset(presetId: number, name: string) {
@@ -507,7 +530,7 @@ export default function AssignmentsNotificationsPage() {
   ) {
     const result = await addNotificationTimeAction(presetId, daysBefore, time);
     if ("error" in result) {
-      alert(result.error);
+      toast.error(result.error);
     } else {
       await loadPresets();
     }
@@ -562,7 +585,8 @@ export default function AssignmentsNotificationsPage() {
                 key={preset.id}
                 preset={preset}
                 limits={limits}
-                onActivateForAssignments={() => handleActivateForAssignments(preset.id)}
+                onActivate={() => handleActivate(preset.id)}
+                onApplyToAll={() => handleApplyToAll(preset.id)}
                 onDelete={() => handleDeletePreset(preset.id)}
                 onEdit={(name) => handleEditPreset(preset.id, name)}
                 onAddTime={(days, time) =>

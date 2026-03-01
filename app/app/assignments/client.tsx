@@ -55,10 +55,10 @@ type Preset = {
   id: number;
   userId: string;
   name: string;
-  isActive: boolean;
   isActiveForExams: boolean;
   isActiveForAssignments: boolean;
-  isOneTime: boolean;
+  activatedForExamsAt: Date | null;
+  activatedForAssignmentsAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   times: NotificationTime[];

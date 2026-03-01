@@ -4,6 +4,7 @@ import * as React from "react";
 import { usePageTitle } from "@/app/app/layout";
 import { SubscriptionGate } from "@/components/subscription-prompt";
 import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,11 +31,13 @@ import {
   Edit2,
   Smartphone,
   Send,
+  List,
 } from "lucide-react";
 import {
   createPresetAction,
   deletePresetAction,
   activatePresetForExamsAction,
+  applyPresetToAllCurrentExamsAction,
   getPresetsAction,
   addNotificationTimeAction,
   removeNotificationTimeAction,
@@ -118,9 +121,10 @@ type Preset = {
   id: number;
   userId: string;
   name: string;
-  isActive: boolean;
   isActiveForExams: boolean;
   isActiveForAssignments: boolean;
+  activatedForExamsAt: Date | null;
+  activatedForAssignmentsAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   times: NotificationTime[];
@@ -135,6 +139,7 @@ function PresetCard({
   preset,
   limits,
   onActivate,
+  onApplyToAll,
   onDelete,
   onEdit,
   onAddTime,
@@ -143,6 +148,7 @@ function PresetCard({
   preset: Preset;
   limits: Limits;
   onActivate: () => void;
+  onApplyToAll: () => void;
   onDelete: () => void;
   onEdit: (name: string) => void;
   onAddTime: (daysBefore: number, time: string) => void;
@@ -216,6 +222,16 @@ function PresetCard({
                 title="Set as active for exams"
               >
                 <Check className="size-4" />
+              </Button>
+            )}
+            {preset.isActiveForExams && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onApplyToAll}
+                title="Apply to all current exams"
+              >
+                <List className="size-4" />
               </Button>
             )}
             {!isEditing && (
@@ -358,9 +374,7 @@ function PushNotificationManager() {
       setIsSubscribed(true);
     } catch (error) {
       console.error("Failed to subscribe:", error);
-      alert(
-        "Failed to subscribe to push notifications. Make sure you've added this app to your home screen and granted notification permission.",
-      );
+      toast.error("Failed to subscribe to push notifications. Make sure you've added this app to your home screen and granted notification permission.");
     }
     setIsLoading(false);
   }
@@ -463,7 +477,7 @@ export default function NotificationsPage() {
     setIsLoading(true);
     const result = await createPresetAction(newPresetName.trim());
     if ("error" in result) {
-      alert(result.error);
+      toast.error(result.error);
     } else {
       setNewPresetName("");
       await loadPresets();
@@ -477,9 +491,18 @@ export default function NotificationsPage() {
     await loadPresets();
   }
 
-  async function handleActivatePreset(presetId: number) {
+  async function handleActivate(presetId: number) {
     await activatePresetForExamsAction(presetId);
     await loadPresets();
+  }
+
+  async function handleApplyToAll(presetId: number) {
+    const result = await applyPresetToAllCurrentExamsAction(presetId);
+    if ("error" in result) {
+      toast.error(result.error);
+    } else {
+      toast.success(`Applied to ${result.applied} exam(s)`);
+    }
   }
 
   async function handleEditPreset(presetId: number, name: string) {
@@ -494,7 +517,7 @@ export default function NotificationsPage() {
   ) {
     const result = await addNotificationTimeAction(presetId, daysBefore, time);
     if ("error" in result) {
-      alert(result.error);
+      toast.error(result.error);
     } else {
       await loadPresets();
     }
@@ -509,9 +532,9 @@ export default function NotificationsPage() {
     setIsTestLoading(true);
     const result = await testNotificationToAdminsAction();
     setIsTestLoading(false);
-    alert(
-      `Sent: ${result.sent}/${result.total}\n${result.details.map((d) => `${d.user}: ${d.message}`).join("\n")}`,
-    );
+    toast.info(`Sent: ${result.sent}/${result.total}`, {
+      description: result.details.map((d) => `${d.user}: ${d.message}`).join("\n"),
+    });
   }
 
   const canAddPreset = presets.length < limits.presets;
@@ -553,7 +576,8 @@ export default function NotificationsPage() {
                   key={preset.id}
                   preset={preset}
                   limits={limits}
-                  onActivate={() => handleActivatePreset(preset.id)}
+                  onActivate={() => handleActivate(preset.id)}
+                  onApplyToAll={() => handleApplyToAll(preset.id)}
                   onDelete={() => handleDeletePreset(preset.id)}
                   onEdit={(name) => handleEditPreset(preset.id, name)}
                   onAddTime={(days, time) =>

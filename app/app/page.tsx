@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth"
-import { getUserClass, getExamsByClass, getAssignmentsByClass, getReusablePresetsWithTimes, getExamNotificationMetas, getAssignmentNotificationMetas, getNotificationPresetById, getNotificationTimes } from "@/db"
+import { getUserClass, getExamsByClass, getAssignmentsByClass, getPresetsWithTimes, getNotificationPreferencesForExams, getNotificationPreferencesForAssignments, getNotificationPresetById, getNotificationTimes } from "@/db"
 import { exams, assignments } from "@/db/schema"
 import { HomeClient } from "./client"
 
@@ -18,10 +18,10 @@ type Preset = {
   id: number
   userId: string
   name: string
-  isActive: boolean
   isActiveForExams: boolean
   isActiveForAssignments: boolean
-  isOneTime: boolean
+  activatedForExamsAt: Date | null
+  activatedForAssignmentsAt: Date | null
   createdAt: Date
   updatedAt: Date
   times: NotificationTime[]
@@ -80,13 +80,13 @@ export default async function HomePage() {
           return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
         })
 
-      presets = await getReusablePresetsWithTimes(session.user.id) as Preset[]
+      presets = await getPresetsWithTimes(session.user.id) as Preset[]
 
       if (examsList.length > 0) {
         const examIds = examsList.map(e => e.id)
-        const metas = await getExamNotificationMetas(session.user.id, examIds)
+        const prefs = await getNotificationPreferencesForExams(session.user.id, examIds)
         
-        const presetIds = [...new Set(metas.map(m => m.presetId))]
+        const presetIds = [...new Set(prefs.map(p => p.presetId))]
         const presetDetails = await Promise.all(
           presetIds.map(async (id) => {
             const preset = await getNotificationPresetById(id, session.user!.id)
@@ -101,17 +101,17 @@ export default async function HomePage() {
           if (p) presetMap.set(p.id, p)
         })
 
-        examPresets = metas.map(m => ({
-          examId: m.examId,
-          preset: presetMap.get(m.presetId) ?? null
+        examPresets = prefs.map(p => ({
+          examId: p.examId!,
+          preset: presetMap.get(p.presetId) ?? null
         }))
       }
 
       if (assignmentsList.length > 0) {
         const assignmentIds = assignmentsList.map(a => a.id)
-        const metas = await getAssignmentNotificationMetas(session.user.id, assignmentIds)
+        const prefs = await getNotificationPreferencesForAssignments(session.user.id, assignmentIds)
         
-        const presetIds = [...new Set(metas.map(m => m.presetId))]
+        const presetIds = [...new Set(prefs.map(p => p.presetId))]
         const presetDetails = await Promise.all(
           presetIds.map(async (id) => {
             const preset = await getNotificationPresetById(id, session.user!.id)
@@ -126,9 +126,9 @@ export default async function HomePage() {
           if (p) presetMap.set(p.id, p)
         })
 
-        assignmentPresets = metas.map(m => ({
-          assignmentId: m.assignmentId,
-          preset: presetMap.get(m.presetId) ?? null
+        assignmentPresets = prefs.map(p => ({
+          assignmentId: p.assignmentId!,
+          preset: presetMap.get(p.presetId) ?? null
         }))
       }
     }

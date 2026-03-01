@@ -1,11 +1,11 @@
 import { auth } from "@/lib/auth"
-import { getUserClass, getAssignmentsByClass, getReusablePresetsWithTimes, getAssignmentNotificationMetas, getNotificationPresetById, getNotificationTimes } from "@/db"
+import { getUserClass, getAssignmentsByClass, getPresetsWithTimes, getNotificationPreferencesForAssignments, getNotificationPresetById, getNotificationTimes } from "@/db"
 import { assignments } from "@/db/schema"
 import { AssignmentsClient } from "../client"
 
 type Assignment = typeof assignments.$inferSelect
 
-type Preset = Awaited<ReturnType<typeof getReusablePresetsWithTimes>>[number]
+type Preset = Awaited<ReturnType<typeof getPresetsWithTimes>>[number]
 
 type AssignmentPreset = {
   assignmentId: number
@@ -56,13 +56,13 @@ export default async function AssignmentsPage(props: { searchParams: Promise<{ p
         currentPage * ITEMS_PER_PAGE
       )
 
-      presets = await getReusablePresetsWithTimes(session.user.id)
+      presets = await getPresetsWithTimes(session.user.id)
 
       if (assignmentsList.length > 0) {
         const assignmentIds = assignmentsList.map(a => a.id)
-        const metas = await getAssignmentNotificationMetas(session.user.id, assignmentIds)
+        const prefs = await getNotificationPreferencesForAssignments(session.user.id, assignmentIds)
         
-        const presetIds = [...new Set(metas.map(m => m.presetId))]
+        const presetIds = [...new Set(prefs.map(p => p.presetId))]
         const presetDetails = await Promise.all(
           presetIds.map(async (id) => {
             const preset = await getNotificationPresetById(id, session.user.id)
@@ -77,9 +77,9 @@ export default async function AssignmentsPage(props: { searchParams: Promise<{ p
           if (p) presetMap.set(p.id, p)
         })
 
-        assignmentPresets = metas.map(m => ({
-          assignmentId: m.assignmentId,
-          preset: presetMap.get(m.presetId) ?? null
+        assignmentPresets = prefs.map(p => ({
+          assignmentId: p.assignmentId!,
+          preset: presetMap.get(p.presetId) ?? null
         }))
       }
     }

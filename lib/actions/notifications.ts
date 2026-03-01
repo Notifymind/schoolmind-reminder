@@ -5,26 +5,25 @@ import {
   createNotificationPreset,
   updateNotificationPreset,
   deleteNotificationPreset,
-  setActivePreset,
   setActivePresetForExams,
   setActivePresetForAssignments,
   createNotificationTime,
   deleteNotificationTime,
   countUserPresets,
   countPresetNotificationTimes,
-  applyPresetToNewExams,
-  applyPresetToNewAssignments,
   getNotificationPresetById,
   getPushSubscriptions,
   createPushSubscription,
   deletePushSubscription,
   applyPresetToExam,
   applyPresetToAssignment,
-  deleteExamNotificationMeta,
-  deleteAssignmentNotificationMeta,
-  getExamNotificationMetas,
-  getAssignmentNotificationMetas,
-  getReusablePresetsWithTimes,
+  applyPresetToAllExams,
+  applyPresetToAllAssignments,
+  deleteNotificationPreferenceForExam,
+  deleteNotificationPreferenceForAssignment,
+  getNotificationPreferencesForExams,
+  getNotificationPreferencesForAssignments,
+  getPresetsWithTimes,
   getNotificationTimes,
   getUserNotifications,
   getUnreadNotificationCount,
@@ -66,8 +65,8 @@ export async function createPresetAction(name: string) {
 
   const isFirstPreset = currentCount === 0;
   if (isFirstPreset) {
-    await setActivePreset(session.user.id, preset.id);
-    await applyPresetToNewExams(session.user.id);
+    await setActivePresetForExams(session.user.id, preset.id);
+    await setActivePresetForAssignments(session.user.id, preset.id);
   }
 
   return { preset };
@@ -103,26 +102,6 @@ export async function deletePresetAction(presetId: number) {
   return { success: true };
 }
 
-export async function activatePresetAction(presetId: number) {
-  const session = await auth.api.getSession({
-    headers: await import("next/headers").then((m) => m.headers()),
-  });
-
-  if (!session?.user?.id) {
-    return { error: "Not authenticated" };
-  }
-
-  const preset = await getNotificationPresetById(presetId, session.user.id);
-  if (!preset) {
-    return { error: "Preset not found" };
-  }
-
-  await setActivePreset(session.user.id, presetId);
-  await applyPresetToNewExams(session.user.id);
-
-  return { success: true };
-}
-
 export async function activatePresetForExamsAction(presetId: number) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
@@ -138,7 +117,6 @@ export async function activatePresetForExamsAction(presetId: number) {
   }
 
   await setActivePresetForExams(session.user.id, presetId);
-  await applyPresetToNewExams(session.user.id);
 
   return { success: true };
 }
@@ -158,9 +136,44 @@ export async function activatePresetForAssignmentsAction(presetId: number) {
   }
 
   await setActivePresetForAssignments(session.user.id, presetId);
-  await applyPresetToNewAssignments(session.user.id);
 
   return { success: true };
+}
+
+export async function applyPresetToAllCurrentExamsAction(presetId: number) {
+  const session = await auth.api.getSession({
+    headers: await import("next/headers").then((m) => m.headers()),
+  });
+
+  if (!session?.user?.id) {
+    return { error: "Not authenticated" };
+  }
+
+  const preset = await getNotificationPresetById(presetId, session.user.id);
+  if (!preset) {
+    return { error: "Preset not found" };
+  }
+
+  const result = await applyPresetToAllExams(session.user.id, presetId);
+  return { applied: result.applied };
+}
+
+export async function applyPresetToAllCurrentAssignmentsAction(presetId: number) {
+  const session = await auth.api.getSession({
+    headers: await import("next/headers").then((m) => m.headers()),
+  });
+
+  if (!session?.user?.id) {
+    return { error: "Not authenticated" };
+  }
+
+  const preset = await getNotificationPresetById(presetId, session.user.id);
+  if (!preset) {
+    return { error: "Preset not found" };
+  }
+
+  const result = await applyPresetToAllAssignments(session.user.id, presetId);
+  return { applied: result.applied };
 }
 
 export async function getPresetsAction() {
@@ -172,7 +185,7 @@ export async function getPresetsAction() {
     return { presets: [] };
   }
 
-  const presetsWithTimes = await getReusablePresetsWithTimes(session.user.id);
+  const presetsWithTimes = await getPresetsWithTimes(session.user.id);
   return { presets: presetsWithTimes };
 }
 
@@ -311,7 +324,7 @@ export async function clearExamPresetAction(examId: number) {
     return { error: "Not authenticated" };
   }
 
-  await deleteExamNotificationMeta(session.user.id, examId);
+  await deleteNotificationPreferenceForExam(session.user.id, examId);
   return { success: true };
 }
 
@@ -328,9 +341,9 @@ export async function getExamPresetsAction(examIds: number[]) {
     return { examPresets: [] };
   }
 
-  const metas = await getExamNotificationMetas(session.user.id, examIds);
+  const prefs = await getNotificationPreferencesForExams(session.user.id, examIds);
 
-  const presetIds = [...new Set(metas.map((m) => m.presetId))];
+  const presetIds = [...new Set(prefs.map((p) => p.presetId))];
   const presetDetails = await Promise.all(
     presetIds.map(async (id) => {
       const preset = await getNotificationPresetById(id, session.user.id);
@@ -344,9 +357,9 @@ export async function getExamPresetsAction(examIds: number[]) {
       .map((p) => [p.id, p])
   );
 
-  const examPresets = metas.map((m) => ({
-    examId: m.examId,
-    preset: presetMap.get(m.presetId) ?? null,
+  const examPresets = prefs.map((p) => ({
+    examId: p.examId,
+    preset: presetMap.get(p.presetId) ?? null,
   }));
 
   return { examPresets };
@@ -383,7 +396,7 @@ export async function clearAssignmentPresetAction(assignmentId: number) {
     return { error: "Not authenticated" };
   }
 
-  await deleteAssignmentNotificationMeta(session.user.id, assignmentId);
+  await deleteNotificationPreferenceForAssignment(session.user.id, assignmentId);
   return { success: true };
 }
 
@@ -400,9 +413,9 @@ export async function getAssignmentPresetsAction(assignmentIds: number[]) {
     return { assignmentPresets: [] };
   }
 
-  const metas = await getAssignmentNotificationMetas(session.user.id, assignmentIds);
+  const prefs = await getNotificationPreferencesForAssignments(session.user.id, assignmentIds);
 
-  const presetIds = [...new Set(metas.map((m) => m.presetId))];
+  const presetIds = [...new Set(prefs.map((p) => p.presetId))];
   const presetDetails = await Promise.all(
     presetIds.map(async (id) => {
       const preset = await getNotificationPresetById(id, session.user.id);
@@ -418,9 +431,9 @@ export async function getAssignmentPresetsAction(assignmentIds: number[]) {
       .map((p) => [p.id, p])
   );
 
-  const assignmentPresets = metas.map((m) => ({
-    assignmentId: m.assignmentId,
-    preset: presetMap.get(m.presetId) ?? null,
+  const assignmentPresets = prefs.map((p) => ({
+    assignmentId: p.assignmentId,
+    preset: presetMap.get(p.presetId) ?? null,
   }));
 
   return { assignmentPresets };

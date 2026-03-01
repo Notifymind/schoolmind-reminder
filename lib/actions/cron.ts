@@ -2,10 +2,8 @@
 
 import webpush from "web-push";
 import {
-  getPendingNotifications,
+  getPendingNotificationsForCron,
   markNotificationSent,
-  applyPresetToNewExams,
-  getUserClass,
   getUsersByRole,
   getAllPushSubscriptions,
   getExpiredSubscriptions,
@@ -18,12 +16,13 @@ type Exam = typeof exams.$inferSelect;
 type Assignment = typeof assignments.$inferSelect;
 
 type PendingNotificationItem = {
-  notification: { id: number };
-  notificationTime: { daysBefore: number };
+  userId: string;
+  examId: number | null;
+  assignmentId: number | null;
+  daysBefore: number;
+  item: Exam | Assignment;
   preset: { id: number; name: string };
-  exam: Exam | null;
-  assignment: Assignment | null;
-  user: { id: string; name: string; email: string };
+  time: { id: number; daysBefore: number; time: string };
 };
 
 webpush.setVapidDetails(
@@ -33,7 +32,7 @@ webpush.setVapidDetails(
 );
 
 export async function processNotificationsAction() {
-  const pendingNotifications = await getPendingNotifications() as PendingNotificationItem[];
+  const pendingNotifications = await getPendingNotificationsForCron();
 
   const results = {
     processed: 0,
@@ -45,7 +44,11 @@ export async function processNotificationsAction() {
     results.processed++;
 
     try {
-      const { user, exam, assignment, notification, notificationTime } = item;
+      const { userId, examId, assignmentId, daysBefore, item: examOrAssignment } = item;
+
+      const isAssignment = assignmentId !== null;
+      const assignment = isAssignment ? examOrAssignment as Assignment : null;
+      const exam = !isAssignment ? examOrAssignment as Exam : null;
 
       let title: string;
       let body: string;
@@ -55,25 +58,25 @@ export async function processNotificationsAction() {
         body =
           `${assignment.title || assignment.subject || "Untitled Assignment"}\n` +
           `📅 ${assignment.date || "TBD"} at ${assignment.time || "TBD"}\n` +
-          `This assignment is due in ${notificationTime.daysBefore} day(s)!`;
+          `This assignment is due in ${daysBefore} day(s)!`;
       } else if (exam) {
         title = "📚 Exam Reminder";
         body =
           `${exam.title || exam.subject || "Untitled Exam"}\n` +
           `📅 ${exam.date || "TBD"} at ${exam.time || "TBD"}\n` +
-          `This exam is in ${notificationTime.daysBefore} day(s)!`;
+          `This exam is in ${daysBefore} day(s)!`;
       } else {
         console.error("[Notification] No exam or assignment found");
         results.errors++;
         continue;
       }
 
-      const notificationType = assignment ? "assignment_reminder" : "exam_reminder";
-      await createUserNotification(user.id, title, body, notificationType);
-      await markNotificationSent(notification.id);
+      const notificationType = isAssignment ? "assignment_reminder" : "exam_reminder";
+      await createUserNotification(userId, title, body, notificationType);
+      await markNotificationSent(userId, examId, assignmentId, daysBefore);
 
       const subscriptions = await getAllPushSubscriptions();
-      const userSubs = subscriptions.filter((s) => s.userId === user.id);
+      const userSubs = subscriptions.filter((s) => s.userId === userId);
 
       let pushSent = false;
       for (const sub of userSubs) {
@@ -101,7 +104,7 @@ export async function processNotificationsAction() {
       if (pushSent) {
         results.sent++;
       } else {
-        console.log(`[Notification] No push subscriptions for user ${user.id}`);
+        console.log(`[Notification] No push subscriptions for user ${userId}`);
       }
     } catch (error) {
       console.error(`[Notification] Error processing notification:`, error);
@@ -110,16 +113,6 @@ export async function processNotificationsAction() {
   }
 
   return results;
-}
-
-export async function syncNewExamsAction(userId: string) {
-  const userClass = await getUserClass(userId);
-  if (!userClass) {
-    return { applied: 0, error: "User has no class" };
-  }
-
-  const result = await applyPresetToNewExams(userId);
-  return result;
 }
 
 export async function processExpiredSubscriptionsAction() {

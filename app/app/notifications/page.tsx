@@ -4,6 +4,7 @@ import * as React from "react";
 import { usePageTitle } from "@/app/app/layout";
 import { SubscriptionGate } from "@/components/subscription-prompt";
 import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,6 +38,8 @@ import {
   deletePresetAction,
   activatePresetForExamsAction,
   activatePresetForAssignmentsAction,
+  applyPresetToAllCurrentExamsAction,
+  applyPresetToAllCurrentAssignmentsAction,
   getPresetsAction,
   addNotificationTimeAction,
   removeNotificationTimeAction,
@@ -119,9 +122,10 @@ type Preset = {
   id: number;
   userId: string;
   name: string;
-  isActive: boolean;
   isActiveForExams: boolean;
   isActiveForAssignments: boolean;
+  activatedForExamsAt: Date | null;
+  activatedForAssignmentsAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   times: NotificationTime[];
@@ -135,23 +139,27 @@ type Limits = {
 function PresetCard({
   preset,
   limits,
+  hasAssignmentsPermission,
   onActivateForExams,
   onActivateForAssignments,
+  onApplyToAllExams,
+  onApplyToAllAssignments,
   onDelete,
   onEdit,
   onAddTime,
   onRemoveTime,
-  canActivateForAssignments,
 }: {
   preset: Preset;
   limits: Limits;
+  hasAssignmentsPermission: boolean;
   onActivateForExams: () => void;
   onActivateForAssignments: () => void;
+  onApplyToAllExams: () => void;
+  onApplyToAllAssignments: () => void;
   onDelete: () => void;
   onEdit: (name: string) => void;
   onAddTime: (daysBefore: number, time: string) => void;
   onRemoveTime: (timeId: number) => void;
-  canActivateForAssignments: boolean;
 }) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editName, setEditName] = React.useState(preset.name);
@@ -176,7 +184,7 @@ function PresetCard({
   };
 
   return (
-    <Card className={(preset.isActiveForExams || preset.isActiveForAssignments) ? "border-primary" : ""}>
+    <Card className={preset.isActiveForExams || preset.isActiveForAssignments ? "border-primary" : ""}>
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -230,27 +238,49 @@ function PresetCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button
-            variant={preset.isActiveForExams ? "default" : "outline"}
-            size="sm"
-            onClick={onActivateForExams}
-            className="flex-1"
-          >
-            <FileText className="size-4 mr-2" />
-            {preset.isActiveForExams ? "Active for Exams" : "Activate for Exams"}
-          </Button>
-          <Button
-            variant={preset.isActiveForAssignments ? "default" : "outline"}
-            size="sm"
-            onClick={onActivateForAssignments}
-            className="flex-1"
-            disabled={!canActivateForAssignments}
-            title={!canActivateForAssignments ? "Upgrade to Pro to activate for assignments" : undefined}
-          >
-            <ClipboardList className="size-4 mr-2" />
-            {preset.isActiveForAssignments ? "Active for Assignments" : "Activate for Assignments"}
-          </Button>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant={preset.isActiveForExams ? "default" : "outline"}
+              size="sm"
+              onClick={onActivateForExams}
+              className="flex-1"
+            >
+              <FileText className="size-4 mr-2" />
+              {preset.isActiveForExams ? "Active for Exams" : "Activate for Exams"}
+            </Button>
+            <Button
+              variant={preset.isActiveForAssignments ? "default" : "outline"}
+              size="sm"
+              onClick={onActivateForAssignments}
+              className="flex-1"
+              disabled={!hasAssignmentsPermission}
+            >
+              <ClipboardList className="size-4 mr-2" />
+              {preset.isActiveForAssignments ? "Active for Assignments" : "Activate for Assignments"}
+            </Button>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onApplyToAllExams}
+              className="flex-1"
+            >
+              <FileText className="size-4 mr-2" />
+              Apply to All Exams
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onApplyToAllAssignments}
+              className="flex-1"
+              disabled={!hasAssignmentsPermission}
+            >
+              <ClipboardList className="size-4 mr-2" />
+              Apply to All Assignments
+            </Button>
+          </div>
         </div>
 
         {preset.times.length > 0 ? (
@@ -371,9 +401,7 @@ function PushNotificationManager() {
       setIsSubscribed(true);
     } catch (error) {
       console.error("Failed to subscribe:", error);
-      alert(
-        "Failed to subscribe to push notifications. Make sure you've added this app to your home screen and granted notification permission.",
-      );
+      toast.error("Failed to subscribe to push notifications. Make sure you've added this app to your home screen and granted notification permission.");
     }
     setIsLoading(false);
   }
@@ -452,6 +480,7 @@ export default function NotificationsPage() {
   const [newPresetName, setNewPresetName] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [isInitialLoading, setIsInitialLoading] = React.useState(true);
+  const [hasAssignmentsPermission, setHasAssignmentsPermission] = React.useState<boolean | null>(null);
 
   const role = session?.user?.role as "free" | "basic" | "pro" | "admin" | undefined;
 
@@ -468,6 +497,20 @@ export default function NotificationsPage() {
     loadPresets().finally(() => setIsInitialLoading(false));
   }, []);
 
+  React.useEffect(() => {
+    async function checkPermission() {
+      if (session) {
+        const result = await authClient.admin.hasPermission({
+          permission: { assignments: ["access"] },
+        });
+        setHasAssignmentsPermission(result.data?.success ?? false);
+      } else {
+        setHasAssignmentsPermission(false);
+      }
+    }
+    checkPermission();
+  }, [session]);
+
   async function handleCreatePreset(e: React.FormEvent) {
     e.preventDefault();
     if (!newPresetName.trim()) return;
@@ -475,7 +518,7 @@ export default function NotificationsPage() {
     setIsLoading(true);
     const result = await createPresetAction(newPresetName.trim());
     if ("error" in result) {
-      alert(result.error);
+      toast.error(result.error);
     } else {
       setNewPresetName("");
       await loadPresets();
@@ -499,6 +542,24 @@ export default function NotificationsPage() {
     await loadPresets();
   }
 
+  async function handleApplyToAllExams(presetId: number) {
+    const result = await applyPresetToAllCurrentExamsAction(presetId);
+    if ("error" in result) {
+      toast.error(result.error);
+    } else {
+      toast.success(`Applied to ${result.applied} exam(s)`);
+    }
+  }
+
+  async function handleApplyToAllAssignments(presetId: number) {
+    const result = await applyPresetToAllCurrentAssignmentsAction(presetId);
+    if ("error" in result) {
+      toast.error(result.error);
+    } else {
+      toast.success(`Applied to ${result.applied} assignment(s)`);
+    }
+  }
+
   async function handleEditPreset(presetId: number, name: string) {
     await updatePresetAction(presetId, name);
     await loadPresets();
@@ -511,7 +572,7 @@ export default function NotificationsPage() {
   ) {
     const result = await addNotificationTimeAction(presetId, daysBefore, time);
     if ("error" in result) {
-      alert(result.error);
+      toast.error(result.error);
     } else {
       await loadPresets();
     }
@@ -548,15 +609,17 @@ export default function NotificationsPage() {
                   key={preset.id}
                   preset={preset}
                   limits={limits}
+                  hasAssignmentsPermission={hasAssignmentsPermission ?? false}
                   onActivateForExams={() => handleActivateForExams(preset.id)}
                   onActivateForAssignments={() => handleActivateForAssignments(preset.id)}
+                  onApplyToAllExams={() => handleApplyToAllExams(preset.id)}
+                  onApplyToAllAssignments={() => handleApplyToAllAssignments(preset.id)}
                   onDelete={() => handleDeletePreset(preset.id)}
                   onEdit={(name) => handleEditPreset(preset.id, name)}
                   onAddTime={(days, time) =>
                     handleAddTime(preset.id, days, time)
                   }
                   onRemoveTime={(timeId) => handleRemoveTime(timeId)}
-                  canActivateForAssignments={role !== "basic"}
                 />
               ))}
             </div>
