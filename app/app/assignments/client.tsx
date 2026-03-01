@@ -406,14 +406,16 @@ export function AssignmentsClient({
   isLoggedIn,
   presets: initialPresets,
   assignmentPresets: initialAssignmentPresets,
+  title = "Assignments",
 }: {
   assignments: Assignment[];
   hasClass: boolean;
   isLoggedIn: boolean;
   presets: Preset[];
   assignmentPresets: AssignmentPreset[];
+  title?: string;
 }) {
-  usePageTitle("Assignments");
+  usePageTitle(title);
 
   const [presets, setPresets] = React.useState<Preset[]>(initialPresets);
   const [assignmentPresets, setAssignmentPresets] =

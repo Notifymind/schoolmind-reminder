@@ -404,14 +404,16 @@ export function ExamsClient({
   isLoggedIn,
   presets: initialPresets,
   examPresets: initialExamPresets,
+  title = "Exams",
 }: {
   exams: Exam[];
   hasClass: boolean;
   isLoggedIn: boolean;
   presets: Preset[];
   examPresets: ExamPreset[];
+  title?: string;
 }) {
-  usePageTitle("Exams");
+  usePageTitle(title);
 
   const [presets, setPresets] = React.useState<Preset[]>(initialPresets);
   const [examPresets, setExamPresets] =

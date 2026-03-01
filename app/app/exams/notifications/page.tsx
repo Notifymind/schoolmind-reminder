@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { usePageTitle } from "@/app/app/layout";
 import { SubscriptionGate } from "@/components/subscription-prompt";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -428,6 +429,7 @@ function PushNotificationManager() {
 }
 
 export default function NotificationsPage() {
+  usePageTitle("Exam Notifications");
   const { data: session } = authClient.useSession();
   const [presets, setPresets] = React.useState<Preset[]>([]);
   const [limits, setLimits] = React.useState<Limits>({
@@ -519,15 +521,9 @@ export default function NotificationsPage() {
       <div className="flex flex-1 flex-col gap-6 items-center">
         <div className="grid gap-6 w-full max-w-2xl">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Bell className="size-6" />
-                Notifications
-              </h1>
-              <p className="text-muted-foreground">
-                Configure when you want to be notified about exams
-              </p>
-            </div>
+            <p className="text-muted-foreground">
+              Configure when you want to be notified about exams
+            </p>
             {role === "admin" && (
               <Button
                 variant="outline"

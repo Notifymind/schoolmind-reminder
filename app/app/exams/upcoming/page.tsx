@@ -77,6 +77,7 @@ export default async function UpcomingExamsPage() {
       isLoggedIn={!!session?.user?.id}
       presets={presets}
       examPresets={examPresets}
+      title="Upcoming Exams"
     />
   )
 }

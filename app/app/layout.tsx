@@ -1,10 +1,37 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 import { AppSidebar } from "@/components/app-sidebar"
 import { RequireAuth } from "@/components/require-auth"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
+
+const PAGE_TITLES: Record<string, string> = {
+  "/app": "Dashboard",
+  "/app/account": "Account Settings",
+  "/app/subscription": "Subscription",
+  "/app/assignments": "Assignments",
+  "/app/assignments/upcoming": "Upcoming Assignments",
+  "/app/assignments/notifications": "Assignment Notifications",
+  "/app/exams": "Exams",
+  "/app/exams/upcoming": "Upcoming Exams",
+  "/app/exams/notifications": "Exam Notifications",
+  "/app/admin/overview": "Overview",
+  "/app/admin/classes": "Classes",
+  "/app/admin/sellers": "Sellers",
+  "/app/admin/balance": "Balance",
+  "/app/seller/codes": "Codes",
+}
+
+function getPageTitle(pathname: string): string {
+  if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname]
+  
+  const baseMatch = Object.keys(PAGE_TITLES).find(key => pathname.startsWith(key + "/"))
+  if (baseMatch) return PAGE_TITLES[baseMatch]
+  
+  return ""
+}
 
 const PageTitleContext = React.createContext<{
   title: string
@@ -13,9 +40,8 @@ const PageTitleContext = React.createContext<{
 
 export function usePageTitle(title: string) {
   const { setTitle } = React.useContext(PageTitleContext)
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     setTitle(title)
-    return () => setTitle("")
   }, [title, setTitle])
 }
 
@@ -24,7 +50,10 @@ export default function AppLayout({
 }: {
   children: React.ReactNode
 }) {
-  const [title, setTitle] = React.useState("")
+  const pathname = usePathname()
+  const [overrideTitle, setOverrideTitle] = React.useState("")
+  
+  const title = overrideTitle || getPageTitle(pathname)
 
   return (
     <RequireAuth>
@@ -36,7 +65,7 @@ export default function AppLayout({
             <Separator orientation="vertical" className="mr-2 h-4" />
             {title && <h1 className="text-lg font-semibold">{title}</h1>}
           </header>
-          <PageTitleContext.Provider value={{ title, setTitle }}>
+          <PageTitleContext.Provider value={{ title, setTitle: setOverrideTitle }}>
             <div className="flex flex-1 flex-col gap-4 p-4">
               {children}
             </div>

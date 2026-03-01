@@ -77,6 +77,7 @@ export default async function UpcomingAssignmentsPage() {
       isLoggedIn={!!session?.user?.id}
       presets={presets}
       assignmentPresets={assignmentPresets}
+      title="Upcoming Assignments"
     />
   )
 }

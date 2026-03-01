@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { usePageTitle } from "@/app/app/layout";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -50,6 +51,7 @@ interface Code {
 }
 
 export default function CodesPage() {
+  usePageTitle("Codes");
   const [codes, setCodes] = React.useState<Code[]>([]);
   const [balance, setBalance] = React.useState("0");
   const [maxDebt, setMaxDebt] = React.useState("0");
@@ -124,18 +126,15 @@ export default function CodesPage() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Codes</h1>
-          <p className="text-muted-foreground">
-            Balance: {currentBalance.toFixed(2)} KM
-            {currentBalance < 0 && (
-              <span className="text-destructive ml-2">
-                (Debt: {Math.abs(currentBalance).toFixed(2)} KM / Max:{" "}
-                {maxDebtValue.toFixed(2)} KM)
-              </span>
-            )}
-          </p>
-        </div>
+        <p className="text-muted-foreground">
+          Balance: {currentBalance.toFixed(2)} KM
+          {currentBalance < 0 && (
+            <span className="text-destructive ml-2">
+              (Debt: {Math.abs(currentBalance).toFixed(2)} KM / Max:{" "}
+              {maxDebtValue.toFixed(2)} KM)
+            </span>
+          )}
+        </p>
       </div>
 
       {error && (
