@@ -140,15 +140,18 @@ export default function CodesPage() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
-        <p className="text-muted-foreground">
-          Balance: {currentBalance.toFixed(2)} KM
+        <div>
+          <h1 className="text-2xl font-semibold">Codes</h1>
+          <p className="text-muted-foreground">
+            Balance: {currentBalance.toFixed(2)} KM
           {currentBalance < 0 && (
             <span className="text-destructive ml-2">
               (Debt: {Math.abs(currentBalance).toFixed(2)} KM / Max:{" "}
               {maxDebtValue.toFixed(2)} KM)
             </span>
           )}
-        </p>
+          </p>
+        </div>
       </div>
 
       {error && (

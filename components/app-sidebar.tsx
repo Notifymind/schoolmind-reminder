@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
-import { Home, FileText, ClipboardList, User, LogOut, Sun, Moon, DollarSign, Bell, Ticket, BarChart3, Users, Wallet, GraduationCap } from "lucide-react"
+import { Home, FileText, ClipboardList, User, LogOut, Sun, Moon, DollarSign, Bell, Ticket, BarChart3, Users, Wallet, GraduationCap, History } from "lucide-react"
 
 import {
   Sidebar,
@@ -268,6 +268,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <Link href="/app/seller/prices">
                       <DollarSign />
                       <span>Prices</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="History" isActive={pathname === "/app/seller/history"}>
+                    <Link href="/app/seller/history">
+                      <History />
+                      <span>History</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

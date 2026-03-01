@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { usePageTitle } from "@/app/app/layout";
-import { SubscriptionGate } from "@/components/subscription-prompt";
+import { SubscriptionPrompt } from "@/components/subscription-prompt";
 import { Pagination } from "@/components/ui/pagination";
 import {
   Card,
@@ -403,6 +403,7 @@ function ExamCard({
 export function ExamsClient({
   exams,
   hasClass,
+  hasPermission,
   isLoggedIn,
   presets: initialPresets,
   examPresets: initialExamPresets,
@@ -412,6 +413,7 @@ export function ExamsClient({
 }: {
   exams: Exam[];
   hasClass: boolean;
+  hasPermission: boolean;
   isLoggedIn: boolean;
   presets: Preset[];
   examPresets: ExamPreset[];
@@ -457,43 +459,45 @@ export function ExamsClient({
     router.push(`${pathname}?${params.toString()}`);
   };
 
+  if (!hasPermission) {
+    return <SubscriptionPrompt />;
+  }
+
   return (
-    <SubscriptionGate permission={{ exams: ["access"] }}>
-      <div className="grid gap-4 w-full max-w-2xl mx-auto">
-        {!isLoggedIn && (
-          <p className="text-muted-foreground">Please log in to view exams.</p>
-        )}
-        {isLoggedIn && !hasClass && (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">
-              You haven&apos;t joined a class yet.
-            </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Join a class to see your exams.
-            </p>
-          </div>
-        )}
-        {isLoggedIn && hasClass && exams.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">No exams scheduled yet.</p>
-          </div>
-        )}
-        {exams.map((exam) => (
-          <ExamCard
-            key={exam.id}
-            exam={exam}
-            preset={getPresetForExam(exam.id)}
-            presets={presets}
-            limits={limits}
-            onPresetChange={refreshData}
-          />
-        ))}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
+    <div className="grid gap-4 w-full max-w-2xl mx-auto">
+      {!isLoggedIn && (
+        <p className="text-muted-foreground">Please log in to view exams.</p>
+      )}
+      {isLoggedIn && !hasClass && (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">
+            You haven&apos;t joined a class yet.
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Join a class to see your exams.
+          </p>
+        </div>
+      )}
+      {isLoggedIn && hasClass && exams.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">No exams scheduled yet.</p>
+        </div>
+      )}
+      {exams.map((exam) => (
+        <ExamCard
+          key={exam.id}
+          exam={exam}
+          preset={getPresetForExam(exam.id)}
+          presets={presets}
+          limits={limits}
+          onPresetChange={refreshData}
         />
-      </div>
-    </SubscriptionGate>
+      ))}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
+    </div>
   );
 }

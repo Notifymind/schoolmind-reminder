@@ -19,10 +19,19 @@ export default async function UpcomingAssignmentsPage() {
 
   let assignmentsList: Assignment[] = []
   let hasClass = false
+  let hasPermission = false
   let presets: Preset[] = []
   let assignmentPresets: AssignmentPreset[] = []
 
   if (session?.user?.id) {
+    const permissionResult = await auth.api.userHasPermission({
+      body: {
+        userId: session.user.id,
+        permission: { assignments: ["access"] },
+      },
+    })
+    hasPermission = permissionResult?.success ?? false
+
     const userClass = await getUserClass(session.user.id)
     if (userClass) {
       hasClass = true
@@ -73,7 +82,8 @@ export default async function UpcomingAssignmentsPage() {
   return (
     <AssignmentsClient 
       assignments={assignmentsList} 
-      hasClass={hasClass} 
+      hasClass={hasClass}
+      hasPermission={hasPermission}
       isLoggedIn={!!session?.user?.id}
       presets={presets}
       assignmentPresets={assignmentPresets}

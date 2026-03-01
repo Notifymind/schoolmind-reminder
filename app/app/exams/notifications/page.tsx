@@ -521,9 +521,12 @@ export default function NotificationsPage() {
       <div className="flex flex-1 flex-col gap-6 items-center">
         <div className="grid gap-6 w-full max-w-2xl">
           <div className="flex items-center justify-between">
-            <p className="text-muted-foreground">
-              Configure when you want to be notified about exams
-            </p>
+            <div>
+              <h1 className="text-2xl font-semibold">Exam Notifications</h1>
+              <p className="text-muted-foreground">
+                Configure when you want to be notified about exams
+              </p>
+            </div>
             {role === "admin" && (
               <Button
                 variant="outline"

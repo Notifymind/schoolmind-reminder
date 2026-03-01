@@ -8,7 +8,10 @@ import {
   getCodesBySeller,
   deleteCodeById,
   getCodeByCode,
+  db,
 } from "@/db";
+import { codes, balanceHistory, user } from "@/db/schema";
+import { eq, desc, or } from "drizzle-orm";
 
 export type CodeType = "basic" | "pro" | "upgrade";
 export type CodeDuration = "month" | "school_year";
@@ -179,4 +182,92 @@ export async function getBalanceAction() {
 
   const { balance, maxDebt } = await getSellerBalance(session.user.id);
   return { balance, maxDebt };
+}
+
+export type Transaction = {
+  id: string;
+  type: "code_generated" | "code_deleted" | "balance_added" | "balance_removed" | "balance_set";
+  amount: string;
+  previousBalance: string | null;
+  newBalance: string | null;
+  description: string;
+  createdAt: Date;
+  adminName?: string;
+};
+
+export async function getTransactionHistoryAction(limit = 100, offset = 0) {
+  const session = await auth.api.getSession({
+    headers: await import("next/headers").then((m) => m.headers()),
+  });
+
+  if (!session?.user?.id) {
+    return { transactions: [], total: 0 };
+  }
+
+  if (!(await hasCodePermission(session.user.id))) {
+    return { transactions: [], total: 0 };
+  }
+
+  const sellerCodes = await db
+    .select()
+    .from(codes)
+    .where(eq(codes.sellerId, session.user.id))
+    .orderBy(desc(codes.createdAt));
+
+  const history = await db
+    .select({
+      id: balanceHistory.id,
+      type: balanceHistory.type,
+      amount: balanceHistory.amount,
+      previousBalance: balanceHistory.previousBalance,
+      newBalance: balanceHistory.newBalance,
+      createdAt: balanceHistory.createdAt,
+      adminId: balanceHistory.adminId,
+    })
+    .from(balanceHistory)
+    .where(eq(balanceHistory.sellerId, session.user.id))
+    .orderBy(desc(balanceHistory.createdAt));
+
+  const adminIds = [...new Set(history.map((h) => h.adminId))];
+  const admins = await db
+    .select({ id: user.id, name: user.name })
+    .from(user)
+    .where(or(...adminIds.map((id) => eq(user.id, id))));
+
+  const adminMap = new Map(admins.map((a) => [a.id, a.name]));
+
+  const transactions: Transaction[] = [
+    ...sellerCodes.map((c) => ({
+      id: `code-${c.id}`,
+      type: c.redeemedBy ? ("code_generated" as const) : ("code_generated" as const),
+      amount: `-${c.value}`,
+      previousBalance: null,
+      newBalance: null,
+      description: c.redeemedBy
+        ? `Code generated: ${c.code} (${c.type}, ${c.duration}) - Redeemed`
+        : `Code generated: ${c.code} (${c.type}, ${c.duration})`,
+      createdAt: c.createdAt,
+    })),
+    ...history.map((h) => ({
+      id: `balance-${h.id}`,
+      type: h.type === "add" ? ("balance_added" as const) : h.type === "remove" ? ("balance_removed" as const) : ("balance_set" as const),
+      amount: h.type === "remove" ? `-${h.amount}` : h.amount,
+      previousBalance: h.previousBalance,
+      newBalance: h.newBalance,
+      description: h.type === "add"
+        ? `Balance added by admin`
+        : h.type === "remove"
+          ? `Balance removed by admin`
+          : `Balance set by admin`,
+      createdAt: h.createdAt,
+      adminName: adminMap.get(h.adminId),
+    })),
+  ];
+
+  transactions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  const total = transactions.length;
+  const paginatedTransactions = transactions.slice(offset, offset + limit);
+
+  return { transactions: paginatedTransactions, total };
 }

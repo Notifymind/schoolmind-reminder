@@ -11,6 +11,25 @@ type Permission = {
   [key: string]: string[]
 }
 
+export function SubscriptionPrompt() {
+  return (
+    <div className="flex flex-1 items-center justify-center -mt-16">
+      <div className="bg-card rounded-xl border p-8 max-w-md text-center">
+        <div className="bg-primary/10 mx-auto mb-4 flex size-16 items-center justify-center rounded-full">
+          <DollarSign className="text-primary size-8" />
+        </div>
+        <h2 className="text-xl font-semibold">Subscription Required</h2>
+        <p className="text-muted-foreground mt-2">
+          You need an active subscription to access this feature. Upgrade your plan to unlock all features.
+        </p>
+        <Button asChild className="mt-6">
+          <Link href="/app/subscription">View Plans</Link>
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 export function SubscriptionGate({
   children,
   permission,
@@ -47,22 +66,7 @@ export function SubscriptionGate({
   }
 
   if (!hasPermission) {
-    return (
-      <div className="flex flex-1 items-center justify-center -mt-16">
-        <div className="bg-card rounded-xl border p-8 max-w-md text-center">
-          <div className="bg-primary/10 mx-auto mb-4 flex size-16 items-center justify-center rounded-full">
-            <DollarSign className="text-primary size-8" />
-          </div>
-          <h2 className="text-xl font-semibold">Subscription Required</h2>
-          <p className="text-muted-foreground mt-2">
-            You need an active subscription to access this feature. Upgrade your plan to unlock all features.
-          </p>
-          <Button asChild className="mt-6">
-            <Link href="/app/subscription">View Plans</Link>
-          </Button>
-        </div>
-      </div>
-    )
+    return <SubscriptionPrompt />
   }
 
   return children

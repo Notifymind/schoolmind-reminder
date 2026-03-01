@@ -24,11 +24,20 @@ export default async function AssignmentsPage(props: { searchParams: Promise<{ p
 
   let assignmentsList: Assignment[] = []
   let hasClass = false
+  let hasPermission = false
   let presets: Preset[] = []
   let assignmentPresets: AssignmentPreset[] = []
   let totalCount = 0
 
   if (session?.user?.id) {
+    const permissionResult = await auth.api.userHasPermission({
+      body: {
+        userId: session.user.id,
+        permission: { assignments: ["access"] },
+      },
+    })
+    hasPermission = permissionResult?.success ?? false
+
     const userClass = await getUserClass(session.user.id)
     if (userClass) {
       hasClass = true
@@ -79,7 +88,8 @@ export default async function AssignmentsPage(props: { searchParams: Promise<{ p
   return (
     <AssignmentsClient 
       assignments={assignmentsList} 
-      hasClass={hasClass} 
+      hasClass={hasClass}
+      hasPermission={hasPermission}
       isLoggedIn={!!session?.user?.id}
       presets={presets}
       assignmentPresets={assignmentPresets}

@@ -19,10 +19,19 @@ export default async function UpcomingExamsPage() {
 
   let examsList: Exam[] = []
   let hasClass = false
+  let hasPermission = false
   let presets: Preset[] = []
   let examPresets: ExamPreset[] = []
 
   if (session?.user?.id) {
+    const permissionResult = await auth.api.userHasPermission({
+      body: {
+        userId: session.user.id,
+        permission: { exams: ["access"] },
+      },
+    })
+    hasPermission = permissionResult?.success ?? false
+
     const userClass = await getUserClass(session.user.id)
     if (userClass) {
       hasClass = true
@@ -73,7 +82,8 @@ export default async function UpcomingExamsPage() {
   return (
     <ExamsClient 
       exams={examsList} 
-      hasClass={hasClass} 
+      hasClass={hasClass}
+      hasPermission={hasPermission}
       isLoggedIn={!!session?.user?.id}
       presets={presets}
       examPresets={examPresets}

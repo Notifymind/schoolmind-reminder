@@ -508,9 +508,12 @@ export default function AssignmentsNotificationsPage() {
     <SubscriptionGate permission={{ assignments: ["access"] }}>
       <div className="flex flex-1 flex-col gap-6 items-center">
         <div className="grid gap-6 w-full max-w-2xl">
-          <p className="text-muted-foreground">
-            Configure when you want to be notified about assignments
-          </p>
+          <div>
+            <h1 className="text-2xl font-semibold">Assignment Notifications</h1>
+            <p className="text-muted-foreground">
+              Configure when you want to be notified about assignments
+            </p>
+          </div>
 
           <PushNotificationManager />
 
