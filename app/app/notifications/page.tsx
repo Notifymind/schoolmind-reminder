@@ -141,6 +141,7 @@ function PresetCard({
   onEdit,
   onAddTime,
   onRemoveTime,
+  canActivateForAssignments,
 }: {
   preset: Preset;
   limits: Limits;
@@ -150,6 +151,7 @@ function PresetCard({
   onEdit: (name: string) => void;
   onAddTime: (daysBefore: number, time: string) => void;
   onRemoveTime: (timeId: number) => void;
+  canActivateForAssignments: boolean;
 }) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editName, setEditName] = React.useState(preset.name);
@@ -243,6 +245,8 @@ function PresetCard({
             size="sm"
             onClick={onActivateForAssignments}
             className="flex-1"
+            disabled={!canActivateForAssignments}
+            title={!canActivateForAssignments ? "Upgrade to Pro to activate for assignments" : undefined}
           >
             <ClipboardList className="size-4 mr-2" />
             {preset.isActiveForAssignments ? "Active for Assignments" : "Activate for Assignments"}
@@ -449,7 +453,7 @@ export default function NotificationsPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [isInitialLoading, setIsInitialLoading] = React.useState(true);
 
-  const role = session?.user?.role as "free" | "pro" | "admin" | undefined;
+  const role = session?.user?.role as "free" | "basic" | "pro" | "admin" | undefined;
 
   async function loadPresets() {
     const [presetsResult, limitsResult] = await Promise.all([
@@ -521,7 +525,7 @@ export default function NotificationsPage() {
   const canAddPreset = presets.length < limits.presets;
 
   return (
-    <SubscriptionGate permission={{ exams: ["access"], assignments: ["access"] }}>
+    <SubscriptionGate permission={{ exams: ["access"] }}>
       <div className="flex flex-1 flex-col gap-6 items-center">
         <div className="grid gap-6 w-full max-w-2xl">
           <div>
@@ -552,6 +556,7 @@ export default function NotificationsPage() {
                     handleAddTime(preset.id, days, time)
                   }
                   onRemoveTime={(timeId) => handleRemoveTime(timeId)}
+                  canActivateForAssignments={role !== "basic"}
                 />
               ))}
             </div>

@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
-import { usePageTitle } from "@/app/app/layout"
-import { authClient } from "@/lib/auth-client"
+import * as React from "react";
+import Link from "next/link";
+import { usePageTitle } from "@/app/app/layout";
+import { authClient } from "@/lib/auth-client";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardAction,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,86 +19,96 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
-import { Calendar, Clock, CalendarClock, BookOpen, Bell, Sparkles, DollarSign } from "lucide-react"
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import {
+  Calendar,
+  Clock,
+  CalendarClock,
+  BookOpen,
+  Bell,
+  DollarSign,
+} from "lucide-react";
+import { ProAdCard } from "@/components/pro-ad-card";
 import {
   applyPresetToExamAction,
   applyPresetToAssignmentAction,
   getPresetsAction,
   getExamPresetsAction,
   getAssignmentPresetsAction,
-} from "@/lib/actions/notifications"
+} from "@/lib/actions/notifications";
 
 type Exam = {
-  id: number
-  className: string
-  subject: string | null
-  title: string | null
-  date: string | null
-  time: string | null
-  type: string | null
-  description: string | null
-  dueDate: Date | null
-  createdAt: Date | null
-}
+  id: number;
+  className: string;
+  subject: string | null;
+  title: string | null;
+  date: string | null;
+  time: string | null;
+  type: string | null;
+  description: string | null;
+  dueDate: Date | null;
+  createdAt: Date | null;
+};
 
 type Assignment = {
-  id: number
-  className: string
-  subject: string | null
-  title: string | null
-  date: string | null
-  time: string | null
-  type: string | null
-  description: string | null
-  dueDate: Date | null
-  createdAt: Date | null
-}
+  id: number;
+  className: string;
+  subject: string | null;
+  title: string | null;
+  date: string | null;
+  time: string | null;
+  type: string | null;
+  description: string | null;
+  dueDate: Date | null;
+  createdAt: Date | null;
+};
 
 type NotificationTime = {
-  id: number
-  presetId: number
-  daysBefore: number
-  time: string
-  createdAt: Date
-}
+  id: number;
+  presetId: number;
+  daysBefore: number;
+  time: string;
+  createdAt: Date;
+};
 
 type Preset = {
-  id: number
-  userId: string
-  name: string
-  isActive: boolean
-  isActiveForExams: boolean
-  isActiveForAssignments: boolean
-  isOneTime: boolean
-  createdAt: Date
-  updatedAt: Date
-  times: NotificationTime[]
-}
+  id: number;
+  userId: string;
+  name: string;
+  isActive: boolean;
+  isActiveForExams: boolean;
+  isActiveForAssignments: boolean;
+  isOneTime: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  times: NotificationTime[];
+};
 
 type ExamPreset = {
-  examId: number
-  preset: Preset | null
-}
+  examId: number;
+  preset: Preset | null;
+};
 
 type AssignmentPreset = {
-  assignmentId: number
-  preset: Preset | null
-}
+  assignmentId: number;
+  preset: Preset | null;
+};
 
 function getDaysText(dueDate: Date | null): string | null {
-  if (!dueDate) return null
-  const now = new Date()
-  now.setHours(0, 0, 0, 0)
-  const due = new Date(dueDate)
-  due.setHours(0, 0, 0, 0)
-  const diffDays = Math.floor((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+  if (!dueDate) return null;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const due = new Date(dueDate);
+  due.setHours(0, 0, 0, 0);
+  const diffDays = Math.floor(
+    (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+  );
 
-  if (diffDays === 0) return "Today"
-  if (diffDays === 1) return "Tomorrow"
-  if (diffDays > 1) return `In ${diffDays} days`
-  return `${Math.abs(diffDays)} days ago`
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Tomorrow";
+  if (diffDays > 1) return `In ${diffDays} days`;
+  return `${Math.abs(diffDays)} days ago`;
 }
 
 function ExamCard({
@@ -107,30 +117,32 @@ function ExamCard({
   presets,
   onPresetChange,
 }: {
-  exam: Exam
-  preset: Preset | null
-  presets: Preset[]
-  onPresetChange: () => void
+  exam: Exam;
+  preset: Preset | null;
+  presets: Preset[];
+  onPresetChange: () => void;
 }) {
-  const daysText = getDaysText(exam.dueDate)
-  const [isLoading, setIsLoading] = React.useState(false)
+  const daysText = getDaysText(exam.dueDate);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const handleSelectPreset = async (value: string) => {
-    setIsLoading(true)
-    const presetId = parseInt(value, 10)
-    await applyPresetToExamAction(exam.id, presetId)
-    setIsLoading(false)
-    onPresetChange()
-  }
+    setIsLoading(true);
+    const presetId = parseInt(value, 10);
+    await applyPresetToExamAction(exam.id, presetId);
+    setIsLoading(false);
+    onPresetChange();
+  };
 
-  const activePreset = presets.find((p) => p.isActive)
+  const activePreset = presets.find((p) => p.isActive);
 
   return (
     <Card className="gap-1">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div>
-            <CardTitle className="text-base">{exam.title || "Untitled Exam"}</CardTitle>
+            <CardTitle className="text-base">
+              {exam.title || "Untitled Exam"}
+            </CardTitle>
             <div className="flex flex-wrap items-center gap-2 mt-1 text-muted-foreground text-xs">
               <span className="flex items-center gap-1">
                 <BookOpen className="size-3" />
@@ -173,7 +185,11 @@ function ExamCard({
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup
                   value={
-                    preset ? String(preset.id) : activePreset ? String(activePreset.id) : ""
+                    preset
+                      ? String(preset.id)
+                      : activePreset
+                        ? String(activePreset.id)
+                        : ""
                   }
                   onValueChange={handleSelectPreset}
                 >
@@ -181,7 +197,9 @@ function ExamCard({
                     <DropdownMenuRadioItem key={p.id} value={String(p.id)}>
                       {p.name}
                       {p.isActive && (
-                        <span className="text-xs text-muted-foreground ml-1">(default)</span>
+                        <span className="text-xs text-muted-foreground ml-1">
+                          (default)
+                        </span>
                       )}
                     </DropdownMenuRadioItem>
                   ))}
@@ -193,11 +211,13 @@ function ExamCard({
       </CardHeader>
       {exam.description && (
         <CardContent className="pt-0">
-          <p className="text-xs text-muted-foreground line-clamp-2">{exam.description}</p>
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {exam.description}
+          </p>
         </CardContent>
       )}
     </Card>
-  )
+  );
 }
 
 function AssignmentCard({
@@ -206,30 +226,32 @@ function AssignmentCard({
   presets,
   onPresetChange,
 }: {
-  assignment: Assignment
-  preset: Preset | null
-  presets: Preset[]
-  onPresetChange: () => void
+  assignment: Assignment;
+  preset: Preset | null;
+  presets: Preset[];
+  onPresetChange: () => void;
 }) {
-  const daysText = getDaysText(assignment.dueDate)
-  const [isLoading, setIsLoading] = React.useState(false)
+  const daysText = getDaysText(assignment.dueDate);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const handleSelectPreset = async (value: string) => {
-    setIsLoading(true)
-    const presetId = parseInt(value, 10)
-    await applyPresetToAssignmentAction(assignment.id, presetId)
-    setIsLoading(false)
-    onPresetChange()
-  }
+    setIsLoading(true);
+    const presetId = parseInt(value, 10);
+    await applyPresetToAssignmentAction(assignment.id, presetId);
+    setIsLoading(false);
+    onPresetChange();
+  };
 
-  const activePreset = presets.find((p) => p.isActiveForAssignments)
+  const activePreset = presets.find((p) => p.isActiveForAssignments);
 
   return (
     <Card className="gap-1">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div>
-            <CardTitle className="text-base">{assignment.title || "Untitled Assignment"}</CardTitle>
+            <CardTitle className="text-base">
+              {assignment.title || "Untitled Assignment"}
+            </CardTitle>
             <div className="flex flex-wrap items-center gap-2 mt-1 text-muted-foreground text-xs">
               <span className="flex items-center gap-1">
                 <BookOpen className="size-3" />
@@ -284,7 +306,9 @@ function AssignmentCard({
                     <DropdownMenuRadioItem key={p.id} value={String(p.id)}>
                       {p.name}
                       {p.isActiveForAssignments && (
-                        <span className="text-xs text-muted-foreground ml-1">(default)</span>
+                        <span className="text-xs text-muted-foreground ml-1">
+                          (default)
+                        </span>
                       )}
                     </DropdownMenuRadioItem>
                   ))}
@@ -296,48 +320,13 @@ function AssignmentCard({
       </CardHeader>
       {assignment.description && (
         <CardContent className="pt-0">
-          <p className="text-xs text-muted-foreground line-clamp-2">{assignment.description}</p>
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {assignment.description}
+          </p>
         </CardContent>
       )}
     </Card>
-  )
-}
-
-function ProAdCard() {
-  return (
-    <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20">
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <div className="bg-primary/20 p-2 rounded-lg">
-            <Sparkles className="size-5 text-primary" />
-          </div>
-          <CardTitle>Upgrade to Pro</CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          Unlock assignment notifications and never miss a deadline again.
-        </p>
-        <ul className="space-y-2 text-sm">
-          <li className="flex items-center gap-2">
-            <Bell className="size-4 text-primary" />
-            <span>Assignment reminders</span>
-          </li>
-          <li className="flex items-center gap-2">
-            <CalendarClock className="size-4 text-primary" />
-            <span>Custom notification times</span>
-          </li>
-          <li className="flex items-center gap-2">
-            <Sparkles className="size-4 text-primary" />
-            <span>Priority support</span>
-          </li>
-        </ul>
-        <Button asChild className="w-full">
-          <Link href="/app/subscription">View Plans</Link>
-        </Button>
-      </CardContent>
-    </Card>
-  )
+  );
 }
 
 export function HomeClient({
@@ -349,63 +338,74 @@ export function HomeClient({
   examPresets: initialExamPresets,
   assignmentPresets: initialAssignmentPresets,
 }: {
-  exams: Exam[]
-  assignments: Assignment[]
-  hasClass: boolean
-  isLoggedIn: boolean
-  presets: Preset[]
-  examPresets: ExamPreset[]
-  assignmentPresets: AssignmentPreset[]
+  exams: Exam[];
+  assignments: Assignment[];
+  hasClass: boolean;
+  isLoggedIn: boolean;
+  presets: Preset[];
+  examPresets: ExamPreset[];
+  assignmentPresets: AssignmentPreset[];
 }) {
-  usePageTitle("Home")
+  usePageTitle("Home");
 
-  const { data: session } = authClient.useSession()
-  const [hasAssignmentsPermission, setHasAssignmentsPermission] = React.useState<boolean | null>(null)
-  const [presets, setPresets] = React.useState<Preset[]>(initialPresets)
-  const [examPresets, setExamPresets] = React.useState<ExamPreset[]>(initialExamPresets)
-  const [assignmentPresets, setAssignmentPresets] = React.useState<AssignmentPreset[]>(initialAssignmentPresets)
+  const { data: session } = authClient.useSession();
+  const [hasAssignmentsPermission, setHasAssignmentsPermission] =
+    React.useState<boolean | null>(null);
+  const [presets, setPresets] = React.useState<Preset[]>(initialPresets);
+  const [examPresets, setExamPresets] =
+    React.useState<ExamPreset[]>(initialExamPresets);
+  const [assignmentPresets, setAssignmentPresets] = React.useState<
+    AssignmentPreset[]
+  >(initialAssignmentPresets);
 
   React.useEffect(() => {
     async function checkPermission() {
       if (session) {
         const result = await authClient.admin.hasPermission({
           permission: { assignments: ["access"] },
-        })
-        setHasAssignmentsPermission(result.data?.success ?? false)
+        });
+        setHasAssignmentsPermission(result.data?.success ?? false);
       } else {
-        setHasAssignmentsPermission(false)
+        setHasAssignmentsPermission(false);
       }
     }
-    checkPermission()
-  }, [session])
+    checkPermission();
+  }, [session]);
 
   const refreshData = async () => {
-    const [presetsResult, examPresetsResult, assignmentPresetsResult] = await Promise.all([
-      getPresetsAction(),
-      getExamPresetsAction(exams.map((e) => e.id)),
-      getAssignmentPresetsAction(assignments.map((a) => a.id)),
-    ])
-    setPresets(presetsResult.presets as Preset[])
-    setExamPresets(examPresetsResult.examPresets as ExamPreset[])
-    setAssignmentPresets(assignmentPresetsResult.assignmentPresets as AssignmentPreset[])
-  }
+    const [presetsResult, examPresetsResult, assignmentPresetsResult] =
+      await Promise.all([
+        getPresetsAction(),
+        getExamPresetsAction(exams.map((e) => e.id)),
+        getAssignmentPresetsAction(assignments.map((a) => a.id)),
+      ]);
+    setPresets(presetsResult.presets as Preset[]);
+    setExamPresets(examPresetsResult.examPresets as ExamPreset[]);
+    setAssignmentPresets(
+      assignmentPresetsResult.assignmentPresets as AssignmentPreset[],
+    );
+  };
 
   const getPresetForExam = (examId: number): Preset | null => {
-    const meta = examPresets.find((ep) => ep.examId === examId)
-    return meta?.preset ?? null
-  }
+    const meta = examPresets.find((ep) => ep.examId === examId);
+    return meta?.preset ?? null;
+  };
 
   const getPresetForAssignment = (assignmentId: number): Preset | null => {
-    const meta = assignmentPresets.find((ap) => ap.assignmentId === assignmentId)
-    return meta?.preset ?? null
-  }
+    const meta = assignmentPresets.find(
+      (ap) => ap.assignmentId === assignmentId,
+    );
+    return meta?.preset ?? null;
+  };
 
   if (!isLoggedIn) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <p className="text-muted-foreground">Please log in to view your dashboard.</p>
+        <p className="text-muted-foreground">
+          Please log in to view your dashboard.
+        </p>
       </div>
-    )
+    );
   }
 
   if (!hasClass) {
@@ -417,14 +417,15 @@ export function HomeClient({
           </div>
           <h2 className="text-xl font-semibold">Subscription Required</h2>
           <p className="text-muted-foreground mt-2">
-            You need an active subscription to access your class. Subscribe now to see upcoming exams and assignments.
+            You need an active subscription to access your class. Subscribe now
+            to see upcoming exams and assignments.
           </p>
           <Button asChild className="mt-6">
             <Link href="/app/subscription">View Plans</Link>
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -437,7 +438,9 @@ export function HomeClient({
         {exams.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center">
-              <p className="text-muted-foreground text-sm">No exams scheduled in the next 14 days.</p>
+              <p className="text-muted-foreground text-sm">
+                No exams scheduled in the next 14 days.
+              </p>
             </CardContent>
           </Card>
         ) : (
@@ -471,7 +474,9 @@ export function HomeClient({
         ) : assignments.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center">
-              <p className="text-muted-foreground text-sm">No assignments due in the next 14 days.</p>
+              <p className="text-muted-foreground text-sm">
+                No assignments due in the next 14 days.
+              </p>
             </CardContent>
           </Card>
         ) : (
@@ -489,5 +494,5 @@ export function HomeClient({
         )}
       </div>
     </div>
-  )
+  );
 }

@@ -3,7 +3,8 @@
 import * as React from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { usePageTitle } from "@/app/app/layout";
-import { SubscriptionPrompt } from "@/components/subscription-prompt";
+import { SubscriptionPrompt } from "@/components/subscription-prompt"
+import { ProAdCard } from "@/components/pro-ad-card";
 import { Pagination } from "@/components/ui/pagination";
 import {
   Card,
@@ -197,6 +198,7 @@ export function AssignmentsClient({
   hasClass,
   hasPermission,
   isLoggedIn,
+  userRole,
   presets: initialPresets,
   assignmentPresets: initialAssignmentPresets,
   title = "Assignments",
@@ -207,6 +209,7 @@ export function AssignmentsClient({
   hasClass: boolean;
   hasPermission: boolean;
   isLoggedIn: boolean;
+  userRole?: string;
   presets: Preset[];
   assignmentPresets: AssignmentPreset[];
   title?: string;
@@ -244,7 +247,14 @@ export function AssignmentsClient({
   };
 
   if (!hasPermission) {
-    return <SubscriptionPrompt />;
+    if (userRole === "basic") {
+      return (
+        <div className="flex flex-1 items-center justify-center -mt-16">
+          <ProAdCard />
+        </div>
+      )
+    }
+    return <SubscriptionPrompt />
   }
 
   return (

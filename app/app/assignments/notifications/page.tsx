@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { usePageTitle } from "@/app/app/layout";
-import { SubscriptionGate } from "@/components/subscription-prompt";
+import { SubscriptionPrompt } from "@/components/subscription-prompt"
+import { ProAdCard } from "@/components/pro-ad-card"
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import {
@@ -437,8 +438,23 @@ export default function AssignmentsNotificationsPage() {
   const [newPresetName, setNewPresetName] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [isInitialLoading, setIsInitialLoading] = React.useState(true);
+  const [hasPermission, setHasPermission] = React.useState<boolean | null>(null);
 
-  const role = session?.user?.role as "free" | "pro" | "admin" | undefined;
+  const role = session?.user?.role as "free" | "basic" | "pro" | "admin" | undefined;
+
+  React.useEffect(() => {
+    async function checkPermission() {
+      if (session) {
+        const result = await authClient.admin.hasPermission({
+          permission: { assignments: ["access"] },
+        });
+        setHasPermission(result.data?.success ?? false);
+      } else {
+        setHasPermission(false);
+      }
+    }
+    checkPermission();
+  }, [session]);
 
   async function loadPresets() {
     const [presetsResult, limitsResult] = await Promise.all([
@@ -504,55 +520,73 @@ export default function AssignmentsNotificationsPage() {
 
   const canAddPreset = presets.length < limits.presets;
 
+  if (hasPermission === null) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <Spinner className="size-8" />
+      </div>
+    );
+  }
+
+  if (!hasPermission) {
+    if (role === "basic") {
+      return (
+        <div className="flex flex-1 items-center justify-center -mt-16">
+          <ProAdCard />
+        </div>
+      );
+    }
+    return <SubscriptionPrompt />;
+  }
+
   return (
-    <SubscriptionGate permission={{ assignments: ["access"] }}>
-      <div className="flex flex-1 flex-col gap-6 items-center">
-        <div className="grid gap-6 w-full max-w-2xl">
-          <div>
-            <h1 className="text-2xl font-semibold">Assignment Notifications</h1>
-            <p className="text-muted-foreground">
-              Configure when you want to be notified about assignments
-            </p>
+    <div className="flex flex-1 flex-col gap-6 items-center">
+      <div className="grid gap-6 w-full max-w-2xl">
+        <div>
+          <h1 className="text-2xl font-semibold">Assignment Notifications</h1>
+          <p className="text-muted-foreground">
+            Configure when you want to be notified about assignments
+          </p>
+        </div>
+
+        <PushNotificationManager />
+
+        {isInitialLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Spinner className="size-8" />
           </div>
+        ) : presets.length > 0 ? (
+          <div className="grid gap-4">
+            {presets.map((preset) => (
+              <PresetCard
+                key={preset.id}
+                preset={preset}
+                limits={limits}
+                onActivateForAssignments={() => handleActivateForAssignments(preset.id)}
+                onDelete={() => handleDeletePreset(preset.id)}
+                onEdit={(name) => handleEditPreset(preset.id, name)}
+                onAddTime={(days, time) =>
+                  handleAddTime(preset.id, days, time)
+                }
+                onRemoveTime={(timeId) => handleRemoveTime(timeId)}
+              />
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="py-8 text-center">
+              <Bell className="size-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">
+                No presets configured yet.
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Create a preset to set up your assignment notifications.
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
-          <PushNotificationManager />
-
-          {isInitialLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Spinner className="size-8" />
-            </div>
-          ) : presets.length > 0 ? (
-            <div className="grid gap-4">
-              {presets.map((preset) => (
-                <PresetCard
-                  key={preset.id}
-                  preset={preset}
-                  limits={limits}
-                  onActivateForAssignments={() => handleActivateForAssignments(preset.id)}
-                  onDelete={() => handleDeletePreset(preset.id)}
-                  onEdit={(name) => handleEditPreset(preset.id, name)}
-                  onAddTime={(days, time) =>
-                    handleAddTime(preset.id, days, time)
-                  }
-                  onRemoveTime={(timeId) => handleRemoveTime(timeId)}
-                />
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <Bell className="size-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">
-                  No presets configured yet.
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Create a preset to set up your assignment notifications.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {!isInitialLoading && canAddPreset && (
+        {!isInitialLoading && canAddPreset && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Create New Preset</CardTitle>
@@ -596,6 +630,5 @@ export default function AssignmentsNotificationsPage() {
           )}
         </div>
       </div>
-    </SubscriptionGate>
   );
 }

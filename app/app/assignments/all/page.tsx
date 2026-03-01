@@ -25,11 +25,13 @@ export default async function AssignmentsPage(props: { searchParams: Promise<{ p
   let assignmentsList: Assignment[] = []
   let hasClass = false
   let hasPermission = false
+  let userRole: string | undefined
   let presets: Preset[] = []
   let assignmentPresets: AssignmentPreset[] = []
   let totalCount = 0
 
   if (session?.user?.id) {
+    userRole = session.user.role as string | undefined
     const permissionResult = await auth.api.userHasPermission({
       body: {
         userId: session.user.id,
@@ -91,6 +93,7 @@ export default async function AssignmentsPage(props: { searchParams: Promise<{ p
       hasClass={hasClass}
       hasPermission={hasPermission}
       isLoggedIn={!!session?.user?.id}
+      userRole={userRole}
       presets={presets}
       assignmentPresets={assignmentPresets}
       currentPage={currentPage}
