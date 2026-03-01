@@ -72,7 +72,7 @@ function NotificationDropdown() {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <SidebarMenuButton tooltip="Notifications">
+        <SidebarMenuButton tooltip="Notification Center">
           <div className="relative">
             <Bell className="h-4 w-4" />
             {unreadCount > 0 && (
@@ -81,7 +81,7 @@ function NotificationDropdown() {
               </span>
             )}
           </div>
-          <span>Notifications</span>
+          <span>Notification Center</span>
         </SidebarMenuButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -142,26 +142,30 @@ const navItems = [
     title: "Home",
     url: "/app",
     icon: Home,
+    hideOnMobile: true,
   },
   {
     title: "Exams",
-    url: "/app/exams",
+    url: "/app/exams/upcoming",
     icon: FileText,
     subItems: [
-      { title: "All Exams", url: "/app/exams" },
       { title: "Upcoming Exams", url: "/app/exams/upcoming" },
-      { title: "Notifications", url: "/app/exams/notifications" },
+      { title: "All Exams", url: "/app/exams" },
     ],
   },
   {
     title: "Assignments",
-    url: "/app/assignments",
+    url: "/app/assignments/upcoming",
     icon: ClipboardList,
     subItems: [
-      { title: "All Assignments", url: "/app/assignments" },
       { title: "Upcoming Assignments", url: "/app/assignments/upcoming" },
-      { title: "Notifications", url: "/app/assignments/notifications" },
+      { title: "All Assignments", url: "/app/assignments" },
     ],
+  },
+  {
+    title: "Notifications",
+    url: "/app/notifications",
+    icon: Bell,
   },
 ]
 
@@ -219,10 +223,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu>
               {navItems.map((item) =>
                 item.subItems ? (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton tooltip={item.title} isActive={item.subItems.some((sub) => pathname === sub.url)}>
-                      {item.icon && <item.icon />}
-                      <span>{item.title}</span>
+                  <SidebarMenuItem key={item.title} className={item.hideOnMobile ? "hidden md:block" : ""}>
+                    <SidebarMenuButton asChild tooltip={item.title} isActive={item.subItems.some((sub) => pathname === sub.url)}>
+                      <Link href={item.url}>
+                        {item.icon && <item.icon />}
+                        <span>{item.title}</span>
+                      </Link>
                     </SidebarMenuButton>
                     <SidebarMenuSub>
                       {item.subItems.map((subItem) => (
@@ -237,7 +243,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </SidebarMenuSub>
                   </SidebarMenuItem>
                 ) : (
-                  <SidebarMenuItem key={item.title}>
+                  <SidebarMenuItem key={item.title} className={item.hideOnMobile ? "hidden md:block" : ""}>
                     <SidebarMenuButton asChild tooltip={item.title} isActive={pathname === item.url}>
                       <Link href={item.url}>
                         {item.icon && <item.icon />}

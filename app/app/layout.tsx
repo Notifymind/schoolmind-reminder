@@ -4,6 +4,7 @@ import * as React from "react"
 import { usePathname } from "next/navigation"
 import { AppSidebar } from "@/components/app-sidebar"
 import { RequireAuth } from "@/components/require-auth"
+import { MobileNavbar } from "@/components/mobile-navbar"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 
@@ -11,6 +12,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/app": "Dashboard",
   "/app/account": "Account Settings",
   "/app/subscription": "Subscription",
+  "/app/notifications": "Notification Settings",
   "/app/assignments": "Assignments",
   "/app/assignments/upcoming": "Upcoming Assignments",
   "/app/assignments/notifications": "Assignment Notifications",
@@ -60,17 +62,18 @@ export default function AppLayout({
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <header className="relative z-10 flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <header className="relative z-10 hidden md:flex h-16 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
             {title && <h1 className="text-lg font-semibold">{title}</h1>}
           </header>
           <PageTitleContext.Provider value={{ title, setTitle: setOverrideTitle }}>
-            <div className="flex flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-1 flex-col gap-4 p-4 pb-20 md:pb-4">
               {children}
             </div>
           </PageTitleContext.Provider>
         </SidebarInset>
+        <MobileNavbar />
       </SidebarProvider>
     </RequireAuth>
   )
