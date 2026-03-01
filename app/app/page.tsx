@@ -65,7 +65,7 @@ export default async function HomePage() {
         })
         .sort((a, b) => {
           if (!a.dueDate || !b.dueDate) return 0
-          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+          return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
         })
 
       const allAssignments = await getAssignmentsByClass(userClass)
@@ -77,7 +77,7 @@ export default async function HomePage() {
         })
         .sort((a, b) => {
           if (!a.dueDate || !b.dueDate) return 0
-          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+          return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
         })
 
       presets = await getReusablePresetsWithTimes(session.user.id) as Preset[]
