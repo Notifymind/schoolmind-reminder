@@ -19,23 +19,26 @@ export function SubscriptionGate({
   permission: Permission
 }) {
   const { data: session, isPending } = authClient.useSession()
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [hasPermission, setHasPermission] = useState(false)
 
   useEffect(() => {
     async function checkPermission() {
-      if (!isPending && session) {
+      if (isPending) return
+      if (session) {
         const result = await authClient.admin.hasPermission({
           permission,
         })
         setHasPermission(result.data?.success ?? false)
-      } else if (!isPending && !session) {
+      } else {
         setHasPermission(false)
       }
+      setIsLoading(false)
     }
     checkPermission()
   }, [isPending, session, permission])
 
-  if (isPending || hasPermission === null) {
+  if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center -mt-16">
         <Spinner className="size-12" />

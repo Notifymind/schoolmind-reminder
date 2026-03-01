@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Calendar, Clock, CalendarClock, BookOpen, Bell, Sparkles, Plus, Trash2 } from "lucide-react"
+import { Calendar, Clock, CalendarClock, BookOpen, Bell, Sparkles, Plus, Trash2, DollarSign } from "lucide-react"
 import {
   applyPresetToExamAction,
   createOneTimePresetForExamAction,
@@ -639,12 +639,18 @@ export function HomeClient({
 
   if (!hasClass) {
     return (
-      <div className="flex flex-1 items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground">You haven&apos;t joined a class yet.</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Join a class to see your upcoming exams and assignments.
+      <div className="flex flex-1 items-center justify-center -mt-16">
+        <div className="bg-card rounded-xl border p-8 max-w-md text-center">
+          <div className="bg-primary/10 mx-auto mb-4 flex size-16 items-center justify-center rounded-full">
+            <DollarSign className="text-primary size-8" />
+          </div>
+          <h2 className="text-xl font-semibold">Subscription Required</h2>
+          <p className="text-muted-foreground mt-2">
+            You need an active subscription to access your class. Subscribe now to see upcoming exams and assignments.
           </p>
+          <Button asChild className="mt-6">
+            <Link href="/app/subscription">View Plans</Link>
+          </Button>
         </div>
       </div>
     )
