@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { usePageTitle } from "@/app/app/layout";
 import { SubscriptionGate } from "@/components/subscription-prompt";
+import { Pagination } from "@/components/ui/pagination";
 import {
   Card,
   CardContent,
@@ -405,6 +407,8 @@ export function ExamsClient({
   presets: initialPresets,
   examPresets: initialExamPresets,
   title = "Exams",
+  currentPage = 1,
+  totalPages = 1,
 }: {
   exams: Exam[];
   hasClass: boolean;
@@ -412,8 +416,14 @@ export function ExamsClient({
   presets: Preset[];
   examPresets: ExamPreset[];
   title?: string;
+  currentPage?: number;
+  totalPages?: number;
 }) {
   usePageTitle(title);
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [presets, setPresets] = React.useState<Preset[]>(initialPresets);
   const [examPresets, setExamPresets] =
@@ -439,6 +449,12 @@ export function ExamsClient({
   const getPresetForExam = (examId: number): Preset | null => {
     const meta = examPresets.find((ep) => ep.examId === examId);
     return meta?.preset ?? null;
+  };
+
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(page));
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   return (
@@ -472,6 +488,11 @@ export function ExamsClient({
             onPresetChange={refreshData}
           />
         ))}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
       </div>
     </SubscriptionGate>
   );

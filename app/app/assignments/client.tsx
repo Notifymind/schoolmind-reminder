@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { usePageTitle } from "@/app/app/layout";
 import { SubscriptionGate } from "@/components/subscription-prompt";
+import { Pagination } from "@/components/ui/pagination";
 import {
   Card,
   CardContent,
@@ -407,6 +409,8 @@ export function AssignmentsClient({
   presets: initialPresets,
   assignmentPresets: initialAssignmentPresets,
   title = "Assignments",
+  currentPage = 1,
+  totalPages = 1,
 }: {
   assignments: Assignment[];
   hasClass: boolean;
@@ -414,8 +418,14 @@ export function AssignmentsClient({
   presets: Preset[];
   assignmentPresets: AssignmentPreset[];
   title?: string;
+  currentPage?: number;
+  totalPages?: number;
 }) {
   usePageTitle(title);
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [presets, setPresets] = React.useState<Preset[]>(initialPresets);
   const [assignmentPresets, setAssignmentPresets] =
@@ -441,6 +451,12 @@ export function AssignmentsClient({
   const getPresetForAssignment = (assignmentId: number): Preset | null => {
     const meta = assignmentPresets.find((ap) => ap.assignmentId === assignmentId);
     return meta?.preset ?? null;
+  };
+
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(page));
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   return (
@@ -474,6 +490,11 @@ export function AssignmentsClient({
             onPresetChange={refreshData}
           />
         ))}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
       </div>
     </SubscriptionGate>
   );

@@ -12,7 +12,12 @@ type AssignmentPreset = {
   preset: Preset | null
 }
 
-export default async function AssignmentsPage() {
+const ITEMS_PER_PAGE = 10
+
+export default async function AssignmentsPage(props: { searchParams: Promise<{ page?: string }> }) {
+  const searchParams = await props.searchParams
+  const currentPage = Math.max(1, parseInt(searchParams.page || "1", 10))
+
   const session = await auth.api.getSession({
     headers: await import("next/headers").then(m => m.headers()),
   })
@@ -21,17 +26,24 @@ export default async function AssignmentsPage() {
   let hasClass = false
   let presets: Preset[] = []
   let assignmentPresets: AssignmentPreset[] = []
+  let totalCount = 0
 
   if (session?.user?.id) {
     const userClass = await getUserClass(session.user.id)
     if (userClass) {
       hasClass = true
-      assignmentsList = (await getAssignmentsByClass(userClass)).sort((a, b) => {
+      const allAssignments = (await getAssignmentsByClass(userClass)).sort((a, b) => {
         if (!a.dueDate && !b.dueDate) return 0
         if (!a.dueDate) return 1
         if (!b.dueDate) return -1
         return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
       })
+
+      totalCount = allAssignments.length
+      assignmentsList = allAssignments.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+      )
 
       presets = await getReusablePresetsWithTimes(session.user.id)
 
@@ -62,6 +74,8 @@ export default async function AssignmentsPage() {
     }
   }
 
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
+
   return (
     <AssignmentsClient 
       assignments={assignmentsList} 
@@ -69,6 +83,8 @@ export default async function AssignmentsPage() {
       isLoggedIn={!!session?.user?.id}
       presets={presets}
       assignmentPresets={assignmentPresets}
+      currentPage={currentPage}
+      totalPages={totalPages}
     />
   )
 }

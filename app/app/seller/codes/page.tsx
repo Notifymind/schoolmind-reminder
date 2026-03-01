@@ -3,6 +3,7 @@
 import * as React from "react";
 import { usePageTitle } from "@/app/app/layout";
 import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/ui/pagination";
 import {
   Card,
   CardContent,
@@ -38,6 +39,8 @@ const DURATION_LABELS: Record<CodeDuration, string> = {
   school_year: "School Year",
 };
 
+const ITEMS_PER_PAGE = 10;
+
 interface Code {
   id: number;
   code: string;
@@ -61,6 +64,7 @@ export default function CodesPage() {
   const [isInitialLoading, setIsInitialLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string | null>(null);
+  const [currentPage, setCurrentPage] = React.useState(1);
 
   const price = PRICING[codeType][duration];
   const currentBalance = parseFloat(balance);
@@ -114,6 +118,16 @@ export default function CodesPage() {
 
   const unredeemedCodes = codes.filter((c) => !c.redeemedBy);
   const redeemedCodes = codes.filter((c) => c.redeemedBy);
+  const allCodesSorted = [...unredeemedCodes, ...redeemedCodes];
+  const totalPages = Math.ceil(allCodesSorted.length / ITEMS_PER_PAGE);
+  const paginatedCodes = allCodesSorted.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [codes.length]);
 
   if (isInitialLoading) {
     return (
@@ -245,8 +259,8 @@ export default function CodesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {unredeemedCodes.map((code) => (
-                    <tr key={code.id} className="border-b">
+                  {paginatedCodes.map((code) => (
+                    <tr key={code.id} className={code.redeemedBy ? "border-b opacity-60" : "border-b"}>
                       <td className="p-3 font-mono">{code.code}</td>
                       <td className="p-3">
                         {CODE_TYPE_LABELS[code.type as CodeType] || code.type}
@@ -257,51 +271,44 @@ export default function CodesPage() {
                       </td>
                       <td className="p-3 text-right">{code.value} KM</td>
                       <td className="p-3">
-                        <span className="inline-flex items-center rounded-full bg-yellow-500/10 px-2 py-1 text-xs font-medium text-yellow-600 dark:text-yellow-400">
-                          Unredeemed
-                        </span>
+                        {code.redeemedBy ? (
+                          <span className="inline-flex items-center rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-600 dark:text-green-400">
+                            Redeemed
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-yellow-500/10 px-2 py-1 text-xs font-medium text-yellow-600 dark:text-yellow-400">
+                            Unredeemed
+                          </span>
+                        )}
                       </td>
                       <td className="p-3 text-muted-foreground">
                         {new Date(code.createdAt).toLocaleDateString()}
                       </td>
                       <td className="p-3 text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteCode(code.id)}
-                          title="Delete code and refund"
-                        >
-                          <Trash2 className="size-4 text-destructive" />
-                        </Button>
+                        {code.redeemedBy ? (
+                          "-"
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteCode(code.id)}
+                            title="Delete code and refund"
+                          >
+                            <Trash2 className="size-4 text-destructive" />
+                          </Button>
+                        )}
                       </td>
-                    </tr>
-                  ))}
-                  {redeemedCodes.map((code) => (
-                    <tr key={code.id} className="border-b opacity-60">
-                      <td className="p-3 font-mono">{code.code}</td>
-                      <td className="p-3">
-                        {CODE_TYPE_LABELS[code.type as CodeType] || code.type}
-                      </td>
-                      <td className="p-3">
-                        {DURATION_LABELS[code.duration as CodeDuration] ||
-                          code.duration}
-                      </td>
-                      <td className="p-3 text-right">{code.value} KM</td>
-                      <td className="p-3">
-                        <span className="inline-flex items-center rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-600 dark:text-green-400">
-                          Redeemed
-                        </span>
-                      </td>
-                      <td className="p-3 text-muted-foreground">
-                        {new Date(code.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="p-3 text-right">-</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </CardContent>
       </Card>
     </div>
