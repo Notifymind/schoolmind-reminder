@@ -315,43 +315,6 @@ export async function clearExamPresetAction(examId: number) {
   return { success: true };
 }
 
-export async function createOneTimePresetForExamAction(
-  examId: number,
-  times: { daysBefore: number; time: string }[]
-) {
-  const session = await auth.api.getSession({
-    headers: await import("next/headers").then((m) => m.headers()),
-  });
-
-  if (!session?.user?.id) {
-    return { error: "Not authenticated" };
-  }
-
-  if (times.length === 0) {
-    return { error: "At least one notification time is required" };
-  }
-
-  const role = session.user.role as UserRole;
-  const limits = getLimits(role);
-
-  if (times.length > limits.timesPerPreset) {
-    return { error: `Maximum ${limits.timesPerPreset} notification time(s) per preset for your plan` };
-  }
-
-  const preset = await createNotificationPreset(session.user.id, "Custom", true);
-
-  for (const t of times) {
-    await createNotificationTime(preset.id, t.daysBefore, t.time);
-  }
-
-  const success = await applyPresetToExam(session.user.id, examId, preset.id);
-  if (!success) {
-    return { error: "Failed to apply preset to exam" };
-  }
-
-  return { success: true, presetId: preset.id };
-}
-
 export async function getExamPresetsAction(examIds: number[]) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
@@ -422,43 +385,6 @@ export async function clearAssignmentPresetAction(assignmentId: number) {
 
   await deleteAssignmentNotificationMeta(session.user.id, assignmentId);
   return { success: true };
-}
-
-export async function createOneTimePresetForAssignmentAction(
-  assignmentId: number,
-  times: { daysBefore: number; time: string }[]
-) {
-  const session = await auth.api.getSession({
-    headers: await import("next/headers").then((m) => m.headers()),
-  });
-
-  if (!session?.user?.id) {
-    return { error: "Not authenticated" };
-  }
-
-  if (times.length === 0) {
-    return { error: "At least one notification time is required" };
-  }
-
-  const role = session.user.role as UserRole;
-  const limits = getLimits(role);
-
-  if (times.length > limits.timesPerPreset) {
-    return { error: `Maximum ${limits.timesPerPreset} notification time(s) per preset for your plan` };
-  }
-
-  const preset = await createNotificationPreset(session.user.id, "Custom", true);
-
-  for (const t of times) {
-    await createNotificationTime(preset.id, t.daysBefore, t.time);
-  }
-
-  const success = await applyPresetToAssignment(session.user.id, assignmentId, preset.id);
-  if (!success) {
-    return { error: "Failed to apply preset to assignment" };
-  }
-
-  return { success: true, presetId: preset.id };
 }
 
 export async function getAssignmentPresetsAction(assignmentIds: number[]) {
