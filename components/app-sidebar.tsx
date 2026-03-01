@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import { Home, FileText, ClipboardList, User, LogOut, Sun, Moon, DollarSign, Bell, Ticket, BarChart3, Users, Wallet, GraduationCap } from "lucide-react"
 
@@ -165,6 +166,7 @@ const navItems = [
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
   const { data: session } = authClient.useSession()
@@ -218,14 +220,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               {navItems.map((item) =>
                 item.subItems ? (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton tooltip={item.title}>
+                    <SidebarMenuButton tooltip={item.title} isActive={item.subItems.some((sub) => pathname === sub.url)}>
                       {item.icon && <item.icon />}
                       <span>{item.title}</span>
                     </SidebarMenuButton>
                     <SidebarMenuSub>
                       {item.subItems.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild>
+                          <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
                             <Link href={subItem.url}>
                               <span>{subItem.title}</span>
                             </Link>
@@ -236,7 +238,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuItem>
                 ) : (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild tooltip={item.title}>
+                    <SidebarMenuButton asChild tooltip={item.title} isActive={pathname === item.url}>
                       <Link href={item.url}>
                         {item.icon && <item.icon />}
                         <span>{item.title}</span>
@@ -254,7 +256,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Codes">
+                  <SidebarMenuButton asChild tooltip="Codes" isActive={pathname === "/app/seller/codes"}>
                     <Link href="/app/seller/codes">
                       <Ticket />
                       <span>Codes</span>
@@ -262,7 +264,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Prices">
+                  <SidebarMenuButton asChild tooltip="Prices" isActive={pathname === "/app/seller/prices"}>
                     <Link href="/app/seller/prices">
                       <DollarSign />
                       <span>Prices</span>
@@ -279,7 +281,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Overview">
+                  <SidebarMenuButton asChild tooltip="Overview" isActive={pathname === "/app/admin/overview"}>
                     <Link href="/app/admin/overview">
                       <BarChart3 />
                       <span>Overview</span>
@@ -287,7 +289,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Sellers">
+                  <SidebarMenuButton asChild tooltip="Sellers" isActive={pathname === "/app/admin/sellers"}>
                     <Link href="/app/admin/sellers">
                       <Users />
                       <span>Sellers</span>
@@ -295,7 +297,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Balance">
+                  <SidebarMenuButton asChild tooltip="Balance" isActive={pathname === "/app/admin/balance"}>
                     <Link href="/app/admin/balance">
                       <Wallet />
                       <span>Balance</span>
@@ -303,7 +305,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Classes">
+                  <SidebarMenuButton asChild tooltip="Classes" isActive={pathname === "/app/admin/classes"}>
                     <Link href="/app/admin/classes">
                       <GraduationCap />
                       <span>Classes</span>
