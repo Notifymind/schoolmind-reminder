@@ -52,7 +52,7 @@ export default function HistoryPage() {
   if (isLoading && currentPage === 1) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <Spinner className="size-8" />
+        <Spinner className="size-12" />
       </div>
     );
   }

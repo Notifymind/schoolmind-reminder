@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Calendar, Clock, CalendarClock, BookOpen, Bell, Sparkles, Plus, Trash2, DollarSign } from "lucide-react"
+import { Calendar, Clock, CalendarClock, BookOpen, Bell, Sparkles, Plus, Trash2, DollarSign, Download, X } from "lucide-react"
 import {
   applyPresetToExamAction,
   createOneTimePresetForExamAction,

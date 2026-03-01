@@ -132,7 +132,7 @@ export default function CodesPage() {
   if (isInitialLoading) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <Spinner className="size-8" />
+        <Spinner className="size-12" />
       </div>
     );
   }
