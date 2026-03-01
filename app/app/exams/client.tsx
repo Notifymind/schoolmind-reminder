@@ -307,26 +307,26 @@ function ExamCard({
               <CardTitle className="text-lg">
                 {exam.title || "Untitled Exam"}
               </CardTitle>
-              <div className="flex items-center gap-3 mt-1 text-muted-foreground text-sm">
+              <div className="flex flex-wrap items-center gap-2 mt-1 text-muted-foreground text-xs">
                 <span className="flex items-center gap-1">
-                  <BookOpen className="size-4" />
+                  <BookOpen className="size-3" />
                   {exam.subject || "No subject"}
                 </span>
                 {exam.date && (
                   <span className="flex items-center gap-1">
-                    <Calendar className="size-4" />
+                    <Calendar className="size-3" />
                     {exam.date}
                   </span>
                 )}
                 {exam.time && (
                   <span className="flex items-center gap-1">
-                    <Clock className="size-4" />
+                    <Clock className="size-3" />
                     {exam.time}
                   </span>
                 )}
                 {daysText && (
                   <span className="flex items-center gap-1">
-                    <CalendarClock className="size-4" />
+                    <CalendarClock className="size-3" />
                     {daysText}
                   </span>
                 )}
