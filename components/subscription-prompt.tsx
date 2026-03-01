@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Spinner } from "@/components/ui/spinner"
 import { DollarSign } from "lucide-react"
 
 type Permission = {
@@ -37,12 +37,8 @@ export function SubscriptionGate({
 
   if (isPending || hasPermission === null) {
     return (
-      <div className="flex flex-1 flex-col gap-6 items-center">
-        <div className="grid gap-6 w-full max-w-2xl">
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-40 w-full" />
-          <Skeleton className="h-60 w-full" />
-        </div>
+      <div className="flex flex-1 flex-col gap-6 items-center justify-center">
+        <Spinner className="size-8" />
       </div>
     )
   }

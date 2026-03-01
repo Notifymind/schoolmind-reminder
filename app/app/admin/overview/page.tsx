@@ -5,6 +5,7 @@ import { usePageTitle } from "@/app/app/layout";
 import { getAdminOverviewAction } from "@/lib/actions/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingDown, DollarSign, AlertTriangle } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
 interface SellerWithDebt {
   id: string;
@@ -38,27 +39,8 @@ export default function AdminOverviewPage() {
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="animate-pulse">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Loading...
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-8 bg-muted rounded" />
-          </CardContent>
-        </Card>
-        <Card className="animate-pulse">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Loading...
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-8 bg-muted rounded" />
-          </CardContent>
-        </Card>
+      <div className="flex flex-1 items-center justify-center p-6">
+        <Spinner className="size-8" />
       </div>
     );
   }

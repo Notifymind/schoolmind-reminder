@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Ticket, Trash2, Plus, AlertCircle } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import {
   generateCodeAction,
   deleteCodeAction,
@@ -55,6 +56,7 @@ export default function CodesPage() {
   const [codeType, setCodeType] = React.useState<CodeType>("basic");
   const [duration, setDuration] = React.useState<CodeDuration>("month");
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const [isInitialLoading, setIsInitialLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string | null>(null);
 
@@ -74,7 +76,7 @@ export default function CodesPage() {
   }
 
   React.useEffect(() => {
-    loadData();
+    loadData().finally(() => setIsInitialLoading(false));
   }, []);
 
   async function handleGenerateCode() {
@@ -110,6 +112,14 @@ export default function CodesPage() {
 
   const unredeemedCodes = codes.filter((c) => !c.redeemedBy);
   const redeemedCodes = codes.filter((c) => c.redeemedBy);
+
+  if (isInitialLoading) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-6">
+        <Spinner className="size-8" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">

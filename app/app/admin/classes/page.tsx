@@ -5,6 +5,7 @@ import { usePageTitle } from "@/app/app/layout";
 import { getClassesAction, deleteClassAction } from "@/lib/actions/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { Plus, GraduationCap, Pencil, Trash2 } from "lucide-react";
 import { AddClassDialog } from "@/components/add-class-dialog";
 import { EditClassDialog } from "@/components/edit-class-dialog";
@@ -66,11 +67,9 @@ export default function AdminClassesPage() {
 
   if (isLoading) {
     return (
-      <Card className="animate-pulse">
-        <CardContent className="pt-6">
-          <div className="h-8 bg-muted rounded" />
-        </CardContent>
-      </Card>
+      <div className="flex flex-1 items-center justify-center p-6">
+        <Spinner className="size-8" />
+      </div>
     );
   }
 

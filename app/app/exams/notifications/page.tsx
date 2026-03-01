@@ -18,7 +18,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Bell,
   Plus,
@@ -329,12 +329,8 @@ function PushNotificationManager() {
   if (isChecking) {
     return (
       <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-44" />
-          <Skeleton className="h-4 w-56 mt-2" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-9 w-40" />
+        <CardContent className="flex items-center justify-center py-8">
+          <Spinner className="size-8" />
         </CardContent>
       </Card>
     );
@@ -548,25 +544,8 @@ export default function NotificationsPage() {
           <PushNotificationManager />
 
           {isInitialLoading ? (
-            <div className="grid gap-4">
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-6 w-32" />
-                  <Skeleton className="h-4 w-48 mt-1" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-16 w-full" />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-6 w-36" />
-                  <Skeleton className="h-4 w-24 mt-1" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-9 w-full" />
-                </CardContent>
-              </Card>
+            <div className="flex items-center justify-center py-12">
+              <Spinner className="size-8" />
             </div>
           ) : presets.length > 0 ? (
             <div className="grid gap-4">

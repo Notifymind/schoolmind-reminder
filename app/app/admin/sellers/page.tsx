@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Popover,
   PopoverContent,
@@ -82,6 +83,7 @@ export default function AdminSellersPage() {
   const [sellers, setSellers] = React.useState<Seller[]>([]);
   const [classes, setClasses] = React.useState<Class[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isInitialLoading, setIsInitialLoading] = React.useState(true);
   const [isSearching, setIsSearching] = React.useState(false);
 
   const [addDialogOpen, setAddDialogOpen] = React.useState(false);
@@ -114,8 +116,9 @@ export default function AdminSellersPage() {
   }, []);
 
   React.useEffect(() => {
-    loadSellers();
-    loadClasses();
+    Promise.all([loadSellers(), loadClasses()]).finally(() =>
+      setIsInitialLoading(false)
+    );
   }, [loadSellers, loadClasses]);
 
   React.useEffect(() => {
@@ -212,6 +215,14 @@ export default function AdminSellersPage() {
     setDeleteDialogOpen(false);
     setDeletingSeller(null);
   };
+
+  if (isInitialLoading) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-6">
+        <Spinner className="size-8" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">

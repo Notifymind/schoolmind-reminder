@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Popover,
   PopoverContent,
@@ -46,8 +47,13 @@ export default function AdminBalancePage() {
 
   const [amount, setAmount] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isInitialLoading, setIsInitialLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setIsInitialLoading(false);
+  }, []);
 
   React.useEffect(() => {
     const searchTimeout = setTimeout(async () => {
@@ -113,6 +119,14 @@ export default function AdminBalancePage() {
     setIsLoading(false);
     setAmount("");
   };
+
+  if (isInitialLoading) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-6">
+        <Spinner className="size-8" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
