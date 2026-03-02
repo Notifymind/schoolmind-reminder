@@ -257,7 +257,6 @@ export default function CodesPage() {
                     <th className="text-left p-3 font-medium">Duration</th>
                     <th className="text-right p-3 font-medium">Value</th>
                     <th className="text-left p-3 font-medium">Status</th>
-                    <th className="text-left p-3 font-medium">Created</th>
                     <th className="text-right p-3 font-medium">Actions</th>
                   </tr>
                 </thead>
@@ -283,9 +282,6 @@ export default function CodesPage() {
                             Unredeemed
                           </span>
                         )}
-                      </td>
-                      <td className="p-3 text-muted-foreground">
-                        {new Date(code.createdAt).toLocaleDateString()}
                       </td>
                       <td className="p-3 text-right">
                         {code.redeemedBy ? (
