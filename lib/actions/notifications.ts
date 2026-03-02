@@ -33,9 +33,9 @@ import {
 const PRESET_LIMITS = {
   free: { presets: 0, timesPerPreset: 0 },
   basic: { presets: 1, timesPerPreset: 2 },
-  pro: { presets: 5, timesPerPreset: 5 },
-  seller: { presets: 3, timesPerPreset: 5 },
-  admin: { presets: 3, timesPerPreset: 5 },
+  pro: { presets: 5, timesPerPreset: 7 },
+  seller: { presets: 5, timesPerPreset: 7 },
+  admin: { presets: 5, timesPerPreset: 7 },
 } as const;
 
 type UserRole = "free" | "basic" | "pro" | "seller" | "admin";
@@ -58,7 +58,9 @@ export async function createPresetAction(name: string) {
   const currentCount = await countUserPresets(session.user.id);
 
   if (currentCount >= limits.presets) {
-    return { error: `Maximum ${limits.presets} preset(s) allowed for your plan` };
+    return {
+      error: `Maximum ${limits.presets} preset(s) allowed for your plan`,
+    };
   }
 
   const preset = await createNotificationPreset(session.user.id, name);
@@ -81,7 +83,11 @@ export async function updatePresetAction(presetId: number, name: string) {
     return { error: "Not authenticated" };
   }
 
-  const preset = await updateNotificationPreset(presetId, session.user.id, name);
+  const preset = await updateNotificationPreset(
+    presetId,
+    session.user.id,
+    name,
+  );
   if (!preset) {
     return { error: "Preset not found" };
   }
@@ -158,7 +164,9 @@ export async function applyPresetToAllCurrentExamsAction(presetId: number) {
   return { applied: result.applied };
 }
 
-export async function applyPresetToAllCurrentAssignmentsAction(presetId: number) {
+export async function applyPresetToAllCurrentAssignmentsAction(
+  presetId: number,
+) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
   });
@@ -189,7 +197,11 @@ export async function getPresetsAction() {
   return { presets: presetsWithTimes };
 }
 
-export async function addNotificationTimeAction(presetId: number, daysBefore: number, time: string) {
+export async function addNotificationTimeAction(
+  presetId: number,
+  daysBefore: number,
+  time: string,
+) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
   });
@@ -208,10 +220,16 @@ export async function addNotificationTimeAction(presetId: number, daysBefore: nu
   const currentCount = await countPresetNotificationTimes(presetId);
 
   if (currentCount >= limits.timesPerPreset) {
-    return { error: `Maximum ${limits.timesPerPreset} notification time(s) per preset for your plan` };
+    return {
+      error: `Maximum ${limits.timesPerPreset} notification time(s) per preset for your plan`,
+    };
   }
 
-  const notificationTime = await createNotificationTime(presetId, daysBefore, time);
+  const notificationTime = await createNotificationTime(
+    presetId,
+    daysBefore,
+    time,
+  );
   return { notificationTime };
 }
 
@@ -293,7 +311,10 @@ export async function getPushSubscriptionStatusAction() {
   return { isSubscribed: subscriptions.length > 0 };
 }
 
-export async function applyPresetToExamAction(examId: number, presetId: number) {
+export async function applyPresetToExamAction(
+  examId: number,
+  presetId: number,
+) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
   });
@@ -341,20 +362,23 @@ export async function getExamPresetsAction(examIds: number[]) {
     return { examPresets: [] };
   }
 
-  const prefs = await getNotificationPreferencesForExams(session.user.id, examIds);
+  const prefs = await getNotificationPreferencesForExams(
+    session.user.id,
+    examIds,
+  );
 
   const presetIds = [...new Set(prefs.map((p) => p.presetId))];
   const presetDetails = await Promise.all(
     presetIds.map(async (id) => {
       const preset = await getNotificationPresetById(id, session.user.id);
       return preset ? { ...preset } : null;
-    })
+    }),
   );
 
   const presetMap = new Map(
     presetDetails
       .filter((p): p is NonNullable<typeof p> => p !== null)
-      .map((p) => [p.id, p])
+      .map((p) => [p.id, p]),
   );
 
   const examPresets = prefs.map((p) => ({
@@ -365,7 +389,10 @@ export async function getExamPresetsAction(examIds: number[]) {
   return { examPresets };
 }
 
-export async function applyPresetToAssignmentAction(assignmentId: number, presetId: number) {
+export async function applyPresetToAssignmentAction(
+  assignmentId: number,
+  presetId: number,
+) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
   });
@@ -379,7 +406,11 @@ export async function applyPresetToAssignmentAction(assignmentId: number, preset
     return { error: "Preset not found" };
   }
 
-  const success = await applyPresetToAssignment(session.user.id, assignmentId, presetId);
+  const success = await applyPresetToAssignment(
+    session.user.id,
+    assignmentId,
+    presetId,
+  );
   if (!success) {
     return { error: "Failed to apply preset to assignment" };
   }
@@ -396,7 +427,10 @@ export async function clearAssignmentPresetAction(assignmentId: number) {
     return { error: "Not authenticated" };
   }
 
-  await deleteNotificationPreferenceForAssignment(session.user.id, assignmentId);
+  await deleteNotificationPreferenceForAssignment(
+    session.user.id,
+    assignmentId,
+  );
   return { success: true };
 }
 
@@ -413,7 +447,10 @@ export async function getAssignmentPresetsAction(assignmentIds: number[]) {
     return { assignmentPresets: [] };
   }
 
-  const prefs = await getNotificationPreferencesForAssignments(session.user.id, assignmentIds);
+  const prefs = await getNotificationPreferencesForAssignments(
+    session.user.id,
+    assignmentIds,
+  );
 
   const presetIds = [...new Set(prefs.map((p) => p.presetId))];
   const presetDetails = await Promise.all(
@@ -422,13 +459,13 @@ export async function getAssignmentPresetsAction(assignmentIds: number[]) {
       if (!preset) return null;
       const times = await getNotificationTimes(id);
       return { ...preset, times };
-    })
+    }),
   );
 
   const presetMap = new Map(
     presetDetails
       .filter((p): p is NonNullable<typeof p> => p !== null)
-      .map((p) => [p.id, p])
+      .map((p) => [p.id, p]),
   );
 
   const assignmentPresets = prefs.map((p) => ({
