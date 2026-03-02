@@ -43,15 +43,15 @@ type Exam = {
 };
 
 type NotificationTime = {
-  id: number;
-  presetId: number;
+  id: string;
+  presetId: string;
   daysBefore: number;
   time: string;
   createdAt: Date;
 };
 
 type Preset = {
-  id: number;
+  id: string;
   userId: string;
   name: string;
   isActiveForExams: boolean;
@@ -102,8 +102,7 @@ function ExamCard({
 
   const handleSelectPreset = async (value: string) => {
     setIsLoading(true);
-    const presetId = parseInt(value, 10);
-    await applyPresetToExamAction(exam.id, presetId);
+    await applyPresetToExamAction(exam.id, value);
     setIsLoading(false);
     onPresetChange();
   };

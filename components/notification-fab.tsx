@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator"
 import { getUserNotificationsAction, getUnreadNotificationCountAction, markAllNotificationsReadAction } from "@/lib/actions/notifications"
 
 type UserNotification = {
-  id: number
+  id: string
   title: string
   message: string
   type: string

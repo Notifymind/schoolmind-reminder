@@ -44,15 +44,15 @@ type Assignment = {
 };
 
 type NotificationTime = {
-  id: number;
-  presetId: number;
+  id: string;
+  presetId: string;
   daysBefore: number;
   time: string;
   createdAt: Date;
 };
 
 type Preset = {
-  id: number;
+  id: string;
   userId: string;
   name: string;
   isActiveForExams: boolean;
@@ -103,8 +103,7 @@ function AssignmentCard({
 
   const handleSelectPreset = async (value: string) => {
     setIsLoading(true);
-    const presetId = parseInt(value, 10);
-    await applyPresetToAssignmentAction(assignment.id, presetId);
+    await applyPresetToAssignmentAction(assignment.id, value);
     setIsLoading(false);
     onPresetChange();
   };

@@ -123,7 +123,7 @@ export async function generateCodeAction(
   return { code };
 }
 
-export async function deleteCodeAction(codeId: number) {
+export async function deleteCodeAction(codeId: string) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
   });

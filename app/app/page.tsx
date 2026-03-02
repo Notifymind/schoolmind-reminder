@@ -3,39 +3,40 @@ import { getUserClass, getExamsByClass, getAssignmentsByClass, getPresetsWithTim
 import { exams, assignments } from "@/db/schema"
 import { HomeClient } from "./client"
 
+
 type Exam = typeof exams.$inferSelect
 type Assignment = typeof assignments.$inferSelect
 
 type NotificationTime = {
-  id: number
-  presetId: number
-  daysBefore: number
-  time: string
-  createdAt: Date
-}
+  id: string;
+  presetId: string;
+  daysBefore: number;
+  time: string;
+  createdAt: Date;
+};
 
 type Preset = {
-  id: number
-  userId: string
-  name: string
-  isActiveForExams: boolean
-  isActiveForAssignments: boolean
-  activatedForExamsAt: Date | null
-  activatedForAssignmentsAt: Date | null
-  createdAt: Date
-  updatedAt: Date
-  times: NotificationTime[]
-}
+  id: string;
+  userId: string;
+  name: string;
+  isActiveForExams: boolean;
+  isActiveForAssignments: boolean;
+  activatedForExamsAt: Date | null;
+  activatedForAssignmentsAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  times: NotificationTime[];
+};
 
 type ExamPreset = {
-  examId: number
-  preset: Preset | null
-}
+  examId: number;
+  preset: Preset | null;
+};
 
 type AssignmentPreset = {
-  assignmentId: number
-  preset: Preset | null
-}
+  assignmentId: number;
+  preset: Preset | null;
+};
 
 export default async function HomePage() {
   const session = await auth.api.getSession({
@@ -96,7 +97,7 @@ export default async function HomePage() {
           })
         )
         
-        const presetMap = new Map<number, Preset>()
+        const presetMap = new Map<string, Preset>()
         presetDetails.forEach(p => {
           if (p) presetMap.set(p.id, p)
         })
@@ -121,7 +122,7 @@ export default async function HomePage() {
           })
         )
         
-        const presetMap = new Map<number, Preset>()
+        const presetMap = new Map<string, Preset>()
         presetDetails.forEach(p => {
           if (p) presetMap.set(p.id, p)
         })

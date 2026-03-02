@@ -66,7 +66,7 @@ export default async function UpcomingExamsPage() {
           })
         )
         
-        const presetMap = new Map<number, Preset>()
+        const presetMap = new Map<string, Preset>()
         presetDetails.forEach(p => {
           if (p) presetMap.set(p.id, p)
         })

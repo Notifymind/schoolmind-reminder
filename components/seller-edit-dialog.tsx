@@ -66,6 +66,13 @@ export function SellerEditDialog({
   const [error, setError] = React.useState<string | null>(null);
   const [classPopoverOpen, setClassPopoverOpen] = React.useState(false);
 
+  const loadClasses = React.useCallback(async () => {
+    const result = await getClassesAction();
+    if ("classes" in result) {
+      setClasses(result.classes);
+    }
+  }, []);
+
   React.useEffect(() => {
     if (open && seller) {
       setMaxDebt(seller.maxDebt);
@@ -73,14 +80,7 @@ export function SellerEditDialog({
       setError(null);
       loadClasses();
     }
-  }, [open, seller]);
-
-  const loadClasses = async () => {
-    const result = await getClassesAction();
-    if ("classes" in result) {
-      setClasses(result.classes);
-    }
-  };
+  }, [open, seller, loadClasses]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

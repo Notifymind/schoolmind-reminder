@@ -221,7 +221,7 @@ export const assignmentsRelations = relations(assignments, ({ one, many }) => ({
 export const notificationPresets = pgTable(
   "notification_presets",
   {
-    id: serial("id").primaryKey(),
+    id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -242,8 +242,8 @@ export const notificationPresets = pgTable(
 export const notificationTimes = pgTable(
   "notification_times",
   {
-    id: serial("id").primaryKey(),
-    presetId: integer("preset_id")
+    id: text("id").primaryKey(),
+    presetId: text("preset_id")
       .notNull()
       .references(() => notificationPresets.id, { onDelete: "cascade" }),
     daysBefore: integer("days_before").notNull(),
@@ -256,13 +256,13 @@ export const notificationTimes = pgTable(
 export const notificationPreferences = pgTable(
   "notification_preferences",
   {
-    id: serial("id").primaryKey(),
+    id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     examId: integer("exam_id").references(() => exams.id, { onDelete: "cascade" }),
     assignmentId: integer("assignment_id").references(() => assignments.id, { onDelete: "cascade" }),
-    presetId: integer("preset_id")
+    presetId: text("preset_id")
       .notNull()
       .references(() => notificationPresets.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -277,7 +277,7 @@ export const notificationPreferences = pgTable(
 export const sentNotifications = pgTable(
   "sent_notifications",
   {
-    id: serial("id").primaryKey(),
+    id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -358,7 +358,7 @@ export const sentNotificationsRelations = relations(
 export const pushSubscriptions = pgTable(
   "push_subscriptions",
   {
-    id: serial("id").primaryKey(),
+    id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -383,7 +383,7 @@ export const pushSubscriptionsRelations = relations(
 export const userNotifications = pgTable(
   "user_notifications",
   {
-    id: serial("id").primaryKey(),
+    id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -412,7 +412,7 @@ export const userNotificationsRelations = relations(
 export const codes = pgTable(
   "codes",
   {
-    id: serial("id").primaryKey(),
+    id: text("id").primaryKey(),
     code: varchar("code", { length: 11 }).notNull().unique(),
     type: varchar("type", { length: 20 }).notNull(),
     duration: varchar("duration", { length: 20 }).notNull(),
@@ -448,7 +448,7 @@ export const codesRelations = relations(codes, ({ one }) => ({
 export const balanceHistory = pgTable(
   "balance_history",
   {
-    id: serial("id").primaryKey(),
+    id: text("id").primaryKey(),
     sellerId: text("seller_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),

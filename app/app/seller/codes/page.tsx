@@ -51,7 +51,7 @@ const DURATION_LABELS: Record<CodeDuration, string> = {
 const ITEMS_PER_PAGE = 10;
 
 interface Code {
-  id: number;
+  id: string;
   code: string;
   type: string;
   duration: string;
@@ -75,7 +75,7 @@ export default function CodesPage() {
   const [success, setSuccess] = React.useState<string | null>(null);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [viewingCode, setViewingCode] = React.useState<Code | null>(null);
-  const [copiedId, setCopiedId] = React.useState<number | null>(null);
+  const [copiedId, setCopiedId] = React.useState<string | null>(null);
 
   const price = PRICING[codeType][duration];
   const currentBalance = parseFloat(balance);
@@ -113,7 +113,7 @@ export default function CodesPage() {
     setIsGenerating(false);
   }
 
-  async function handleDeleteCode(codeId: number) {
+  async function handleDeleteCode(codeId: string) {
     setError(null);
     setSuccess(null);
 

@@ -36,7 +36,7 @@ import { getUserNotificationsAction, getUnreadNotificationCountAction, markAllNo
 import { Separator } from "@/components/ui/separator"
 
 type UserNotification = {
-  id: number;
+  id: string;
   title: string;
   message: string;
   type: string;

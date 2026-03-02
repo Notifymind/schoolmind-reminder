@@ -15,6 +15,7 @@ import {
   balanceHistory,
   userNotifications,
 } from "./schema";
+import { generateId } from "@/lib/utils";
 
 const db = drizzle(process.env.DATABASE_URL!);
 
@@ -59,7 +60,7 @@ export async function createPushSubscription(
   }
   const result = await db
     .insert(pushSubscriptions)
-    .values({ userId, endpoint, p256dh, auth })
+    .values({ id: generateId(), userId, endpoint, p256dh, auth })
     .returning();
   return result[0];
 }
@@ -82,7 +83,7 @@ export async function getNotificationPresets(userId: string) {
   return db.select().from(notificationPresets).where(eq(notificationPresets.userId, userId));
 }
 
-export async function getNotificationPresetById(presetId: number, userId: string) {
+export async function getNotificationPresetById(presetId: string, userId: string) {
   const result = await db
     .select()
     .from(notificationPresets)
@@ -91,11 +92,11 @@ export async function getNotificationPresetById(presetId: number, userId: string
 }
 
 export async function createNotificationPreset(userId: string, name: string) {
-  const result = await db.insert(notificationPresets).values({ userId, name }).returning();
+  const result = await db.insert(notificationPresets).values({ id: generateId(), userId, name }).returning();
   return result[0];
 }
 
-export async function updateNotificationPreset(presetId: number, userId: string, name: string) {
+export async function updateNotificationPreset(presetId: string, userId: string, name: string) {
   const result = await db
     .update(notificationPresets)
     .set({ name })
@@ -104,13 +105,13 @@ export async function updateNotificationPreset(presetId: number, userId: string,
   return result[0] ?? null;
 }
 
-export async function deleteNotificationPreset(presetId: number, userId: string) {
+export async function deleteNotificationPreset(presetId: string, userId: string) {
   await db
     .delete(notificationPresets)
     .where(and(eq(notificationPresets.id, presetId), eq(notificationPresets.userId, userId)));
 }
 
-export async function setActivePresetForExams(userId: string, presetId: number) {
+export async function setActivePresetForExams(userId: string, presetId: string) {
   await db.update(notificationPresets).set({ isActiveForExams: false, activatedForExamsAt: null }).where(eq(notificationPresets.userId, userId));
   const result = await db
     .update(notificationPresets)
@@ -120,7 +121,7 @@ export async function setActivePresetForExams(userId: string, presetId: number) 
   return result[0] ?? null;
 }
 
-export async function setActivePresetForAssignments(userId: string, presetId: number) {
+export async function setActivePresetForAssignments(userId: string, presetId: string) {
   await db.update(notificationPresets).set({ isActiveForAssignments: false, activatedForAssignmentsAt: null }).where(eq(notificationPresets.userId, userId));
   const result = await db
     .update(notificationPresets)
@@ -130,16 +131,16 @@ export async function setActivePresetForAssignments(userId: string, presetId: nu
   return result[0] ?? null;
 }
 
-export async function getNotificationTimes(presetId: number) {
+export async function getNotificationTimes(presetId: string) {
   return db.select().from(notificationTimes).where(eq(notificationTimes.presetId, presetId));
 }
 
-export async function createNotificationTime(presetId: number, daysBefore: number, time: string) {
-  const result = await db.insert(notificationTimes).values({ presetId, daysBefore, time }).returning();
+export async function createNotificationTime(presetId: string, daysBefore: number, time: string) {
+  const result = await db.insert(notificationTimes).values({ id: generateId(), presetId, daysBefore, time }).returning();
   return result[0];
 }
 
-export async function deleteNotificationTime(timeId: number, userId: string) {
+export async function deleteNotificationTime(timeId: string, userId: string) {
   const preset = await db
     .select()
     .from(notificationPresets)
@@ -174,7 +175,7 @@ export async function countUserPresets(userId: string) {
   return result.length;
 }
 
-export async function countPresetNotificationTimes(presetId: number) {
+export async function countPresetNotificationTimes(presetId: string) {
   const result = await db.select({ id: notificationTimes.id }).from(notificationTimes).where(eq(notificationTimes.presetId, presetId));
   return result.length;
 }
@@ -218,13 +219,13 @@ export async function getAssignmentsWithoutPreference(userId: string, className:
 
 export async function createNotificationPreference(
   userId: string,
-  presetId: number,
+  presetId: string,
   examId?: number,
   assignmentId?: number
 ) {
   const result = await db
     .insert(notificationPreferences)
-    .values({ userId, presetId, examId: examId ?? null, assignmentId: assignmentId ?? null })
+    .values({ id: generateId(), userId, presetId, examId: examId ?? null, assignmentId: assignmentId ?? null })
     .returning();
   return result[0];
 }
@@ -273,7 +274,7 @@ export async function deleteNotificationPreferenceForAssignment(userId: string, 
     .where(and(eq(notificationPreferences.userId, userId), eq(notificationPreferences.assignmentId, assignmentId)));
 }
 
-export async function applyPresetToExam(userId: string, examId: number, presetId: number) {
+export async function applyPresetToExam(userId: string, examId: number, presetId: string) {
   const exam = await db.select().from(exams).where(eq(exams.id, examId));
   if (exam.length === 0) return false;
 
@@ -282,7 +283,7 @@ export async function applyPresetToExam(userId: string, examId: number, presetId
   return true;
 }
 
-export async function applyPresetToAllExams(userId: string, presetId: number) {
+export async function applyPresetToAllExams(userId: string, presetId: string) {
   const userClass = await getUserClass(userId);
   if (!userClass) return { applied: 0 };
 
@@ -299,7 +300,7 @@ export async function applyPresetToAllExams(userId: string, presetId: number) {
   return { applied: futureExams.length };
 }
 
-export async function applyPresetToAssignment(userId: string, assignmentId: number, presetId: number) {
+export async function applyPresetToAssignment(userId: string, assignmentId: number, presetId: string) {
   const assignment = await db.select().from(assignments).where(eq(assignments.id, assignmentId));
   if (assignment.length === 0) return false;
 
@@ -308,7 +309,7 @@ export async function applyPresetToAssignment(userId: string, assignmentId: numb
   return true;
 }
 
-export async function applyPresetToAllAssignments(userId: string, presetId: number) {
+export async function applyPresetToAllAssignments(userId: string, presetId: string) {
   const userClass = await getUserClass(userId);
   if (!userClass) return { applied: 0 };
 
@@ -544,6 +545,7 @@ export async function markNotificationSent(
   daysBefore: number
 ) {
   await db.insert(sentNotifications).values({
+    id: generateId(),
     userId,
     examId,
     assignmentId,
@@ -583,7 +585,7 @@ export async function createCode(
   sellerId: string,
   className?: string | null
 ) {
-  const result = await db.insert(codes).values({ code, type, duration, value, sellerId, className }).returning();
+  const result = await db.insert(codes).values({ id: generateId(), code, type, duration, value, sellerId, className }).returning();
   return result[0];
 }
 
@@ -596,7 +598,7 @@ export async function getCodeByCode(codeString: string) {
   return result[0] ?? null;
 }
 
-export async function deleteCodeById(codeId: number, sellerId: string) {
+export async function deleteCodeById(codeId: string, sellerId: string) {
   const result = await db
     .delete(codes)
     .where(and(eq(codes.id, codeId), eq(codes.sellerId, sellerId), isNull(codes.redeemedBy)))
@@ -643,7 +645,7 @@ export async function extendSubscription(userId: string, newEndsAt: Date, newRol
   await db.update(user).set(updateData).where(eq(user.id, userId));
 }
 
-export async function redeemCodeInDb(codeId: number, userId: string) {
+export async function redeemCodeInDb(codeId: string, userId: string) {
   const result = await db
     .update(codes)
     .set({ redeemedBy: userId, redeemedAt: new Date() })
@@ -813,6 +815,7 @@ export async function updateSellerBalanceWithLog(
   await db.update(user).set({ balance: newBalance.toString() }).where(eq(user.id, sellerId));
 
   await db.insert(balanceHistory).values({
+    id: generateId(),
     sellerId,
     adminId,
     type,
@@ -902,7 +905,7 @@ export async function createUserNotification(
 ) {
   const result = await db
     .insert(userNotifications)
-    .values({ userId, title, message, type })
+    .values({ id: generateId(), userId, title, message, type })
     .returning();
   return result[0];
 }

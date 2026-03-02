@@ -74,7 +74,7 @@ export async function createPresetAction(name: string) {
   return { preset };
 }
 
-export async function updatePresetAction(presetId: number, name: string) {
+export async function updatePresetAction(presetId: string, name: string) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
   });
@@ -95,7 +95,7 @@ export async function updatePresetAction(presetId: number, name: string) {
   return { preset };
 }
 
-export async function deletePresetAction(presetId: number) {
+export async function deletePresetAction(presetId: string) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
   });
@@ -108,7 +108,7 @@ export async function deletePresetAction(presetId: number) {
   return { success: true };
 }
 
-export async function activatePresetForExamsAction(presetId: number) {
+export async function activatePresetForExamsAction(presetId: string) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
   });
@@ -127,7 +127,7 @@ export async function activatePresetForExamsAction(presetId: number) {
   return { success: true };
 }
 
-export async function activatePresetForAssignmentsAction(presetId: number) {
+export async function activatePresetForAssignmentsAction(presetId: string) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
   });
@@ -146,7 +146,7 @@ export async function activatePresetForAssignmentsAction(presetId: number) {
   return { success: true };
 }
 
-export async function applyPresetToAllCurrentExamsAction(presetId: number) {
+export async function applyPresetToAllCurrentExamsAction(presetId: string) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
   });
@@ -165,7 +165,7 @@ export async function applyPresetToAllCurrentExamsAction(presetId: number) {
 }
 
 export async function applyPresetToAllCurrentAssignmentsAction(
-  presetId: number,
+  presetId: string,
 ) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
@@ -198,7 +198,7 @@ export async function getPresetsAction() {
 }
 
 export async function addNotificationTimeAction(
-  presetId: number,
+  presetId: string,
   daysBefore: number,
   time: string,
 ) {
@@ -233,7 +233,7 @@ export async function addNotificationTimeAction(
   return { notificationTime };
 }
 
-export async function removeNotificationTimeAction(timeId: number) {
+export async function removeNotificationTimeAction(timeId: string) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
   });
@@ -313,7 +313,7 @@ export async function getPushSubscriptionStatusAction() {
 
 export async function applyPresetToExamAction(
   examId: number,
-  presetId: number,
+  presetId: string,
 ) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
@@ -391,7 +391,7 @@ export async function getExamPresetsAction(examIds: number[]) {
 
 export async function applyPresetToAssignmentAction(
   assignmentId: number,
-  presetId: number,
+  presetId: string,
 ) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),

@@ -3,32 +3,46 @@ import { getUserClass, getExamsByClass, getPresetsWithTimes, getNotificationPref
 import { exams } from "@/db/schema"
 import { ExamsClient } from "../client"
 
+
 type Exam = typeof exams.$inferSelect
 
-type Preset = Awaited<ReturnType<typeof getPresetsWithTimes>>[number]
+type NotificationTime = {
+  id: string;
+  presetId: string;
+  daysBefore: number;
+  time: string;
+  createdAt: Date;
+};
 
+type Preset = {
+  id: string;
+  userId: string;
+  name: string;
+  isActiveForExams: boolean;
+  isActiveForAssignments: boolean;
+  activatedForExamsAt: Date | null;
+  activatedForAssignmentsAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  times: NotificationTime[];
+};
 type ExamPreset = {
-  examId: number
-  preset: Preset | null
-}
-
+  examId: number;
+  preset: Preset | null;
+};
 const ITEMS_PER_PAGE = 10
-
 export default async function ExamsPage(props: { searchParams: Promise<{ page?: string }> }) {
   const searchParams = await props.searchParams
   const currentPage = Math.max(1, parseInt(searchParams.page || "1", 10))
-
   const session = await auth.api.getSession({
     headers: await import("next/headers").then(m => m.headers()),
   })
-
   let examsList: Exam[] = []
   let hasClass = false
   let hasPermission = false
   let presets: Preset[] = []
   let examPresets: ExamPreset[] = []
   let totalCount = 0
-
   if (session?.user?.id) {
     const permissionResult = await auth.api.userHasPermission({
       body: {
@@ -37,7 +51,6 @@ export default async function ExamsPage(props: { searchParams: Promise<{ page?: 
       },
     })
     hasPermission = permissionResult?.success ?? false
-
     const userClass = await getUserClass(session.user.id)
     if (userClass) {
       hasClass = true
@@ -47,19 +60,15 @@ export default async function ExamsPage(props: { searchParams: Promise<{ page?: 
         if (!b.dueDate) return -1
         return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
       })
-
       totalCount = allExams.length
       examsList = allExams.slice(
         (currentPage - 1) * ITEMS_PER_PAGE,
         currentPage * ITEMS_PER_PAGE
       )
-
       presets = await getPresetsWithTimes(session.user.id)
-
       if (examsList.length > 0) {
         const examIds = examsList.map(e => e.id)
         const prefs = await getNotificationPreferencesForExams(session.user.id, examIds)
-        
         const presetIds = [...new Set(prefs.map(p => p.presetId))]
         const presetDetails = await Promise.all(
           presetIds.map(async (id) => {
@@ -69,12 +78,10 @@ export default async function ExamsPage(props: { searchParams: Promise<{ page?: 
             return { ...preset, times }
           })
         )
-        
-        const presetMap = new Map<number, Preset>()
+        const presetMap = new Map<string, Preset>()
         presetDetails.forEach(p => {
           if (p) presetMap.set(p.id, p)
         })
-
         examPresets = prefs.map(p => ({
           examId: p.examId!,
           preset: presetMap.get(p.presetId) ?? null
@@ -82,9 +89,7 @@ export default async function ExamsPage(props: { searchParams: Promise<{ page?: 
       }
     }
   }
-
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
-
   return (
     <ExamsClient 
       exams={examsList} 

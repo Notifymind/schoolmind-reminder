@@ -129,15 +129,15 @@ function TimePicker({
 }
 
 type NotificationTime = {
-  id: number;
-  presetId: number;
+  id: string;
+  presetId: string;
   daysBefore: number;
   time: string;
   createdAt: Date;
 };
 
 type Preset = {
-  id: number;
+  id: string;
   userId: string;
   name: string;
   isActiveForExams: boolean;
@@ -154,7 +154,7 @@ type Limits = {
   timesPerPreset: number;
 };
 
-type ActivatingButton = { presetId: number; type: "exams" | "assignments" | "applyExams" | "applyAssignments" } | null;
+type ActivatingButton = { presetId: string; type: "exams" | "assignments" | "applyExams" | "applyAssignments" } | null;
 
 function PresetCard({
   preset,
@@ -181,14 +181,14 @@ function PresetCard({
   onDelete: () => Promise<void>;
   onEdit: (name: string) => Promise<void>;
   onAddTime: (daysBefore: number, time: string) => Promise<void>;
-  onRemoveTime: (timeId: number) => Promise<void>;
+  onRemoveTime: (timeId: string) => Promise<void>;
 }) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editName, setEditName] = React.useState(preset.name);
   const [daysBefore, setDaysBefore] = React.useState("1");
   const [time, setTime] = React.useState("09:00");
   const [isAddTimeOpen, setIsAddTimeOpen] = React.useState(false);
-  const [deletingTimeId, setDeletingTimeId] = React.useState<number | null>(null);
+  const [deletingTimeId, setDeletingTimeId] = React.useState<string | null>(null);
   const [isAddingTime, setIsAddingTime] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isSavingEdit, setIsSavingEdit] = React.useState(false);
@@ -222,7 +222,7 @@ function PresetCard({
     }
   };
 
-  const handleRemoveTime = async (timeId: number) => {
+  const handleRemoveTime = async (timeId: string) => {
     setDeletingTimeId(timeId);
     await onRemoveTime(timeId);
     setDeletingTimeId(null);
@@ -626,12 +626,12 @@ export default function NotificationsPage() {
     setIsLoading(false);
   }
 
-  async function handleDeletePreset(presetId: number): Promise<void> {
+  async function handleDeletePreset(presetId: string): Promise<void> {
      await deletePresetAction(presetId);
      await loadPresets();
   }
 
-  async function handleActivateForExams(presetId: number) {
+  async function handleActivateForExams(presetId: string) {
     setActivatingButton({ presetId, type: "exams" });
     try {
       await activatePresetForExamsAction(presetId);
@@ -641,7 +641,7 @@ export default function NotificationsPage() {
     }
   }
 
-  async function handleActivateForAssignments(presetId: number) {
+  async function handleActivateForAssignments(presetId: string) {
     setActivatingButton({ presetId, type: "assignments" });
     try {
       await activatePresetForAssignmentsAction(presetId);
@@ -651,7 +651,7 @@ export default function NotificationsPage() {
     }
   }
 
-  async function handleApplyToAllExams(presetId: number) {
+  async function handleApplyToAllExams(presetId: string) {
     setActivatingButton({ presetId, type: "applyExams" });
     try {
       const result = await applyPresetToAllCurrentExamsAction(presetId);
@@ -665,7 +665,7 @@ export default function NotificationsPage() {
     }
   }
 
-  async function handleApplyToAllAssignments(presetId: number) {
+  async function handleApplyToAllAssignments(presetId: string) {
     setActivatingButton({ presetId, type: "applyAssignments" });
     try {
       const result = await applyPresetToAllCurrentAssignmentsAction(presetId);
@@ -679,13 +679,13 @@ export default function NotificationsPage() {
     }
   }
 
-  async function handleEditPreset(presetId: number, name: string): Promise<void> {
+  async function handleEditPreset(presetId: string, name: string): Promise<void> {
      await updatePresetAction(presetId, name);
      await loadPresets();
   }
  
   async function handleAddTime(
-     presetId: number,
+     presetId: string,
      daysBefore: number,
      time: string,
   ): Promise<void> {
@@ -697,7 +697,7 @@ export default function NotificationsPage() {
      }
   }
  
-  async function handleRemoveTime(timeId: number): Promise<void> {
+  async function handleRemoveTime(timeId: string): Promise<void> {
      await removeNotificationTimeAction(timeId);
      await loadPresets();
   }
