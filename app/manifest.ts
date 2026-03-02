@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "SchoolMind Reminder",
     short_name: "School Rem.",
     description: "Get reminders for your school exams",
-    start_url: "/app?default=true",
+    start_url: "/app",
     display: "standalone",
     background_color: "#ffffff",
     theme_color: "#000000",
