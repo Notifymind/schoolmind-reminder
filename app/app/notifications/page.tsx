@@ -168,16 +168,20 @@ function PresetCard({
   onActivateForAssignments: () => void;
   onApplyToAllExams: () => void;
   onApplyToAllAssignments: () => void;
-  onDelete: () => void;
-  onEdit: (name: string) => void;
-  onAddTime: (daysBefore: number, time: string) => void;
-  onRemoveTime: (timeId: number) => void;
+  onDelete: () => Promise<void>;
+  onEdit: (name: string) => Promise<void>;
+  onAddTime: (daysBefore: number, time: string) => Promise<void>;
+  onRemoveTime: (timeId: number) => Promise<void>;
 }) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editName, setEditName] = React.useState(preset.name);
   const [daysBefore, setDaysBefore] = React.useState("1");
   const [time, setTime] = React.useState("09:00");
   const [isAddTimeOpen, setIsAddTimeOpen] = React.useState(false);
+  const [deletingTimeId, setDeletingTimeId] = React.useState<number | null>(null);
+  const [isAddingTime, setIsAddingTime] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [isSavingEdit, setIsSavingEdit] = React.useState(false);
 
   const isActivating = activatingButton !== null;
   const isActivatingExams = activatingButton?.presetId === preset.id && activatingButton?.type === "exams";
@@ -185,22 +189,37 @@ function PresetCard({
   const isApplyingExams = activatingButton?.presetId === preset.id && activatingButton?.type === "applyExams";
   const isApplyingAssignments = activatingButton?.presetId === preset.id && activatingButton?.type === "applyAssignments";
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (editName.trim()) {
-      onEdit(editName.trim());
+      setIsSavingEdit(true);
+      await onEdit(editName.trim());
+      setIsSavingEdit(false);
       setIsEditing(false);
     }
   };
 
-  const handleAddTime = (e: React.FormEvent) => {
+  const handleAddTime = async (e: React.FormEvent) => {
     e.preventDefault();
     const days = parseInt(daysBefore, 10);
     if (!isNaN(days) && days >= 0 && time) {
-      onAddTime(days, time);
+      setIsAddingTime(true);
+      await onAddTime(days, time);
+      setIsAddingTime(false);
       setDaysBefore("1");
       setTime("09:00");
       setIsAddTimeOpen(false);
     }
+  };
+
+  const handleRemoveTime = async (timeId: number) => {
+    setDeletingTimeId(timeId);
+    await onRemoveTime(timeId);
+    setDeletingTimeId(null);
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    await onDelete();
   };
 
   return (
@@ -215,8 +234,8 @@ function PresetCard({
                   onChange={(e) => setEditName(e.target.value)}
                   className="text-lg font-semibold"
                 />
-                <Button size="sm" onClick={handleSaveEdit}>
-                  Save
+                <Button size="sm" onClick={handleSaveEdit} disabled={isSavingEdit}>
+                   {isSavingEdit ? <Spinner className="size-4" /> : "Save"}
                 </Button>
                 <Button
                   size="sm"
@@ -237,24 +256,24 @@ function PresetCard({
           </div>
           <div className="flex gap-1">
             {!isEditing && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsEditing(true)}
-                title="Edit"
-                disabled={isActivating}
-              >
-                <Edit2 className="size-4" />
-              </Button>
+               <Button
+                 variant="ghost"
+                 size="icon"
+                 onClick={() => setIsEditing(true)}
+                 title="Edit"
+                 disabled={isActivating || isDeleting}
+               >
+                 <Edit2 className="size-4" />
+               </Button>
             )}
             <Button
-              variant="ghost"
-              size="icon"
-              onClick={onDelete}
-              title="Delete"
-              disabled={isActivating}
-            >
-              <Trash2 className="size-4 text-destructive" />
+               variant="ghost"
+               size="icon"
+               onClick={handleDelete}
+               title="Delete"
+               disabled={isActivating || isDeleting}
+             >
+               {isDeleting ? <Spinner className="size-4" /> : <Trash2 className="size-4 text-destructive" />}
             </Button>
           </div>
         </div>
@@ -329,12 +348,12 @@ function PresetCard({
                   </span>
                 </div>
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onRemoveTime(t.id)}
-                  disabled={isActivating}
-                >
-                  <Trash2 className="size-4" />
+                   variant="ghost"
+                   size="icon"
+                   onClick={() => handleRemoveTime(t.id)}
+                   disabled={isActivating || deletingTimeId !== null}
+                 >
+                   {deletingTimeId === t.id ? <Spinner className="size-4" /> : <Trash2 className="size-4" />}
                 </Button>
               </div>
             ))}
@@ -345,11 +364,11 @@ function PresetCard({
 
         {preset.times.length < limits.timesPerPreset && (
           <Dialog open={isAddTimeOpen} onOpenChange={setIsAddTimeOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full" disabled={isActivating}>
-                <Plus className="size-4 mr-2" />
-                Add notification time
-              </Button>
+             <DialogTrigger asChild>
+               <Button variant="outline" size="sm" className="w-full" disabled={isActivating || isDeleting || deletingTimeId !== null}>
+                 <Plus className="size-4 mr-2" />
+                 Add notification time
+               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -380,10 +399,12 @@ function PresetCard({
                     </div>
                   </Field>
                   <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => setIsAddTimeOpen(false)}>
-                      Cancel
+                     <Button type="button" variant="outline" onClick={() => setIsAddTimeOpen(false)} disabled={isAddingTime}>
+                       Cancel
                     </Button>
-                    <Button type="submit">Add</Button>
+                    <Button type="submit" disabled={isAddingTime}>
+                       {isAddingTime ? <Spinner className="size-4" /> : "Add"}
+                    </Button>
                   </div>
                 </FieldGroup>
               </form>
@@ -572,10 +593,10 @@ export default function NotificationsPage() {
     setIsLoading(false);
   }
 
-  async function handleDeletePreset(presetId: number) {
-    if (!confirm("Delete this preset?")) return;
-    await deletePresetAction(presetId);
-    await loadPresets();
+  async function handleDeletePreset(presetId: number): Promise<void> {
+     if (!confirm("Delete this preset?")) return;
+     await deletePresetAction(presetId);
+     await loadPresets();
   }
 
   async function handleActivateForExams(presetId: number) {
@@ -626,27 +647,27 @@ export default function NotificationsPage() {
     }
   }
 
-  async function handleEditPreset(presetId: number, name: string) {
-    await updatePresetAction(presetId, name);
-    await loadPresets();
+  async function handleEditPreset(presetId: number, name: string): Promise<void> {
+     await updatePresetAction(presetId, name);
+     await loadPresets();
   }
-
+ 
   async function handleAddTime(
-    presetId: number,
-    daysBefore: number,
-    time: string,
-  ) {
-    const result = await addNotificationTimeAction(presetId, daysBefore, time);
-    if ("error" in result) {
-      toast.error(result.error);
-    } else {
-      await loadPresets();
-    }
+     presetId: number,
+     daysBefore: number,
+     time: string,
+  ): Promise<void> {
+     const result = await addNotificationTimeAction(presetId, daysBefore, time);
+     if ("error" in result) {
+       toast.error(result.error);
+     } else {
+       await loadPresets();
+     }
   }
-
-  async function handleRemoveTime(timeId: number) {
-    await removeNotificationTimeAction(timeId);
-    await loadPresets();
+ 
+  async function handleRemoveTime(timeId: number): Promise<void> {
+     await removeNotificationTimeAction(timeId);
+     await loadPresets();
   }
 
   const canAddPreset = presets.length < limits.presets;
