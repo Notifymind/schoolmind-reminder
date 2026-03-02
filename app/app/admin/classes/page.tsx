@@ -8,6 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Plus, GraduationCap, Pencil, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AddClassDialog } from "@/components/add-class-dialog";
 import { EditClassDialog } from "@/components/edit-class-dialog";
 
@@ -24,6 +34,7 @@ export default function AdminClassesPage() {
   const [addClassDialogOpen, setAddClassDialogOpen] = React.useState(false);
   const [editClassDialogOpen, setEditClassDialogOpen] = React.useState(false);
   const [selectedClass, setSelectedClass] = React.useState<Class | null>(null);
+  const [deleteClass, setDeleteClass] = React.useState<Class | null>(null);
 
   const loadClasses = React.useCallback(async () => {
     setIsLoading(true);
@@ -49,15 +60,18 @@ export default function AdminClassesPage() {
   };
 
   const handleDeleteClick = async (cls: Class) => {
-    if (!confirm(`Are you sure you want to delete "${cls.name}"?`)) {
-      return;
-    }
     const result = await deleteClassAction(cls.name);
     if ("error" in result && result.error) {
       toast.error(result.error);
       return;
     }
     loadClasses();
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteClass) return;
+    await handleDeleteClick(deleteClass);
+    setDeleteClass(null);
   };
 
   const handleClassUpdated = () => {
@@ -118,7 +132,7 @@ export default function AdminClassesPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDeleteClick(cls)}
+                      onClick={() => setDeleteClass(cls)}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -142,6 +156,23 @@ export default function AdminClassesPage() {
         onClassUpdated={handleClassUpdated}
         classData={selectedClass}
       />
+
+      <AlertDialog open={!!deleteClass} onOpenChange={() => setDeleteClass(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Class</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{deleteClass?.name}&quot;?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

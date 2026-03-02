@@ -42,6 +42,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   createPresetAction,
   deletePresetAction,
   activatePresetForExamsAction,
@@ -182,6 +192,7 @@ function PresetCard({
   const [isAddingTime, setIsAddingTime] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isSavingEdit, setIsSavingEdit] = React.useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
 
   const isActivating = activatingButton !== null;
   const isActivatingExams = activatingButton?.presetId === preset.id && activatingButton?.type === "exams";
@@ -217,8 +228,13 @@ function PresetCard({
     setDeletingTimeId(null);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
     setIsDeleting(true);
+    setShowDeleteConfirm(false);
     await onDelete();
   };
 
@@ -412,6 +428,23 @@ function PresetCard({
           </Dialog>
         )}
       </CardContent>
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Preset</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{preset.name}&quot;?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
@@ -594,7 +627,6 @@ export default function NotificationsPage() {
   }
 
   async function handleDeletePreset(presetId: number): Promise<void> {
-     if (!confirm("Delete this preset?")) return;
      await deletePresetAction(presetId);
      await loadPresets();
   }
