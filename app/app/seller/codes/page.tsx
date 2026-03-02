@@ -11,8 +11,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Ticket, Trash2, Plus, AlertCircle } from "lucide-react";
+import { Ticket, Trash2, Plus, AlertCircle, Eye, Copy, Check } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   generateCodeAction,
   deleteCodeAction,
@@ -65,6 +74,8 @@ export default function CodesPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string | null>(null);
   const [currentPage, setCurrentPage] = React.useState(1);
+  const [viewingCode, setViewingCode] = React.useState<Code | null>(null);
+  const [copiedId, setCopiedId] = React.useState<number | null>(null);
 
   const price = PRICING[codeType][duration];
   const currentBalance = parseFloat(balance);
@@ -114,6 +125,12 @@ export default function CodesPage() {
       setSuccess("Code deleted and value refunded to your balance");
       await loadData();
     }
+  }
+
+  async function handleCopyCode(code: Code) {
+    await navigator.clipboard.writeText(code.code);
+    setCopiedId(code.id);
+    setTimeout(() => setCopiedId(null), 2000);
   }
 
   const unredeemedCodes = codes.filter((c) => !c.redeemedBy);
@@ -252,7 +269,6 @@ export default function CodesPage() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left p-3 font-medium">Code</th>
                     <th className="text-left p-3 font-medium">Type</th>
                     <th className="text-left p-3 font-medium">Duration</th>
                     <th className="text-right p-3 font-medium">Value</th>
@@ -263,7 +279,6 @@ export default function CodesPage() {
                 <tbody>
                   {paginatedCodes.map((code) => (
                     <tr key={code.id} className={code.redeemedBy ? "border-b opacity-60" : "border-b"}>
-                      <td className="p-3 font-mono">{code.code}</td>
                       <td className="p-3">
                         {CODE_TYPE_LABELS[code.type as CodeType] || code.type}
                       </td>
@@ -284,18 +299,38 @@ export default function CodesPage() {
                         )}
                       </td>
                       <td className="p-3 text-right">
-                        {code.redeemedBy ? (
-                          "-"
-                        ) : (
+                        <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDeleteCode(code.id)}
-                            title="Delete code and refund"
+                            onClick={() => setViewingCode(code)}
+                            title="View code"
                           >
-                            <Trash2 className="size-4 text-destructive" />
+                            <Eye className="size-4" />
                           </Button>
-                        )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleCopyCode(code)}
+                            title="Copy code"
+                          >
+                            {copiedId === code.id ? (
+                              <Check className="size-4 text-green-500" />
+                            ) : (
+                              <Copy className="size-4" />
+                            )}
+                          </Button>
+                          {!code.redeemedBy && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteCode(code.id)}
+                              title="Delete code and refund"
+                            >
+                              <Trash2 className="size-4 text-destructive" />
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -310,6 +345,51 @@ export default function CodesPage() {
           />
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!viewingCode} onOpenChange={() => setViewingCode(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Code Details</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3 pt-2">
+              <div className="rounded-md bg-muted p-4">
+                <p className="text-xs text-muted-foreground mb-1">Code</p>
+                <p className="font-mono text-lg select-all">{viewingCode?.code}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Type</p>
+                  <p>{viewingCode && CODE_TYPE_LABELS[viewingCode.type as CodeType]}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Duration</p>
+                  <p>{viewingCode && DURATION_LABELS[viewingCode.duration as CodeDuration]}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Value</p>
+                  <p>{viewingCode?.value} KM</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Status</p>
+                  <p>{viewingCode?.redeemedBy ? "Redeemed" : "Unredeemed"}</p>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={async () => {
+                if (viewingCode) {
+                  await handleCopyCode(viewingCode);
+                  setViewingCode(null);
+                }
+              }}
+            >
+              <Copy className="size-4 mr-2" />
+              Copy Code
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
