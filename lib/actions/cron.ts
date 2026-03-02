@@ -56,10 +56,18 @@ export async function processNotificationsAction() {
       const dueTime = assignment?.time || exam?.time;
       const dueDateDisplay = dueTime ? `${dueDate} at ${dueTime}` : dueDate;
 
-      const timeText = daysBefore === 1 ? "due tomorrow" : `due in ${daysBefore} days`;
+      const daysText = daysBefore === 1 ? "tomorrow" : `in ${daysBefore} days`;
 
-      const title = `${itemName} (${timeText}) [${typeLabel}]`;
-      const body = `Preset: ${item.preset.name} | Due Date: ${dueDateDisplay}`;
+      let title: string;
+      let body: string;
+
+      if (isAssignment) {
+        title = `Assignment due ${daysText}!`;
+        body = `${itemName} is due ${daysText}! | Date: ${dueDateDisplay}`;
+      } else {
+        title = `Exam ${daysText}!`;
+        body = `${itemName} is ${daysText}! | Date: ${dueDateDisplay}`;
+      }
 
       const notificationType = isAssignment ? "assignment_reminder" : "exam_reminder";
       await createUserNotification(userId, title, body, notificationType);
