@@ -34,6 +34,14 @@ import {
   ClipboardList,
 } from "lucide-react";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   createPresetAction,
   deletePresetAction,
   activatePresetForExamsAction,
@@ -136,10 +144,13 @@ type Limits = {
   timesPerPreset: number;
 };
 
+type ActivatingButton = { presetId: number; type: "exams" | "assignments" | "applyExams" | "applyAssignments" } | null;
+
 function PresetCard({
   preset,
   limits,
   hasAssignmentsPermission,
+  activatingButton,
   onActivateForExams,
   onActivateForAssignments,
   onApplyToAllExams,
@@ -152,6 +163,7 @@ function PresetCard({
   preset: Preset;
   limits: Limits;
   hasAssignmentsPermission: boolean;
+  activatingButton: ActivatingButton;
   onActivateForExams: () => void;
   onActivateForAssignments: () => void;
   onApplyToAllExams: () => void;
@@ -165,6 +177,13 @@ function PresetCard({
   const [editName, setEditName] = React.useState(preset.name);
   const [daysBefore, setDaysBefore] = React.useState("1");
   const [time, setTime] = React.useState("09:00");
+  const [isAddTimeOpen, setIsAddTimeOpen] = React.useState(false);
+
+  const isActivating = activatingButton !== null;
+  const isActivatingExams = activatingButton?.presetId === preset.id && activatingButton?.type === "exams";
+  const isActivatingAssignments = activatingButton?.presetId === preset.id && activatingButton?.type === "assignments";
+  const isApplyingExams = activatingButton?.presetId === preset.id && activatingButton?.type === "applyExams";
+  const isApplyingAssignments = activatingButton?.presetId === preset.id && activatingButton?.type === "applyAssignments";
 
   const handleSaveEdit = () => {
     if (editName.trim()) {
@@ -180,6 +199,7 @@ function PresetCard({
       onAddTime(days, time);
       setDaysBefore("1");
       setTime("09:00");
+      setIsAddTimeOpen(false);
     }
   };
 
@@ -222,6 +242,7 @@ function PresetCard({
                 size="icon"
                 onClick={() => setIsEditing(true)}
                 title="Edit"
+                disabled={isActivating}
               >
                 <Edit2 className="size-4" />
               </Button>
@@ -231,6 +252,7 @@ function PresetCard({
               size="icon"
               onClick={onDelete}
               title="Delete"
+              disabled={isActivating}
             >
               <Trash2 className="size-4 text-destructive" />
             </Button>
@@ -245,19 +267,22 @@ function PresetCard({
               size="sm"
               onClick={onActivateForExams}
               className="flex-1"
+              disabled={isActivating && !isActivatingExams}
             >
+              {isActivatingExams && <Spinner className="size-4 mr-2" />}
               <FileText className="size-4 mr-2" />
-              {preset.isActiveForExams ? "Active for Exams" : "Activate for Exams"}
+              {isActivatingExams ? "Activating..." : preset.isActiveForExams ? "Active for Exams" : "Activate for Exams"}
             </Button>
             <Button
               variant={preset.isActiveForAssignments ? "default" : "outline"}
               size="sm"
               onClick={onActivateForAssignments}
               className="flex-1"
-              disabled={!hasAssignmentsPermission}
+              disabled={!hasAssignmentsPermission || (isActivating && !isActivatingAssignments)}
             >
+              {isActivatingAssignments && <Spinner className="size-4 mr-2" />}
               <ClipboardList className="size-4 mr-2" />
-              {preset.isActiveForAssignments ? "Active for Assignments" : "Activate for Assignments"}
+              {isActivatingAssignments ? "Activating..." : preset.isActiveForAssignments ? "Active for Assignments" : "Activate for Assignments"}
             </Button>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
@@ -266,19 +291,22 @@ function PresetCard({
               size="sm"
               onClick={onApplyToAllExams}
               className="flex-1"
+              disabled={isActivating && !isApplyingExams}
             >
+              {isApplyingExams && <Spinner className="size-4 mr-2" />}
               <FileText className="size-4 mr-2" />
-              Apply to All Exams
+              {isApplyingExams ? "Applying..." : "Apply to All Exams"}
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={onApplyToAllAssignments}
               className="flex-1"
-              disabled={!hasAssignmentsPermission}
+              disabled={!hasAssignmentsPermission || (isActivating && !isApplyingAssignments)}
             >
+              {isApplyingAssignments && <Spinner className="size-4 mr-2" />}
               <ClipboardList className="size-4 mr-2" />
-              Apply to All Assignments
+              {isApplyingAssignments ? "Applying..." : "Apply to All Assignments"}
             </Button>
           </div>
         </div>
@@ -304,6 +332,7 @@ function PresetCard({
                   variant="ghost"
                   size="icon"
                   onClick={() => onRemoveTime(t.id)}
+                  disabled={isActivating}
                 >
                   <Trash2 className="size-4" />
                 </Button>
@@ -315,35 +344,51 @@ function PresetCard({
         )}
 
         {preset.times.length < limits.timesPerPreset && (
-          <form onSubmit={handleAddTime} className="border-t pt-4">
-            <FieldGroup>
-              <Field>
-                <FieldLabel>Add notification time</FieldLabel>
-<div className="flex flex-wrap gap-2">
-                   <div className="flex items-center gap-2">
-                     <Input
-                      type="number"
-                      min="0"
-                      max="30"
-                      value={daysBefore}
-                      onChange={(e) => setDaysBefore(e.target.value)}
-                      className="w-20"
-                    />
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">
-                      days before at:
-                    </span>
+          <Dialog open={isAddTimeOpen} onOpenChange={setIsAddTimeOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full" disabled={isActivating}>
+                <Plus className="size-4 mr-2" />
+                Add notification time
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add notification time</DialogTitle>
+                <DialogDescription>
+                  {limits.timesPerPreset - preset.times.length} remaining for this preset
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleAddTime}>
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel>When to notify</FieldLabel>
+                    <div className="flex flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="30"
+                          value={daysBefore}
+                          onChange={(e) => setDaysBefore(e.target.value)}
+                          className="w-20"
+                        />
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">
+                          days before at:
+                        </span>
+                      </div>
+                      <TimePicker value={time} onChange={setTime} />
+                    </div>
+                  </Field>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setIsAddTimeOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">Add</Button>
                   </div>
-                  <TimePicker value={time} onChange={setTime} />
-                  <Button type="submit" size="sm">
-                    <Plus className="size-4" />
-                  </Button>
-                </div>
-                <FieldDescription>
-                  {limits.timesPerPreset - preset.times.length} remaining
-                </FieldDescription>
-              </Field>
-            </FieldGroup>
-          </form>
+                </FieldGroup>
+              </form>
+            </DialogContent>
+          </Dialog>
         )}
       </CardContent>
     </Card>
@@ -481,6 +526,7 @@ export default function NotificationsPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [isInitialLoading, setIsInitialLoading] = React.useState(true);
   const [hasAssignmentsPermission, setHasAssignmentsPermission] = React.useState<boolean | null>(null);
+  const [activatingButton, setActivatingButton] = React.useState<ActivatingButton>(null);
 
   const role = session?.user?.role as "free" | "basic" | "pro" | "admin" | undefined;
 
@@ -533,30 +579,50 @@ export default function NotificationsPage() {
   }
 
   async function handleActivateForExams(presetId: number) {
-    await activatePresetForExamsAction(presetId);
-    await loadPresets();
+    setActivatingButton({ presetId, type: "exams" });
+    try {
+      await activatePresetForExamsAction(presetId);
+      await loadPresets();
+    } finally {
+      setActivatingButton(null);
+    }
   }
 
   async function handleActivateForAssignments(presetId: number) {
-    await activatePresetForAssignmentsAction(presetId);
-    await loadPresets();
+    setActivatingButton({ presetId, type: "assignments" });
+    try {
+      await activatePresetForAssignmentsAction(presetId);
+      await loadPresets();
+    } finally {
+      setActivatingButton(null);
+    }
   }
 
   async function handleApplyToAllExams(presetId: number) {
-    const result = await applyPresetToAllCurrentExamsAction(presetId);
-    if ("error" in result) {
-      toast.error(result.error);
-    } else {
-      toast.success(`Applied to ${result.applied} exam(s)`);
+    setActivatingButton({ presetId, type: "applyExams" });
+    try {
+      const result = await applyPresetToAllCurrentExamsAction(presetId);
+      if ("error" in result) {
+        toast.error(result.error);
+      } else {
+        toast.success(`Applied to ${result.applied} exam(s)`);
+      }
+    } finally {
+      setActivatingButton(null);
     }
   }
 
   async function handleApplyToAllAssignments(presetId: number) {
-    const result = await applyPresetToAllCurrentAssignmentsAction(presetId);
-    if ("error" in result) {
-      toast.error(result.error);
-    } else {
-      toast.success(`Applied to ${result.applied} assignment(s)`);
+    setActivatingButton({ presetId, type: "applyAssignments" });
+    try {
+      const result = await applyPresetToAllCurrentAssignmentsAction(presetId);
+      if ("error" in result) {
+        toast.error(result.error);
+      } else {
+        toast.success(`Applied to ${result.applied} assignment(s)`);
+      }
+    } finally {
+      setActivatingButton(null);
     }
   }
 
@@ -610,6 +676,7 @@ export default function NotificationsPage() {
                   preset={preset}
                   limits={limits}
                   hasAssignmentsPermission={hasAssignmentsPermission ?? false}
+                  activatingButton={activatingButton}
                   onActivateForExams={() => handleActivateForExams(preset.id)}
                   onActivateForAssignments={() => handleActivateForAssignments(preset.id)}
                   onApplyToAllExams={() => handleApplyToAllExams(preset.id)}
