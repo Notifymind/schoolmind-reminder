@@ -327,6 +327,8 @@ export async function applyPresetToAllAssignments(userId: string, presetId: numb
 
 export async function getPendingNotificationsForCron() {
   const now = new Date();
+  const bufferMs = 5 * 60 * 1000;
+  const nowWithBuffer = new Date(now.getTime() + bufferMs);
   const results: {
     userId: string;
     examId: number | null;
@@ -363,7 +365,7 @@ export async function getPendingNotificationsForCron() {
         const [hours, minutes] = time.time.split(":").map(Number);
         notificationTime.setHours(hours, minutes, 0, 0);
 
-        if (notificationTime <= now) {
+        if (notificationTime <= nowWithBuffer) {
           const alreadySent = await db
             .select()
             .from(sentNotifications)
@@ -417,7 +419,7 @@ export async function getPendingNotificationsForCron() {
         const [hours, minutes] = time.time.split(":").map(Number);
         notificationTime.setHours(hours, minutes, 0, 0);
 
-        if (notificationTime <= now) {
+        if (notificationTime <= nowWithBuffer) {
           const alreadySent = await db
             .select()
             .from(sentNotifications)
@@ -467,7 +469,7 @@ export async function getPendingNotificationsForCron() {
         const [hours, minutes] = time.time.split(":").map(Number);
         notificationTime.setHours(hours, minutes, 0, 0);
 
-        if (notificationTime <= now) {
+        if (notificationTime <= nowWithBuffer) {
           const alreadySent = await db
             .select()
             .from(sentNotifications)
@@ -504,7 +506,7 @@ export async function getPendingNotificationsForCron() {
         const [hours, minutes] = time.time.split(":").map(Number);
         notificationTime.setHours(hours, minutes, 0, 0);
 
-        if (notificationTime <= now) {
+        if (notificationTime <= nowWithBuffer) {
           const alreadySent = await db
             .select()
             .from(sentNotifications)
