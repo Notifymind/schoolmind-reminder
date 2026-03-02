@@ -82,7 +82,7 @@ function AssignmentCard({
 }) {
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const getDaysText = () => {
+  const getDaysText = (): { text: string; isPast: boolean; isUrgent: boolean } | null => {
     if (!assignment.dueDate) return null;
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -92,13 +92,14 @@ function AssignmentCard({
       (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
     );
 
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Tomorrow";
-    if (diffDays > 1) return `In ${diffDays} days`;
-    return `${Math.abs(diffDays)} days ago`;
+    if (diffDays < 0) return { text: `${Math.abs(diffDays)} days ago`, isPast: true, isUrgent: false };
+    if (diffDays === 0) return { text: "Today", isPast: false, isUrgent: true };
+    if (diffDays === 1) return { text: "Tomorrow", isPast: false, isUrgent: true };
+    if (diffDays <= 7) return { text: `In ${diffDays} days`, isPast: false, isUrgent: true };
+    return { text: `In ${diffDays} days`, isPast: false, isUrgent: false };
   };
 
-  const daysText = getDaysText();
+  const daysInfo = getDaysText();
 
   const handleSelectPreset = async (value: string) => {
     setIsLoading(true);
@@ -135,10 +136,10 @@ function AssignmentCard({
                   {assignment.time}
                 </span>
               )}
-              {daysText && (
-                <span className="flex items-center gap-1">
+              {daysInfo && (
+                <span className={`flex items-center gap-1 ${daysInfo.isUrgent ? "text-orange-500" : ""}`}>
                   <CalendarClock className="size-3" />
-                  {daysText}
+                  {daysInfo.text}
                 </span>
               )}
               {assignment.type && (
@@ -148,40 +149,42 @@ function AssignmentCard({
               )}
             </div>
           </div>
-          <CardAction>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" disabled={isLoading}>
-                  <Bell className="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Notification Preset</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup
-                  value={
-                    preset
-                      ? String(preset.id)
-                      : activePreset
-                        ? String(activePreset.id)
-                        : ""
-                  }
-                  onValueChange={handleSelectPreset}
-                >
-                  {presets.map((p) => (
-                    <DropdownMenuRadioItem key={p.id} value={String(p.id)}>
-                      {p.name}
-                      {p.isActiveForAssignments && (
-                        <span className="text-xs text-muted-foreground ml-1">
-                          (default)
-                        </span>
-                      )}
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </CardAction>
+          {!daysInfo?.isPast && (
+            <CardAction>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" disabled={isLoading}>
+                    <Bell className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Notification Preset</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup
+                    value={
+                      preset
+                        ? String(preset.id)
+                        : activePreset
+                          ? String(activePreset.id)
+                          : ""
+                    }
+                    onValueChange={handleSelectPreset}
+                  >
+                    {presets.map((p) => (
+                      <DropdownMenuRadioItem key={p.id} value={String(p.id)}>
+                        {p.name}
+                        {p.isActiveForAssignments && (
+                          <span className="text-xs text-muted-foreground ml-1">
+                            (default)
+                          </span>
+                        )}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </CardAction>
+          )}
         </div>
       </CardHeader>
       {assignment.description && (
