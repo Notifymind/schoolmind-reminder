@@ -77,11 +77,6 @@ export function NotificationFab() {
             <div className="flex flex-col">
               {unreadNotifications.length > 0 && (
                 <>
-                  <div className="flex items-center gap-2 px-2 py-1.5">
-                    <Separator className="flex-1 bg-destructive" />
-                    <span className="text-xs font-medium text-destructive">NEW</span>
-                    <Separator className="flex-1 bg-destructive" />
-                  </div>
                   {unreadNotifications.map((notification) => (
                     <div
                       key={notification.id}
@@ -91,6 +86,11 @@ export function NotificationFab() {
                       <span className="text-xs text-muted-foreground">{notification.message}</span>
                     </div>
                   ))}
+                  <div className="flex items-center gap-2 px-2 py-1.5">
+                    <Separator className="flex-1 bg-destructive" />
+                    <span className="text-xs font-medium text-destructive">NEW</span>
+                    <Separator className="flex-1 bg-destructive" />
+                  </div>
                 </>
               )}
               {readNotifications.length > 0 && (
