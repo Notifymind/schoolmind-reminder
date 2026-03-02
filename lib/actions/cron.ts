@@ -50,26 +50,16 @@ export async function processNotificationsAction() {
       const assignment = isAssignment ? examOrAssignment as Assignment : null;
       const exam = !isAssignment ? examOrAssignment as Exam : null;
 
-      let title: string;
-      let body: string;
+      const itemName = assignment?.title || exam?.title || assignment?.subject || exam?.subject || "Untitled";
+      const typeLabel = assignment ? "Assignment" : "Exam";
+      const dueDate = assignment?.date || exam?.date || "TBD";
+      const dueTime = assignment?.time || exam?.time;
+      const dueDateDisplay = dueTime ? `${dueDate} at ${dueTime}` : dueDate;
 
-      if (assignment) {
-        title = "📝 Assignment Reminder";
-        body =
-          `${assignment.title || assignment.subject || "Untitled Assignment"}\n` +
-          `📅 ${assignment.date || "TBD"} at ${assignment.time || "TBD"}\n` +
-          `This assignment is due in ${daysBefore} day(s)!`;
-      } else if (exam) {
-        title = "📚 Exam Reminder";
-        body =
-          `${exam.title || exam.subject || "Untitled Exam"}\n` +
-          `📅 ${exam.date || "TBD"} at ${exam.time || "TBD"}\n` +
-          `This exam is in ${daysBefore} day(s)!`;
-      } else {
-        console.error("[Notification] No exam or assignment found");
-        results.errors++;
-        continue;
-      }
+      const timeText = daysBefore === 1 ? "due tomorrow" : `due in ${daysBefore} days`;
+
+      const title = `${itemName} (${timeText}) [${typeLabel}]`;
+      const body = `Preset: ${item.preset.name} | Due Date: ${dueDateDisplay}`;
 
       const notificationType = isAssignment ? "assignment_reminder" : "exam_reminder";
       await createUserNotification(userId, title, body, notificationType);
