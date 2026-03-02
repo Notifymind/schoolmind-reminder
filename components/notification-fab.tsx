@@ -64,7 +64,7 @@ export function NotificationFab() {
           </div>
         </button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="h-[50vh] rounded-t-2xl" showCloseButton={false}>
+      <SheetContent side="bottom" className="h-[70vh] rounded-t-2xl" showCloseButton={false}>
         <SheetHeader className="pb-2">
           <SheetTitle className="text-center">Notifications</SheetTitle>
         </SheetHeader>
