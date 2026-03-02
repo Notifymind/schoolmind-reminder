@@ -142,7 +142,6 @@ const navItems = [
     title: "Home",
     url: "/app",
     icon: Home,
-    hideOnMobile: true,
   },
   {
     title: "Exams",
@@ -174,14 +173,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
   const { data: session } = authClient.useSession()
-  const [isSmallScreen, setIsSmallScreen] = React.useState(false)
-
-  React.useEffect(() => {
-    const checkScreenSize = () => setIsSmallScreen(window.innerWidth < 768)
-    checkScreenSize()
-    window.addEventListener("resize", checkScreenSize)
-    return () => window.removeEventListener("resize", checkScreenSize)
-  }, [])
 
   const userRole = session?.user?.role as "admin" | "seller" | undefined
   const canAccessSellerPlatform = userRole
@@ -212,7 +203,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href={isSmallScreen ? "/app/exams" : "/app"}>
+              <Link href="/app">
                 <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                   <Bell className="size-4" />
                 </div>
@@ -231,8 +222,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu>
               {navItems.map((item) =>
                 item.subItems ? (
-                  <SidebarMenuItem key={item.title} className={item.hideOnMobile ? "hidden md:block" : ""}>
-                    <SidebarMenuButton asChild tooltip={item.title} isActive={item.subItems.some((sub) => pathname === sub.url)}>
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild tooltip={item.title} isActive={item.subItems?.some((sub) => pathname === sub.url)}>
                       <Link href={item.url}>
                         {item.icon && <item.icon />}
                         <span>{item.title}</span>
@@ -251,7 +242,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </SidebarMenuSub>
                   </SidebarMenuItem>
                 ) : (
-                  <SidebarMenuItem key={item.title} className={item.hideOnMobile ? "hidden md:block" : ""}>
+                  <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild tooltip={item.title} isActive={pathname === item.url}>
                       <Link href={item.url}>
                         {item.icon && <item.icon />}
@@ -341,7 +332,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarMenuItem>
+          <SidebarMenuItem className="hidden md:block">
             <NotificationDropdown />
           </SidebarMenuItem>
           <SidebarMenuItem>
