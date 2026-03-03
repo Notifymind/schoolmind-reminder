@@ -53,6 +53,15 @@ export default function SubscriptionPage() {
   const userRole = session?.user?.role as string | undefined;
   const isPro = userRole === "pro";
 
+  const searchParams = useSearchParams();
+
+  React.useEffect(() => {
+    const codeParam = searchParams.get("code");
+    if (codeParam) {
+      setCode(codeParam.toUpperCase());
+    }
+  }, [searchParams]);
+
   React.useEffect(() => {
     async function loadStatus() {
       const status = await getSubscriptionStatusAction();
