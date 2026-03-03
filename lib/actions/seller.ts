@@ -17,8 +17,8 @@ export type CodeType = "basic" | "pro" | "upgrade";
 export type CodeDuration = "month" | "school_year";
 
 const PRICING = {
-  basic: { month: 3, school_year: 24 },
-  pro: { month: 5, school_year: 40 },
+  basic: { month: 2, school_year: 16 },
+  pro: { month: 4, school_year: 24 },
   upgrade: { month: 2, school_year: 16 },
 } as const;
 
