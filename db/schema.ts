@@ -263,8 +263,8 @@ export const notificationPreferences = pgTable(
     examId: integer("exam_id").references(() => exams.id, { onDelete: "cascade" }),
     assignmentId: integer("assignment_id").references(() => assignments.id, { onDelete: "cascade" }),
     presetId: text("preset_id")
-      .notNull()
       .references(() => notificationPresets.id, { onDelete: "cascade" }),
+    disabled: boolean("disabled").default(false).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [

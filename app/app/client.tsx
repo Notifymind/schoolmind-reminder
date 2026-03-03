@@ -36,6 +36,8 @@ import {
   getPresetsAction,
   getExamPresetsAction,
   getAssignmentPresetsAction,
+  disableNotificationsForExamAction,
+  disableNotificationsForAssignmentAction,
 } from "@/lib/actions/notifications";
 
 type Exam = {
@@ -88,11 +90,13 @@ type Preset = {
 type ExamPreset = {
   examId: number;
   preset: Preset | null;
+  disabled: boolean;
 };
 
 type AssignmentPreset = {
   assignmentId: number;
   preset: Preset | null;
+  disabled: boolean;
 };
 
 function getDaysText(dueDate: Date | null): { text: string; isPast: boolean; isUrgent: boolean } | null {
@@ -116,11 +120,13 @@ function ExamCard({
   exam,
   preset,
   presets,
+  disabled,
   onPresetChange,
 }: {
   exam: Exam;
   preset: Preset | null;
   presets: Preset[];
+  disabled: boolean;
   onPresetChange: () => void;
 }) {
   const daysInfo = getDaysText(exam.dueDate);
@@ -128,7 +134,11 @@ function ExamCard({
 
   const handleSelectPreset = async (value: string) => {
     setIsLoading(true);
-    await applyPresetToExamAction(exam.id, value);
+    if (value === "disabled") {
+      await disableNotificationsForExamAction(exam.id);
+    } else {
+      await applyPresetToExamAction(exam.id, value);
+    }
     setIsLoading(false);
     onPresetChange();
   };
@@ -177,7 +187,7 @@ function ExamCard({
             <CardAction>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" disabled={isLoading}>
+                  <Button variant="ghost" size="icon" disabled={isLoading} className={disabled ? "text-muted-foreground" : ""}>
                     <Bell className="size-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -186,11 +196,13 @@ function ExamCard({
                   <DropdownMenuSeparator />
                   <DropdownMenuRadioGroup
                     value={
-                      preset
-                        ? String(preset.id)
-                        : activePreset
-                          ? String(activePreset.id)
-                          : ""
+                      disabled
+                        ? "disabled"
+                        : preset
+                          ? String(preset.id)
+                          : activePreset
+                            ? String(activePreset.id)
+                            : ""
                     }
                     onValueChange={handleSelectPreset}
                   >
@@ -204,6 +216,10 @@ function ExamCard({
                         )}
                       </DropdownMenuRadioItem>
                     ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioItem value="disabled">
+                      Disable Notifications
+                    </DropdownMenuRadioItem>
                   </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -226,11 +242,13 @@ function AssignmentCard({
   assignment,
   preset,
   presets,
+  disabled,
   onPresetChange,
 }: {
   assignment: Assignment;
   preset: Preset | null;
   presets: Preset[];
+  disabled: boolean;
   onPresetChange: () => void;
 }) {
   const daysInfo = getDaysText(assignment.dueDate);
@@ -238,7 +256,11 @@ function AssignmentCard({
 
   const handleSelectPreset = async (value: string) => {
     setIsLoading(true);
-    await applyPresetToAssignmentAction(assignment.id, value);
+    if (value === "disabled") {
+      await disableNotificationsForAssignmentAction(assignment.id);
+    } else {
+      await applyPresetToAssignmentAction(assignment.id, value);
+    }
     setIsLoading(false);
     onPresetChange();
   };
@@ -287,7 +309,7 @@ function AssignmentCard({
             <CardAction>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" disabled={isLoading}>
+                  <Button variant="ghost" size="icon" disabled={isLoading} className={disabled ? "text-muted-foreground" : ""}>
                     <Bell className="size-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -296,11 +318,13 @@ function AssignmentCard({
                   <DropdownMenuSeparator />
                   <DropdownMenuRadioGroup
                     value={
-                      preset
-                        ? String(preset.id)
-                        : activePreset
-                          ? String(activePreset.id)
-                          : ""
+                      disabled
+                        ? "disabled"
+                        : preset
+                          ? String(preset.id)
+                          : activePreset
+                            ? String(activePreset.id)
+                            : ""
                     }
                     onValueChange={handleSelectPreset}
                   >
@@ -314,6 +338,10 @@ function AssignmentCard({
                         )}
                       </DropdownMenuRadioItem>
                     ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioItem value="disabled">
+                      Disable Notifications
+                    </DropdownMenuRadioItem>
                   </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -389,16 +417,16 @@ export function HomeClient({
     );
   };
 
-  const getPresetForExam = (examId: number): Preset | null => {
+  const getPresetForExam = (examId: number): { preset: Preset | null; disabled: boolean } => {
     const meta = examPresets.find((ep) => ep.examId === examId);
-    return meta?.preset ?? null;
+    return { preset: meta?.preset ?? null, disabled: meta?.disabled ?? false };
   };
 
-  const getPresetForAssignment = (assignmentId: number): Preset | null => {
+  const getPresetForAssignment = (assignmentId: number): { preset: Preset | null; disabled: boolean } => {
     const meta = assignmentPresets.find(
       (ap) => ap.assignmentId === assignmentId,
     );
-    return meta?.preset ?? null;
+    return { preset: meta?.preset ?? null, disabled: meta?.disabled ?? false };
   };
 
   if (!isLoggedIn) {
@@ -448,15 +476,19 @@ export function HomeClient({
           </Card>
         ) : (
           <div className="space-y-3">
-            {exams.map((exam) => (
-              <ExamCard
-                key={exam.id}
-                exam={exam}
-                preset={getPresetForExam(exam.id)}
-                presets={presets}
-                onPresetChange={refreshData}
-              />
-            ))}
+            {exams.map((exam) => {
+              const { preset, disabled } = getPresetForExam(exam.id);
+              return (
+                <ExamCard
+                  key={exam.id}
+                  exam={exam}
+                  preset={preset}
+                  presets={presets}
+                  disabled={disabled}
+                  onPresetChange={refreshData}
+                />
+              );
+            })}
           </div>
         )}
       </div>
@@ -484,15 +516,19 @@ export function HomeClient({
           </Card>
         ) : (
           <div className="space-y-3">
-            {assignments.map((assignment) => (
-              <AssignmentCard
-                key={assignment.id}
-                assignment={assignment}
-                preset={getPresetForAssignment(assignment.id)}
-                presets={presets}
-                onPresetChange={refreshData}
-              />
-            ))}
+            {assignments.map((assignment) => {
+              const { preset, disabled } = getPresetForAssignment(assignment.id);
+              return (
+                <AssignmentCard
+                  key={assignment.id}
+                  assignment={assignment}
+                  preset={preset}
+                  presets={presets}
+                  disabled={disabled}
+                  onPresetChange={refreshData}
+                />
+              );
+            })}
           </div>
         )}
       </div>

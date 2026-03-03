@@ -29,6 +29,7 @@ import {
   applyPresetToAssignmentAction,
   getPresetsAction,
   getAssignmentPresetsAction,
+  disableNotificationsForAssignmentAction,
 } from "@/lib/actions/notifications";
 
 type Assignment = {
@@ -68,17 +69,20 @@ type Preset = {
 type AssignmentPreset = {
   assignmentId: number;
   preset: Preset | null;
+  disabled: boolean;
 };
 
 function AssignmentCard({
   assignment,
   preset,
   presets,
+  disabled,
   onPresetChange,
 }: {
   assignment: Assignment;
   preset: Preset | null;
   presets: Preset[];
+  disabled: boolean;
   onPresetChange: () => void;
 }) {
   const router = useRouter();
@@ -105,7 +109,11 @@ function AssignmentCard({
 
   const handleSelectPreset = async (value: string) => {
     setIsLoading(true);
-    await applyPresetToAssignmentAction(assignment.id, value);
+    if (value === "disabled") {
+      await disableNotificationsForAssignmentAction(assignment.id);
+    } else {
+      await applyPresetToAssignmentAction(assignment.id, value);
+    }
     setIsLoading(false);
     onPresetChange();
   };
@@ -154,7 +162,7 @@ function AssignmentCard({
             <CardAction>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" disabled={isLoading}>
+                  <Button variant="ghost" size="icon" disabled={isLoading} className={disabled ? "text-muted-foreground" : ""}>
                     <Bell className="size-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -163,11 +171,13 @@ function AssignmentCard({
                   <DropdownMenuSeparator />
                   <DropdownMenuRadioGroup
                     value={
-                      preset
-                        ? String(preset.id)
-                        : activePreset
-                          ? String(activePreset.id)
-                          : ""
+                      disabled
+                        ? "disabled"
+                        : preset
+                          ? String(preset.id)
+                          : activePreset
+                            ? String(activePreset.id)
+                            : ""
                     }
                     onValueChange={handleSelectPreset}
                   >
@@ -181,6 +191,10 @@ function AssignmentCard({
                         )}
                       </DropdownMenuRadioItem>
                     ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioItem value="disabled">
+                      Disable Notifications
+                    </DropdownMenuRadioItem>
                   </DropdownMenuRadioGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => router.push("/app/notifications")}>
@@ -243,9 +257,9 @@ export function AssignmentsClient({
     setAssignmentPresets(assignmentPresetsResult.assignmentPresets as AssignmentPreset[]);
   };
 
-  const getPresetForAssignment = (assignmentId: number): Preset | null => {
+  const getPresetForAssignment = (assignmentId: number): { preset: Preset | null; disabled: boolean } => {
     const meta = assignmentPresets.find((ap) => ap.assignmentId === assignmentId);
-    return meta?.preset ?? null;
+    return { preset: meta?.preset ?? null, disabled: meta?.disabled ?? false };
   };
 
   const handlePageChange = (page: number) => {
@@ -285,15 +299,19 @@ export function AssignmentsClient({
           <p className="text-muted-foreground">No assignments scheduled yet.</p>
         </div>
       )}
-      {assignments.map((assignment) => (
-        <AssignmentCard
-          key={assignment.id}
-          assignment={assignment}
-          preset={getPresetForAssignment(assignment.id)}
-          presets={presets}
-          onPresetChange={refreshData}
-        />
-      ))}
+      {assignments.map((assignment) => {
+        const { preset, disabled } = getPresetForAssignment(assignment.id);
+        return (
+          <AssignmentCard
+            key={assignment.id}
+            assignment={assignment}
+            preset={preset}
+            presets={presets}
+            disabled={disabled}
+            onPresetChange={refreshData}
+          />
+        );
+      })}
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}

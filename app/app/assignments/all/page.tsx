@@ -29,6 +29,7 @@ type Preset = {
 type AssignmentPreset = {
   assignmentId: number;
   preset: Preset | null;
+  disabled: boolean;
 };
 const ITEMS_PER_PAGE = 10
 export default async function AssignmentsPage(props: { searchParams: Promise<{ page?: string }> }) {
@@ -71,7 +72,7 @@ export default async function AssignmentsPage(props: { searchParams: Promise<{ p
       if (assignmentsList.length > 0) {
         const assignmentIds = assignmentsList.map(a => a.id)
         const prefs = await getNotificationPreferencesForAssignments(session.user.id, assignmentIds)
-        const presetIds = [...new Set(prefs.map(p => p.presetId))]
+        const presetIds = [...new Set(prefs.map(p => p.presetId).filter((id): id is string => id !== null))]
         const presetDetails = await Promise.all(
           presetIds.map(async (id) => {
             const preset = await getNotificationPresetById(id, session.user.id)
@@ -86,7 +87,8 @@ export default async function AssignmentsPage(props: { searchParams: Promise<{ p
         })
         assignmentPresets = prefs.map(p => ({
           assignmentId: p.assignmentId!,
-          preset: presetMap.get(p.presetId) ?? null
+          preset: p.presetId ? presetMap.get(p.presetId) ?? null : null,
+          disabled: p.disabled
         }))
       }
     }

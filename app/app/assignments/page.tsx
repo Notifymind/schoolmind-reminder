@@ -29,6 +29,7 @@ type Preset = {
 type AssignmentPreset = {
   assignmentId: number;
   preset: Preset | null;
+  disabled: boolean;
 };
 export default async function UpcomingAssignmentsPage() {
   const session = await auth.api.getSession({
@@ -67,7 +68,7 @@ export default async function UpcomingAssignmentsPage() {
       if (assignmentsList.length > 0) {
         const assignmentIds = assignmentsList.map(a => a.id)
         const prefs = await getNotificationPreferencesForAssignments(session.user.id, assignmentIds)
-        const presetIds = [...new Set(prefs.map(p => p.presetId))]
+        const presetIds = [...new Set(prefs.map(p => p.presetId).filter((id): id is string => id !== null))]
         const presetDetails = await Promise.all(
           presetIds.map(async (id) => {
             const preset = await getNotificationPresetById(id, session.user.id)
@@ -82,7 +83,8 @@ export default async function UpcomingAssignmentsPage() {
         })
         assignmentPresets = prefs.map(p => ({
           assignmentId: p.assignmentId!,
-          preset: presetMap.get(p.presetId) ?? null
+          preset: p.presetId ? presetMap.get(p.presetId) ?? null : null,
+          disabled: p.disabled
         }))
       }
     }

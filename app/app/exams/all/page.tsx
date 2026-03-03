@@ -29,6 +29,7 @@ type Preset = {
 type ExamPreset = {
   examId: number;
   preset: Preset | null;
+  disabled: boolean;
 };
 const ITEMS_PER_PAGE = 10
 export default async function ExamsPage(props: { searchParams: Promise<{ page?: string }> }) {
@@ -69,7 +70,7 @@ export default async function ExamsPage(props: { searchParams: Promise<{ page?: 
       if (examsList.length > 0) {
         const examIds = examsList.map(e => e.id)
         const prefs = await getNotificationPreferencesForExams(session.user.id, examIds)
-        const presetIds = [...new Set(prefs.map(p => p.presetId))]
+        const presetIds = [...new Set(prefs.map(p => p.presetId).filter((id): id is string => id !== null))]
         const presetDetails = await Promise.all(
           presetIds.map(async (id) => {
             const preset = await getNotificationPresetById(id, session.user.id)
@@ -84,7 +85,8 @@ export default async function ExamsPage(props: { searchParams: Promise<{ page?: 
         })
         examPresets = prefs.map(p => ({
           examId: p.examId!,
-          preset: presetMap.get(p.presetId) ?? null
+          preset: p.presetId ? presetMap.get(p.presetId) ?? null : null,
+          disabled: p.disabled
         }))
       }
     }

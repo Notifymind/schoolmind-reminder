@@ -31,11 +31,13 @@ type Preset = {
 type ExamPreset = {
   examId: number;
   preset: Preset | null;
+  disabled: boolean;
 };
 
 type AssignmentPreset = {
   assignmentId: number;
   preset: Preset | null;
+  disabled: boolean;
 };
 
 export default async function HomePage() {
@@ -87,7 +89,7 @@ export default async function HomePage() {
         const examIds = examsList.map(e => e.id)
         const prefs = await getNotificationPreferencesForExams(session.user.id, examIds)
         
-        const presetIds = [...new Set(prefs.map(p => p.presetId))]
+        const presetIds = [...new Set(prefs.map(p => p.presetId).filter((id): id is string => id !== null))]
         const presetDetails = await Promise.all(
           presetIds.map(async (id) => {
             const preset = await getNotificationPresetById(id, session.user!.id)
@@ -104,7 +106,8 @@ export default async function HomePage() {
 
         examPresets = prefs.map(p => ({
           examId: p.examId!,
-          preset: presetMap.get(p.presetId) ?? null
+          preset: p.presetId ? presetMap.get(p.presetId) ?? null : null,
+          disabled: p.disabled
         }))
       }
 
@@ -112,7 +115,7 @@ export default async function HomePage() {
         const assignmentIds = assignmentsList.map(a => a.id)
         const prefs = await getNotificationPreferencesForAssignments(session.user.id, assignmentIds)
         
-        const presetIds = [...new Set(prefs.map(p => p.presetId))]
+        const presetIds = [...new Set(prefs.map(p => p.presetId).filter((id): id is string => id !== null))]
         const presetDetails = await Promise.all(
           presetIds.map(async (id) => {
             const preset = await getNotificationPresetById(id, session.user!.id)
@@ -129,7 +132,8 @@ export default async function HomePage() {
 
         assignmentPresets = prefs.map(p => ({
           assignmentId: p.assignmentId!,
-          preset: presetMap.get(p.presetId) ?? null
+          preset: p.presetId ? presetMap.get(p.presetId) ?? null : null,
+          disabled: p.disabled
         }))
       }
     }

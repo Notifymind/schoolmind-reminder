@@ -10,6 +10,7 @@ type Preset = Awaited<ReturnType<typeof getPresetsWithTimes>>[number]
 type ExamPreset = {
   examId: number
   preset: Preset | null
+  disabled: boolean
 }
 
 export default async function UpcomingExamsPage() {
@@ -56,7 +57,7 @@ export default async function UpcomingExamsPage() {
         const examIds = examsList.map(e => e.id)
         const prefs = await getNotificationPreferencesForExams(session.user.id, examIds)
         
-        const presetIds = [...new Set(prefs.map(p => p.presetId))]
+        const presetIds = [...new Set(prefs.map(p => p.presetId).filter((id): id is string => id !== null))]
         const presetDetails = await Promise.all(
           presetIds.map(async (id) => {
             const preset = await getNotificationPresetById(id, session.user.id)
@@ -73,7 +74,8 @@ export default async function UpcomingExamsPage() {
 
         examPresets = prefs.map(p => ({
           examId: p.examId!,
-          preset: presetMap.get(p.presetId) ?? null
+          preset: p.presetId ? presetMap.get(p.presetId) ?? null : null,
+          disabled: p.disabled
         }))
       }
     }

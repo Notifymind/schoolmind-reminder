@@ -21,6 +21,8 @@ import {
   applyPresetToAllAssignments,
   deleteNotificationPreferenceForExam,
   deleteNotificationPreferenceForAssignment,
+  disableNotificationsForExam,
+  disableNotificationsForAssignment,
   getNotificationPreferencesForExams,
   getNotificationPreferencesForAssignments,
   getPresetsWithTimes,
@@ -349,6 +351,19 @@ export async function clearExamPresetAction(examId: number) {
   return { success: true };
 }
 
+export async function disableNotificationsForExamAction(examId: number) {
+  const session = await auth.api.getSession({
+    headers: await import("next/headers").then((m) => m.headers()),
+  });
+
+  if (!session?.user?.id) {
+    return { error: "Not authenticated" };
+  }
+
+  await disableNotificationsForExam(session.user.id, examId);
+  return { success: true };
+}
+
 export async function getExamPresetsAction(examIds: number[]) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
@@ -367,7 +382,7 @@ export async function getExamPresetsAction(examIds: number[]) {
     examIds,
   );
 
-  const presetIds = [...new Set(prefs.map((p) => p.presetId))];
+  const presetIds = [...new Set(prefs.map((p) => p.presetId).filter((id): id is string => id !== null))];
   const presetDetails = await Promise.all(
     presetIds.map(async (id) => {
       const preset = await getNotificationPresetById(id, session.user.id);
@@ -383,7 +398,8 @@ export async function getExamPresetsAction(examIds: number[]) {
 
   const examPresets = prefs.map((p) => ({
     examId: p.examId,
-    preset: presetMap.get(p.presetId) ?? null,
+    preset: p.presetId ? presetMap.get(p.presetId) ?? null : null,
+    disabled: p.disabled,
   }));
 
   return { examPresets };
@@ -434,6 +450,19 @@ export async function clearAssignmentPresetAction(assignmentId: number) {
   return { success: true };
 }
 
+export async function disableNotificationsForAssignmentAction(assignmentId: number) {
+  const session = await auth.api.getSession({
+    headers: await import("next/headers").then((m) => m.headers()),
+  });
+
+  if (!session?.user?.id) {
+    return { error: "Not authenticated" };
+  }
+
+  await disableNotificationsForAssignment(session.user.id, assignmentId);
+  return { success: true };
+}
+
 export async function getAssignmentPresetsAction(assignmentIds: number[]) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
@@ -452,7 +481,7 @@ export async function getAssignmentPresetsAction(assignmentIds: number[]) {
     assignmentIds,
   );
 
-  const presetIds = [...new Set(prefs.map((p) => p.presetId))];
+  const presetIds = [...new Set(prefs.map((p) => p.presetId).filter((id): id is string => id !== null))];
   const presetDetails = await Promise.all(
     presetIds.map(async (id) => {
       const preset = await getNotificationPresetById(id, session.user.id);
@@ -470,7 +499,8 @@ export async function getAssignmentPresetsAction(assignmentIds: number[]) {
 
   const assignmentPresets = prefs.map((p) => ({
     assignmentId: p.assignmentId,
-    preset: presetMap.get(p.presetId) ?? null,
+    preset: p.presetId ? presetMap.get(p.presetId) ?? null : null,
+    disabled: p.disabled,
   }));
 
   return { assignmentPresets };

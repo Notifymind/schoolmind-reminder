@@ -219,13 +219,14 @@ export async function getAssignmentsWithoutPreference(userId: string, className:
 
 export async function createNotificationPreference(
   userId: string,
-  presetId: string,
+  presetId: string | null,
   examId?: number,
-  assignmentId?: number
+  assignmentId?: number,
+  disabled: boolean = false
 ) {
   const result = await db
     .insert(notificationPreferences)
-    .values({ id: generateId(), userId, presetId, examId: examId ?? null, assignmentId: assignmentId ?? null })
+    .values({ id: generateId(), userId, presetId: presetId ?? null, examId: examId ?? null, assignmentId: assignmentId ?? null, disabled })
     .returning();
   return result[0];
 }
@@ -272,6 +273,16 @@ export async function deleteNotificationPreferenceForAssignment(userId: string, 
   await db
     .delete(notificationPreferences)
     .where(and(eq(notificationPreferences.userId, userId), eq(notificationPreferences.assignmentId, assignmentId)));
+}
+
+export async function disableNotificationsForExam(userId: string, examId: number) {
+  await deleteNotificationPreferenceForExam(userId, examId);
+  await createNotificationPreference(userId, null, examId, undefined, true);
+}
+
+export async function disableNotificationsForAssignment(userId: string, assignmentId: number) {
+  await deleteNotificationPreferenceForAssignment(userId, assignmentId);
+  await createNotificationPreference(userId, null, undefined, assignmentId, true);
 }
 
 export async function applyPresetToExam(userId: string, examId: number, presetId: string) {
@@ -340,6 +351,24 @@ export async function getPendingNotificationsForCron() {
     time: typeof notificationTimes.$inferSelect;
   }[] = [];
 
+  const allPrefs = await db.select().from(notificationPreferences);
+  const disabledExamIds = new Set<number>();
+  const disabledAssignmentIds = new Set<number>();
+  const userExamPrefs = new Map<string, Set<number>>();
+  const userAssignmentPrefs = new Map<string, Set<number>>();
+
+  for (const pref of allPrefs) {
+    if (pref.disabled) {
+      if (pref.examId) disabledExamIds.add(pref.examId);
+      if (pref.assignmentId) disabledAssignmentIds.add(pref.assignmentId);
+    } else {
+      if (!userExamPrefs.has(pref.userId)) userExamPrefs.set(pref.userId, new Set());
+      if (!userAssignmentPrefs.has(pref.userId)) userAssignmentPrefs.set(pref.userId, new Set());
+      if (pref.examId) userExamPrefs.get(pref.userId)!.add(pref.examId);
+      if (pref.assignmentId) userAssignmentPrefs.get(pref.userId)!.add(pref.assignmentId);
+    }
+  }
+
   const activeExamPresets = await db
     .select()
     .from(notificationPresets)
@@ -357,8 +386,12 @@ export async function getPendingNotificationsForCron() {
       .from(exams)
       .where(and(eq(exams.className, userClass), gt(exams.createdAt, preset.activatedForExamsAt!)));
 
+    const examPrefsForUser = userExamPrefs.get(preset.userId) ?? new Set();
+
     for (const exam of classExams) {
       if (!exam.dueDate) continue;
+      if (disabledExamIds.has(exam.id)) continue;
+      if (examPrefsForUser.has(exam.id)) continue;
 
       for (const time of times) {
         const notificationTime = new Date(exam.dueDate);
@@ -411,8 +444,12 @@ export async function getPendingNotificationsForCron() {
       .from(assignments)
       .where(and(eq(assignments.className, userClass), gt(assignments.createdAt, preset.activatedForAssignmentsAt!)));
 
+    const assignmentPrefsForUser = userAssignmentPrefs.get(preset.userId) ?? new Set();
+
     for (const assignment of classAssignments) {
       if (!assignment.dueDate) continue;
+      if (disabledAssignmentIds.has(assignment.id)) continue;
+      if (assignmentPrefsForUser.has(assignment.id)) continue;
 
       for (const time of times) {
         const notificationTime = new Date(assignment.dueDate);
@@ -448,9 +485,9 @@ export async function getPendingNotificationsForCron() {
     }
   }
 
-  const prefs = await db.select().from(notificationPreferences);
+  for (const pref of allPrefs) {
+    if (pref.disabled || !pref.presetId) continue;
 
-  for (const pref of prefs) {
     const preset = await db
       .select()
       .from(notificationPresets)
