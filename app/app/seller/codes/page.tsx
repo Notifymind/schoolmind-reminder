@@ -14,10 +14,10 @@ import {
 import { Ticket, Trash2, Plus, AlertCircle, Eye, Copy } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { QRCodeSVG } from "qrcode.react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -328,7 +328,22 @@ export default function CodesPage() {
             </div>
             <div className="rounded-md bg-muted p-4">
               <p className="text-xs text-muted-foreground mb-1">Code</p>
-              <p className="font-mono text-lg select-all">{viewingCode?.code}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-mono text-lg select-all">{viewingCode?.code}</p>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={async () => {
+                    if (viewingCode) {
+                      await handleCopyCode(viewingCode);
+                      toast.success("Code copied to clipboard");
+                    }
+                  }}
+                  title="Copy code"
+                >
+                  <Copy className="size-4" />
+                </Button>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
@@ -349,19 +364,6 @@ export default function CodesPage() {
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button
-              onClick={async () => {
-                if (viewingCode) {
-                  await handleCopyCode(viewingCode);
-                  setViewingCode(null);
-                }
-              }}
-            >
-              <Copy className="size-4 mr-2" />
-              Copy Code
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
