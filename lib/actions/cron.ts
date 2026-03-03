@@ -56,7 +56,7 @@ export async function processNotificationsAction() {
       const dueTime = assignment?.time || exam?.time;
       const dueDateDisplay = dueTime ? `${dueDate} at ${dueTime}` : dueDate;
 
-      const daysText = daysBefore === 1 ? "tomorrow" : `in ${daysBefore} days`;
+      const daysText = daysBefore === 0 ? "today" : daysBefore === 1 ? "tomorrow" : `in ${daysBefore} days`;
 
       let title: string;
       let body: string;
