@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import { usePageTitle } from "@/app/app/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Ticket, Trash2, Plus, AlertCircle, Eye, Copy, Check } from "lucide-react";
+import { Ticket, Trash2, Plus, AlertCircle, Eye, Copy } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import {
   AlertDialog,
@@ -75,7 +75,6 @@ export default function CodesPage() {
   const [success, setSuccess] = React.useState<string | null>(null);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [viewingCode, setViewingCode] = React.useState<Code | null>(null);
-  const [copiedId, setCopiedId] = React.useState<string | null>(null);
 
   const price = PRICING[codeType][duration];
   const currentBalance = parseFloat(balance);
@@ -129,15 +128,11 @@ export default function CodesPage() {
 
   async function handleCopyCode(code: Code) {
     await navigator.clipboard.writeText(code.code);
-    setCopiedId(code.id);
-    setTimeout(() => setCopiedId(null), 2000);
   }
 
   const unredeemedCodes = codes.filter((c) => !c.redeemedBy);
-  const redeemedCodes = codes.filter((c) => c.redeemedBy);
-  const allCodesSorted = [...unredeemedCodes, ...redeemedCodes];
-  const totalPages = Math.ceil(allCodesSorted.length / ITEMS_PER_PAGE);
-  const paginatedCodes = allCodesSorted.slice(
+  const totalPages = Math.ceil(unredeemedCodes.length / ITEMS_PER_PAGE);
+  const paginatedCodes = unredeemedCodes.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -271,32 +266,18 @@ export default function CodesPage() {
                   <tr className="border-b">
                     <th className="text-left p-3 font-medium">Type</th>
                     <th className="text-left p-3 font-medium">Duration</th>
-                    <th className="text-right p-3 font-medium">Value</th>
-                    <th className="text-left p-3 font-medium">Status</th>
                     <th className="text-right p-3 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedCodes.map((code) => (
-                    <tr key={code.id} className={code.redeemedBy ? "border-b opacity-60" : "border-b"}>
+                    <tr key={code.id} className="border-b">
                       <td className="p-3">
                         {CODE_TYPE_LABELS[code.type as CodeType] || code.type}
                       </td>
                       <td className="p-3">
                         {DURATION_LABELS[code.duration as CodeDuration] ||
                           code.duration}
-                      </td>
-                      <td className="p-3 text-right">{code.value} KM</td>
-                      <td className="p-3">
-                        {code.redeemedBy ? (
-                          <span className="inline-flex items-center rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-600 dark:text-green-400">
-                            Redeemed
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center rounded-full bg-yellow-500/10 px-2 py-1 text-xs font-medium text-yellow-600 dark:text-yellow-400">
-                            Unredeemed
-                          </span>
-                        )}
                       </td>
                       <td className="p-3 text-right">
                         <div className="flex items-center justify-end gap-1">
@@ -311,25 +292,11 @@ export default function CodesPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleCopyCode(code)}
-                            title="Copy code"
+                            onClick={() => handleDeleteCode(code.id)}
+                            title="Delete code and refund"
                           >
-                            {copiedId === code.id ? (
-                              <Check className="size-4 text-green-500" />
-                            ) : (
-                              <Copy className="size-4" />
-                            )}
+                            <Trash2 className="size-4 text-destructive" />
                           </Button>
-                          {!code.redeemedBy && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteCode(code.id)}
-                              title="Delete code and refund"
-                            >
-                              <Trash2 className="size-4 text-destructive" />
-                            </Button>
-                          )}
                         </div>
                       </td>
                     </tr>
