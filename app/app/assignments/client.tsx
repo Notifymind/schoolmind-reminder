@@ -16,6 +16,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -80,6 +81,7 @@ function AssignmentCard({
   presets: Preset[];
   onPresetChange: () => void;
 }) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
 
   const getDaysText = (): { text: string; isPast: boolean; isUrgent: boolean } | null => {
@@ -180,6 +182,10 @@ function AssignmentCard({
                       </DropdownMenuRadioItem>
                     ))}
                   </DropdownMenuRadioGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push("/app/notifications")}>
+                    Create Preset
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </CardAction>
