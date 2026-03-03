@@ -13,15 +13,14 @@ import {
 } from "@/components/ui/card";
 import { Ticket, Trash2, Plus, AlertCircle, Eye, Copy } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import { QRCodeSVG } from "qrcode.react";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   generateCodeAction,
   deleteCodeAction,
@@ -313,37 +312,45 @@ export default function CodesPage() {
         </CardContent>
       </Card>
 
-      <AlertDialog open={!!viewingCode} onOpenChange={() => setViewingCode(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Code Details</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3 pt-2">
-              <div className="rounded-md bg-muted p-4">
-                <p className="text-xs text-muted-foreground mb-1">Code</p>
-                <p className="font-mono text-lg select-all">{viewingCode?.code}</p>
+      <Dialog open={!!viewingCode} onOpenChange={() => setViewingCode(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Code Details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex justify-center">
+              <div className="bg-white p-3 rounded-lg">
+                <QRCodeSVG
+                  value={`${typeof window !== "undefined" ? window.location.origin : ""}/app/subscription?code=${viewingCode?.code ?? ""}`}
+                  size={150}
+                />
               </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Type</p>
-                  <p>{viewingCode && CODE_TYPE_LABELS[viewingCode.type as CodeType]}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Duration</p>
-                  <p>{viewingCode && DURATION_LABELS[viewingCode.duration as CodeDuration]}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Value</p>
-                  <p>{viewingCode?.value} KM</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Status</p>
-                  <p>{viewingCode?.redeemedBy ? "Redeemed" : "Unredeemed"}</p>
-                </div>
+            </div>
+            <div className="rounded-md bg-muted p-4">
+              <p className="text-xs text-muted-foreground mb-1">Code</p>
+              <p className="font-mono text-lg select-all">{viewingCode?.code}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground">Type</p>
+                <p>{viewingCode && CODE_TYPE_LABELS[viewingCode.type as CodeType]}</p>
               </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction
+              <div>
+                <p className="text-muted-foreground">Duration</p>
+                <p>{viewingCode && DURATION_LABELS[viewingCode.duration as CodeDuration]}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Value</p>
+                <p>{viewingCode?.value} KM</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Status</p>
+                <p>{viewingCode?.redeemedBy ? "Redeemed" : "Unredeemed"}</p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
               onClick={async () => {
                 if (viewingCode) {
                   await handleCopyCode(viewingCode);
@@ -353,10 +360,10 @@ export default function CodesPage() {
             >
               <Copy className="size-4 mr-2" />
               Copy Code
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
