@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { usePageTitle } from "@/app/app/layout";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Key, Mail, Fingerprint, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +41,7 @@ type Passkey = {
 
 export default function AccountPage() {
   usePageTitle("Account Settings");
+  const router = useRouter();
   const { data: session } = authClient.useSession();
   const [email, setEmail] = React.useState("");
   const [currentPassword, setCurrentPassword] = React.useState("");
@@ -68,35 +71,64 @@ export default function AccountPage() {
   async function handleUpdateEmail(e: React.FormEvent) {
     e.preventDefault();
     setIsLoading(true);
-    await authClient.changeEmail({ newEmail: email });
+    const result = await authClient.changeEmail({ newEmail: email });
     setIsLoading(false);
+
+    if (result.error) {
+      toast.error(result.error.message || "Failed to update email");
+      return;
+    }
+
+    toast.success("Email updated successfully");
   }
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
       return;
     }
     setIsLoading(true);
-    await authClient.changePassword({
+    const result = await authClient.changePassword({
       currentPassword,
       newPassword,
     });
+    setIsLoading(false);
+
+    if (result.error) {
+      toast.error(result.error.message || "Failed to change password");
+      return;
+    }
+
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
-    setIsLoading(false);
+    toast.success("Password changed successfully");
   }
 
   async function handleAddPasskey() {
-    await authClient.passkey.addPasskey({ name: passkeyName || undefined });
+    const result = await authClient.passkey.addPasskey({ name: passkeyName || undefined });
+
+    if (result.error) {
+      toast.error(result.error.message || "Failed to add passkey");
+      return;
+    }
+
     setPasskeyName("");
     loadPasskeys();
+    toast.success("Passkey added successfully");
   }
 
   async function handleDeletePasskey(id: string) {
-    await authClient.passkey.deletePasskey({ id });
+    const result = await authClient.passkey.deletePasskey({ id });
+
+    if (result.error) {
+      toast.error(result.error.message || "Failed to delete passkey");
+      return;
+    }
+
     loadPasskeys();
+    toast.success("Passkey deleted successfully");
   }
 
   return (
@@ -275,7 +307,15 @@ export default function AccountPage() {
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     variant="destructive"
-                    onClick={() => authClient.deleteUser()}
+                    onClick={async () => {
+                      const result = await authClient.deleteUser();
+                      if (result.error) {
+                        toast.error(result.error.message || "Failed to delete account");
+                        return;
+                      }
+                      toast.success("Account deleted successfully");
+                      router.push("/");
+                    }}
                   >
                     Delete Account
                   </AlertDialogAction>

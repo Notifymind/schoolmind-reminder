@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
 
 export function RegisterForm({
   className,
@@ -35,18 +36,26 @@ export function RegisterForm({
     e.preventDefault();
 
     if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
       return;
     }
 
     setIsLoading(true);
 
-    await authClient.signUp.email({
+    const result = await authClient.signUp.email({
       email,
       password,
       name,
     });
 
     setIsLoading(false);
+
+    if (result.error) {
+      toast.error(result.error.message || "Failed to create account");
+      return;
+    }
+
+    toast.success("Account created successfully");
     router.push("/app");
   }
 

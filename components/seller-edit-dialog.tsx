@@ -27,6 +27,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { ChevronsUpDown, Check } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface Seller {
@@ -63,7 +64,6 @@ export function SellerEditDialog({
   const [selectedClass, setSelectedClass] = React.useState<string | null>(null);
   const [classes, setClasses] = React.useState<Class[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
   const [classPopoverOpen, setClassPopoverOpen] = React.useState(false);
 
   const loadClasses = React.useCallback(async () => {
@@ -77,7 +77,6 @@ export function SellerEditDialog({
     if (open && seller) {
       setMaxDebt(seller.maxDebt);
       setSelectedClass(seller.class);
-      setError(null);
       loadClasses();
     }
   }, [open, seller, loadClasses]);
@@ -87,17 +86,17 @@ export function SellerEditDialog({
     if (!seller) return;
 
     setIsLoading(true);
-    setError(null);
 
     const result = await updateSellerAction(seller.id, maxDebt, selectedClass);
 
     if ("error" in result && result.error) {
-      setError(result.error);
+      toast.error(result.error);
       setIsLoading(false);
       return;
     }
 
     setIsLoading(false);
+    toast.success("Seller updated successfully");
     onUpdated();
     onOpenChange(false);
   };
@@ -201,7 +200,6 @@ export function SellerEditDialog({
                 required
               />
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
           <DialogFooter className="mt-6">
             <Button

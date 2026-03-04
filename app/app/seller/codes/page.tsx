@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Ticket, Trash2, Plus, AlertCircle, Eye, Copy } from "lucide-react";
+import { Ticket, Trash2, Plus, Eye, Copy } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
@@ -70,8 +70,6 @@ export default function CodesPage() {
   const [duration, setDuration] = React.useState<CodeDuration>("month");
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isInitialLoading, setIsInitialLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [success, setSuccess] = React.useState<string | null>(null);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [viewingCode, setViewingCode] = React.useState<Code | null>(null);
 
@@ -95,16 +93,14 @@ export default function CodesPage() {
   }, []);
 
   async function handleGenerateCode() {
-    setError(null);
-    setSuccess(null);
     setIsGenerating(true);
 
     const result = await generateCodeAction(codeType, duration);
 
     if (result.error) {
-      setError(result.error);
+      toast.error(result.error);
     } else if (result.code) {
-      setSuccess(`Code generated: ${result.code.code}`);
+      toast.success(`Code generated: ${result.code.code}`);
       await loadData();
     }
 
@@ -112,15 +108,12 @@ export default function CodesPage() {
   }
 
   async function handleDeleteCode(codeId: string) {
-    setError(null);
-    setSuccess(null);
-
     const result = await deleteCodeAction(codeId);
 
     if (result.error) {
-      setError(result.error);
+      toast.error(result.error);
     } else {
-      setSuccess("Code deleted and value refunded to your balance");
+      toast.success("Code deleted and value refunded to your balance");
       await loadData();
     }
   }
@@ -164,20 +157,6 @@ export default function CodesPage() {
           </p>
         </div>
       </div>
-
-      {error && (
-        <div className="flex items-center gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-4 text-destructive">
-          <AlertCircle className="size-5" />
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="flex items-center gap-2 rounded-md border border-green-500/50 bg-green-500/10 p-4 text-green-600 dark:text-green-400">
-          <Ticket className="size-5" />
-          {success}
-        </div>
-      )}
 
       <Card>
         <CardHeader>

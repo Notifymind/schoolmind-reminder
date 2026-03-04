@@ -26,6 +26,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { ChevronsUpDown, Check, Wallet } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface Seller {
@@ -48,8 +49,6 @@ export default function AdminBalancePage() {
   const [amount, setAmount] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [isInitialLoading, setIsInitialLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [success, setSuccess] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setIsInitialLoading(false);
@@ -87,21 +86,17 @@ export default function AdminBalancePage() {
     setSearchedSellers([]);
     setSellerPopoverOpen(false);
     setAmount("");
-    setError(null);
-    setSuccess(null);
   };
 
   const handleBalanceAction = async (type: "add" | "remove" | "set") => {
     if (!selectedSeller || !amount) return;
 
     setIsLoading(true);
-    setError(null);
-    setSuccess(null);
 
     const result = await adjustBalanceAction(selectedSeller.id, type, amount);
 
     if ("error" in result && result.error) {
-      setError(result.error);
+      toast.error(result.error);
       setIsLoading(false);
       return;
     }
@@ -111,7 +106,7 @@ export default function AdminBalancePage() {
         ...selectedSeller,
         balance: result.newBalance ?? "0",
       });
-      setSuccess(
+      toast.success(
         `Balance ${type === "add" ? "increased" : type === "remove" ? "decreased" : "set"} successfully`
       );
     }
@@ -257,13 +252,6 @@ export default function AdminBalancePage() {
                   placeholder="Enter amount"
                 />
               </div>
-
-              {error && (
-                <p className="text-sm text-destructive">{error}</p>
-              )}
-              {success && (
-                <p className="text-sm text-green-600">{success}</p>
-              )}
 
               <div className="flex flex-wrap gap-2">
                 <Button

@@ -91,7 +91,6 @@ export default function AdminSellersPage() {
   const [maxDebt, setMaxDebt] = React.useState("0");
   const [selectedClass, setSelectedClass] = React.useState<string | null>(null);
   const [classPopoverOpen, setClassPopoverOpen] = React.useState(false);
-  const [addError, setAddError] = React.useState<string | null>(null);
 
   const [addClassDialogOpen, setAddClassDialogOpen] = React.useState(false);
   const [pendingClassName, setPendingClassName] = React.useState("");
@@ -170,7 +169,6 @@ export default function AdminSellersPage() {
     if (!selectedUser) return;
 
     setIsLoading(true);
-    setAddError(null);
 
     const result = await upgradeToSellerAction(
       selectedUser.id,
@@ -179,7 +177,7 @@ export default function AdminSellersPage() {
     );
 
     if ("error" in result && result.error) {
-      setAddError(result.error);
+      toast.error(result.error);
       setIsLoading(false);
       return;
     }
@@ -187,6 +185,7 @@ export default function AdminSellersPage() {
     setIsLoading(false);
     setAddDialogOpen(false);
     setSelectedUser(null);
+    toast.success("Seller added successfully");
     loadSellers();
   };
 
@@ -209,6 +208,7 @@ export default function AdminSellersPage() {
     if ("error" in result && result.error) {
       toast.error(result.error);
     } else {
+      toast.success("Seller role removed successfully");
       loadSellers();
     }
 
@@ -466,7 +466,6 @@ export default function AdminSellersPage() {
                 onChange={(e) => setMaxDebt(e.target.value)}
               />
             </div>
-            {addError && <p className="text-sm text-destructive">{addError}</p>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddDialogOpen(false)}>

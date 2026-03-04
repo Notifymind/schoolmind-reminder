@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 interface AddClassDialogProps {
   open: boolean;
@@ -31,31 +32,29 @@ export function AddClassDialog({
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (open) {
       setName(initialName);
       setUsername("");
       setPassword("");
-      setError(null);
     }
   }, [open, initialName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
 
     const result = await createClassAction(name, username, password);
 
     if ("error" in result && result.error) {
-      setError(result.error);
+      toast.error(result.error);
       setIsLoading(false);
       return;
     }
 
     setIsLoading(false);
+    toast.success("Class created successfully");
     onClassCreated(name);
     onOpenChange(false);
   };
@@ -102,7 +101,6 @@ export function AddClassDialog({
                 required
               />
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
           <DialogFooter className="mt-6">
             <Button

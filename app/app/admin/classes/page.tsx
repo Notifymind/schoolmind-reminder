@@ -65,6 +65,7 @@ export default function AdminClassesPage() {
       toast.error(result.error);
       return;
     }
+    toast.success("Class deleted successfully");
     loadClasses();
   };
 

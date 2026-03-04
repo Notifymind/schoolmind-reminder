@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 interface EditClassDialogProps {
   open: boolean;
@@ -34,14 +35,12 @@ export function EditClassDialog({
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (open && classData) {
       setName(classData.name);
       setUsername(classData.username);
       setPassword("");
-      setError(null);
     }
   }, [open, classData]);
 
@@ -50,17 +49,17 @@ export function EditClassDialog({
     if (!classData) return;
 
     setIsLoading(true);
-    setError(null);
 
     const result = await updateClassAction(classData.name, name, username, password);
 
     if ("error" in result && result.error) {
-      setError(result.error);
+      toast.error(result.error);
       setIsLoading(false);
       return;
     }
 
     setIsLoading(false);
+    toast.success("Class updated successfully");
     onClassUpdated();
     onOpenChange(false);
   };
@@ -104,7 +103,6 @@ export function EditClassDialog({
                 placeholder="Leave empty to keep current"
               />
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
           <DialogFooter className="mt-6">
             <Button

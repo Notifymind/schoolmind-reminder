@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Check, X, Gift, Copy, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import {
   redeemCodeAction,
@@ -39,10 +40,6 @@ export default function SubscriptionPage() {
   const [code, setCode] = React.useState("");
   const [isRedeeming, setIsRedeeming] = React.useState(false);
   const [isGeneratingTrial, setIsGeneratingTrial] = React.useState(false);
-  const [message, setMessage] = React.useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = React.useState<{
     role: string;
     subscriptionEndsAt: Date | null;
@@ -90,14 +87,13 @@ export default function SubscriptionPage() {
     if (!code.trim()) return;
 
     setIsRedeeming(true);
-    setMessage(null);
 
     const result = await redeemCodeAction(code);
 
     if (result.error) {
-      setMessage({ type: "error", text: result.error });
+      toast.error(result.error);
     } else if (result.success) {
-      setMessage({ type: "success", text: result.message });
+      toast.success(result.message);
       setCode("");
       const status = await getSubscriptionStatusAction();
       setSubscriptionStatus(status);
@@ -108,19 +104,15 @@ export default function SubscriptionPage() {
 
   async function handleGenerateTrialCode() {
     setIsGeneratingTrial(true);
-    setMessage(null);
     setTrialCode(null);
 
     const result = await generateTrialCodeAction();
 
     if (result.error) {
-      setMessage({ type: "error", text: result.error });
+      toast.error(result.error);
     } else if (result.code) {
       setTrialCode(result.code.code);
-      setMessage({
-        type: "success",
-        text: "Trial code generated! Share it with a friend.",
-      });
+      toast.success("Trial code generated! Share it with a friend.");
       const status = await getSubscriptionStatusAction();
       setSubscriptionStatus(status);
     }
@@ -131,7 +123,7 @@ export default function SubscriptionPage() {
   async function copyTrialCode() {
     if (trialCode) {
       await navigator.clipboard.writeText(trialCode);
-      setMessage({ type: "success", text: "Code copied to clipboard!" });
+      toast.success("Code copied to clipboard!");
     }
   }
 
@@ -187,18 +179,6 @@ export default function SubscriptionPage() {
               </p>
             </CardContent>
           </Card>
-        )}
-
-        {message && (
-          <div
-            className={`w-full max-w-2xl p-4 rounded-md border ${
-              message.type === "success"
-                ? "border-green-500/50 bg-green-500/10 text-green-600 dark:text-green-400"
-                : "border-red-500/50 bg-red-500/10 text-red-600 dark:text-red-400"
-            }`}
-          >
-            {message.text}
-          </div>
         )}
 
         <Card className="w-full max-w-2xl">

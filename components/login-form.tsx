@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { authClient } from "@/lib/auth-client"
 import { Fingerprint } from "lucide-react"
+import { toast } from "sonner"
 
 export function LoginForm({
   className,
@@ -35,19 +36,33 @@ export function LoginForm({
     e.preventDefault()
     setIsLoading(true)
 
-    await authClient.signIn.email({
+    const result = await authClient.signIn.email({
       email,
       password,
     })
 
     setIsLoading(false)
+
+    if (result.error) {
+      toast.error(result.error.message || "Failed to login")
+      return
+    }
+
+    toast.success("Logged in successfully")
     router.push("/app")
   }
 
   async function handlePasskeyLogin() {
     setIsPasskeyLoading(true)
-    await authClient.signIn.passkey()
+    const result = await authClient.signIn.passkey()
     setIsPasskeyLoading(false)
+
+    if (result.error) {
+      toast.error(result.error.message || "Failed to login with passkey")
+      return
+    }
+
+    toast.success("Logged in successfully")
     router.push("/app")
   }
 
