@@ -107,7 +107,7 @@ export async function redeemCodeAction(code: string) {
 
   return {
     success: true,
-    message: `Code redeemed successfully! Your subscription is now active until ${newEndsAt.toLocaleDateString()}.`,
+    message: `Code redeemed successfully! Your subscription is now active until ${newEndsAt.toLocaleDateString("de-DE")}.`,
     newEndsAt,
   };
 }

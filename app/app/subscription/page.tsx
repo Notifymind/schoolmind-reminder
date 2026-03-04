@@ -50,10 +50,8 @@ export default function SubscriptionPage() {
   } | null>(null);
   const [trialCode, setTrialCode] = React.useState<string | null>(null);
 
-  const userRole = session?.user?.role as string | undefined;
-  const isPro = userRole === "pro";
-
   const searchParams = useSearchParams();
+  const [hasTrialPermission, setHasTrialPermission] = React.useState(false);
 
   React.useEffect(() => {
     const codeParam = searchParams.get("code");
@@ -69,6 +67,22 @@ export default function SubscriptionPage() {
     }
     loadStatus();
   }, []);
+
+  React.useEffect(() => {
+    async function checkPermission() {
+      if (session) {
+        const result = await authClient.admin.hasPermission({
+          permission: {
+            trialCode: ["generate"],
+          },
+        });
+        setHasTrialPermission(result.data?.success ?? false);
+      } else {
+        setHasTrialPermission(false);
+      }
+    }
+    checkPermission();
+  }, [session]);
 
   async function handleRedeemCode(e: React.FormEvent) {
     e.preventDefault();
@@ -124,7 +138,7 @@ export default function SubscriptionPage() {
   const [daysUntilNextTrial, setDaysUntilNextTrial] = React.useState(0);
 
   React.useEffect(() => {
-    if (!isPro || !subscriptionStatus) {
+    if (!hasTrialPermission || !subscriptionStatus) {
       setCanGenerateTrial(false);
       setDaysUntilNextTrial(0);
       return;
@@ -140,7 +154,7 @@ export default function SubscriptionPage() {
     );
     setCanGenerateTrial(daysSince >= 30);
     setDaysUntilNextTrial(Math.max(0, 30 - daysSince));
-  }, [isPro, subscriptionStatus]);
+  }, [hasTrialPermission, subscriptionStatus]);
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6">
@@ -163,7 +177,7 @@ export default function SubscriptionPage() {
                   <strong>
                     {new Date(
                       subscriptionStatus.subscriptionEndsAt,
-                    ).toLocaleDateString()}
+                    ).toLocaleDateString("de-DE")}
                   </strong>
                 </>
               )}
@@ -214,7 +228,7 @@ export default function SubscriptionPage() {
         </form>
       </Card>
 
-      {isPro && (
+      {hasTrialPermission && (
         <Card className="w-full max-w-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

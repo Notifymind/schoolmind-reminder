@@ -14,12 +14,12 @@ export const ac = createAccessControl(statement);
 
 export const basicRole = ac.newRole({
   exams: ["access"],
-  trialCode: ["generate"],
 });
 
 export const proRole = ac.newRole({
   ...basicRole.statements,
   assignments: ["access"],
+  trialCode: ["generate"],
 });
 
 export const sellerRole = ac.newRole({
@@ -34,5 +34,4 @@ export const adminRole = ac.newRole({
   assignments: ["access"],
   exams: ["access"],
   admin: ["access"],
-  trialCode: ["generate"],
 });
