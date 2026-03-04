@@ -61,6 +61,10 @@ export async function redeemCodeAction(code: string) {
   const currentEndsAt = userSubscription.subscriptionEndsAt;
   const now = new Date();
 
+  if (currentRole === "pro") {
+    return { error: "Pro users cannot redeem codes" };
+  }
+
   const isActive = currentEndsAt && new Date(currentEndsAt) > now;
   const baseDate = isActive ? new Date(currentEndsAt) : now;
 
@@ -84,6 +88,12 @@ export async function redeemCodeAction(code: string) {
     case "upgrade":
       if (currentRole !== "basic") {
         return { error: "Upgrade codes can only be used by basic users" };
+      }
+      if (codeRecord.duration === "month" && isActive) {
+        const remainingDays = Math.ceil((new Date(currentEndsAt).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        if (remainingDays > 30) {
+          return { error: "Your basic subscription has more than a month remaining. You need a year upgrade code to extend it." };
+        }
       }
       await extendSubscription(session.user.id, newEndsAt, "pro", codeRecord.className);
       break;
