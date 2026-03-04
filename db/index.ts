@@ -685,7 +685,7 @@ export async function extendSubscription(userId: string, newEndsAt: Date, newRol
 export async function redeemCodeInDb(codeId: string, userId: string) {
   const result = await db
     .update(codes)
-    .set({ redeemedBy: userId, redeemedAt: new Date() })
+    .set({ redeemedBy: userId, redeemedAt: new Date(), wasRedeemedAt: new Date() })
     .where(and(eq(codes.id, codeId), isNull(codes.redeemedBy)))
     .returning();
   return result[0] ?? null;

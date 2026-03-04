@@ -48,7 +48,7 @@ export async function redeemCodeAction(code: string) {
     return { error: "Code not found" };
   }
 
-  if (codeRecord.redeemedBy) {
+  if (codeRecord.wasRedeemedAt) {
     return { error: "Code has already been redeemed" };
   }
 

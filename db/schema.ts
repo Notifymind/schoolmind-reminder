@@ -423,6 +423,7 @@ export const codes = pgTable(
     className: varchar("class_name", { length: 50 }).references(() => schoolclass.name),
     redeemedBy: text("redeemed_by").references(() => user.id, { onDelete: "set null" }),
     redeemedAt: timestamp("redeemed_at"),
+    wasRedeemedAt: timestamp("was_redeemed_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
