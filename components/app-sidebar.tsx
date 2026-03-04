@@ -166,6 +166,11 @@ const navItems = [
     url: "/app/notifications",
     icon: Bell,
   },
+  {
+    title: "Subscription",
+    url: "/app/subscription",
+    icon: DollarSign,
+  },
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -220,38 +225,45 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) =>
-                item.subItems ? (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild tooltip={item.title} isActive={item.subItems?.some((sub) => pathname === sub.url)}>
-                      <Link href={item.url}>
-                        {item.icon && <item.icon />}
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                      {item.subItems.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
-                            <Link href={subItem.url}>
-                              <span>{subItem.title}</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </SidebarMenuItem>
-                ) : (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild tooltip={item.title} isActive={pathname === item.url}>
-                      <Link href={item.url}>
-                        {item.icon && <item.icon />}
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              )}
+              {navItems
+                .filter((item) => {
+                  if (item.title === "Subscription") {
+                    return !canAccessAdminPlatform && !canAccessSellerPlatform;
+                  }
+                  return true;
+                })
+                .map((item) =>
+                  item.subItems ? (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild tooltip={item.title} isActive={item.subItems?.some((sub) => pathname === sub.url)}>
+                        <Link href={item.url}>
+                          {item.icon && <item.icon />}
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                      <SidebarMenuSub>
+                        {item.subItems.map((subItem) => (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
+                              <Link href={subItem.url}>
+                                <span>{subItem.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </SidebarMenuItem>
+                  ) : (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild tooltip={item.title} isActive={pathname === item.url}>
+                        <Link href={item.url}>
+                          {item.icon && <item.icon />}
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
+                )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -362,12 +374,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <Link href="/app/account">
                     <User />
                     Account
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/app/subscription">
-                    <DollarSign />
-                    Subscription
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>

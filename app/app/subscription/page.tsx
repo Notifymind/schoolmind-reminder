@@ -19,6 +19,7 @@ import {
   generateTrialCodeAction,
   getSubscriptionStatusAction,
 } from "@/lib/actions/subscription";
+import { RequireNotAdminSeller } from "@/components/require-not-admin-seller";
 
 const features = [
   { name: "Exam Access", basic: true, pro: true },
@@ -157,160 +158,162 @@ export default function SubscriptionPage() {
   }, [hasTrialPermission, subscriptionStatus]);
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6">
-      {subscriptionStatus?.isActive && (
-        <Card className="w-full max-w-2xl border-green-500/50 bg-green-500/5">
-          <CardHeader>
-            <CardTitle className="text-green-600 dark:text-green-400">
-              Active Subscription
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>
-              You have an active{" "}
-              <strong>{subscriptionStatus.role.toUpperCase()}</strong>{" "}
-              subscription
-              {subscriptionStatus.subscriptionEndsAt && (
-                <>
-                  {" "}
-                  until{" "}
-                  <strong>
-                    {new Date(
-                      subscriptionStatus.subscriptionEndsAt,
-                    ).toLocaleDateString("de-DE")}
-                  </strong>
-                </>
-              )}
-              .
-            </p>
-          </CardContent>
-        </Card>
-      )}
+    <RequireNotAdminSeller>
+      <div className="flex flex-1 flex-col items-center justify-center gap-6">
+        {subscriptionStatus?.isActive && (
+          <Card className="w-full max-w-2xl border-green-500/50 bg-green-500/5">
+            <CardHeader>
+              <CardTitle className="text-green-600 dark:text-green-400">
+                Active Subscription
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>
+                You have an active{" "}
+                <strong>{subscriptionStatus.role.toUpperCase()}</strong>{" "}
+                subscription
+                {subscriptionStatus.subscriptionEndsAt && (
+                  <>
+                    {" "}
+                    until{" "}
+                    <strong>
+                      {new Date(
+                        subscriptionStatus.subscriptionEndsAt,
+                      ).toLocaleDateString("de-DE")}
+                    </strong>
+                  </>
+                )}
+                .
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
-      {message && (
-        <div
-          className={`w-full max-w-2xl p-4 rounded-md border ${
-            message.type === "success"
-              ? "border-green-500/50 bg-green-500/10 text-green-600 dark:text-green-400"
-              : "border-red-500/50 bg-red-500/10 text-red-600 dark:text-red-400"
-          }`}
-        >
-          {message.text}
-        </div>
-      )}
+        {message && (
+          <div
+            className={`w-full max-w-2xl p-4 rounded-md border ${
+              message.type === "success"
+                ? "border-green-500/50 bg-green-500/10 text-green-600 dark:text-green-400"
+                : "border-red-500/50 bg-red-500/10 text-red-600 dark:text-red-400"
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
 
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Gift className="size-5" />
-            Redeem Code
-          </CardTitle>
-          <CardDescription>
-            Enter a gift or promotional code to activate your subscription.
-            <br />
-            You can buy gift codes from your classes seller.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleRedeemCode}>
-          <CardContent>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Enter your code"
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                className="font-mono uppercase"
-              />
-              <Button type="submit" disabled={isRedeeming || !code.trim()}>
-                {isRedeeming ? "Redeeming..." : "Redeem"}
-              </Button>
-            </div>
-          </CardContent>
-        </form>
-      </Card>
-
-      {hasTrialPermission && (
         <Card className="w-full max-w-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Gift className="size-5" />
-              Trial Code for Friends
+              Redeem Code
             </CardTitle>
             <CardDescription>
-              Generate a 7-day trial code to share with a friend. You can
-              generate one trial code per month.
+              Enter a gift or promotional code to activate your subscription.
+              <br />
+              You can buy gift codes from your classes seller.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            {trialCode ? (
-              <div className="flex items-center gap-2">
-                <div className="flex-1 p-3 bg-muted rounded-md font-mono text-lg">
-                  {trialCode}
-                </div>
-                <Button variant="outline" size="icon" onClick={copyTrialCode}>
-                  <Copy className="size-4" />
+          <form onSubmit={handleRedeemCode}>
+            <CardContent>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter your code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase())}
+                  className="font-mono uppercase"
+                />
+                <Button type="submit" disabled={isRedeeming || !code.trim()}>
+                  {isRedeeming ? "Redeeming..." : "Redeem"}
                 </Button>
               </div>
-            ) : (
-              <Button
-                onClick={handleGenerateTrialCode}
-                disabled={isGeneratingTrial || !canGenerateTrial}
-              >
-                {isGeneratingTrial ? (
-                  <>
-                    <Loader2 className="size-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : canGenerateTrial ? (
-                  "Generate Trial Code"
-                ) : (
-                  `Available in ${daysUntilNextTrial} day(s)`
-                )}
-              </Button>
-            )}
-          </CardContent>
+            </CardContent>
+          </form>
         </Card>
-      )}
 
-      <div className="w-full max-w-2xl overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="border-b">
-              <th className="text-left p-3 font-medium">Feature</th>
-              <th className="text-center p-3 font-medium">Basic</th>
-              <th className="text-center p-3 font-medium">Pro</th>
-            </tr>
-          </thead>
-          <tbody>
-            {features.map((feature, index) => (
-              <tr key={index} className="border-b">
-                <td className="p-3">{feature.name}</td>
-                <td className="text-center p-3">
-                  {typeof feature.basic === "boolean" ? (
-                    feature.basic ? (
-                      <Check className="text-primary mx-auto size-5" />
-                    ) : (
-                      <X className="text-muted-foreground mx-auto size-5" />
-                    )
+        {hasTrialPermission && (
+          <Card className="w-full max-w-2xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Gift className="size-5" />
+                Trial Code for Friends
+              </CardTitle>
+              <CardDescription>
+                Generate a 7-day trial code to share with a friend. You can
+                generate one trial code per month.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {trialCode ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 p-3 bg-muted rounded-md font-mono text-lg">
+                    {trialCode}
+                  </div>
+                  <Button variant="outline" size="icon" onClick={copyTrialCode}>
+                    <Copy className="size-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  onClick={handleGenerateTrialCode}
+                  disabled={isGeneratingTrial || !canGenerateTrial}
+                >
+                  {isGeneratingTrial ? (
+                    <>
+                      <Loader2 className="size-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : canGenerateTrial ? (
+                    "Generate Trial Code"
                   ) : (
-                    feature.basic
+                    `Available in ${daysUntilNextTrial} day(s)`
                   )}
-                </td>
-                <td className="text-center p-3">
-                  {typeof feature.pro === "boolean" ? (
-                    feature.pro ? (
-                      <Check className="text-primary mx-auto size-5" />
-                    ) : (
-                      <X className="text-muted-foreground mx-auto size-5" />
-                    )
-                  ) : (
-                    feature.pro
-                  )}
-                </td>
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="w-full max-w-2xl overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left p-3 font-medium">Feature</th>
+                <th className="text-center p-3 font-medium">Basic</th>
+                <th className="text-center p-3 font-medium">Pro</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {features.map((feature, index) => (
+                <tr key={index} className="border-b">
+                  <td className="p-3">{feature.name}</td>
+                  <td className="text-center p-3">
+                    {typeof feature.basic === "boolean" ? (
+                      feature.basic ? (
+                        <Check className="text-primary mx-auto size-5" />
+                      ) : (
+                        <X className="text-muted-foreground mx-auto size-5" />
+                      )
+                    ) : (
+                      feature.basic
+                    )}
+                  </td>
+                  <td className="text-center p-3">
+                    {typeof feature.pro === "boolean" ? (
+                      feature.pro ? (
+                        <Check className="text-primary mx-auto size-5" />
+                      ) : (
+                        <X className="text-muted-foreground mx-auto size-5" />
+                      )
+                    ) : (
+                      feature.pro
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </RequireNotAdminSeller>
   );
 }
