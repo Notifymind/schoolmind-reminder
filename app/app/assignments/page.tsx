@@ -54,11 +54,13 @@ export default async function UpcomingAssignmentsPage() {
     if (userClass) {
       hasClass = true
       const allAssignments = await getAssignmentsByClass(userClass)
+      const now = new Date()
+      const maxDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
       assignmentsList = allAssignments
         .filter((assignment) => {
           if (!assignment.dueDate) return false
           const dueDate = new Date(assignment.dueDate)
-          return dueDate >= new Date()
+          return dueDate >= now && dueDate <= maxDate
         })
         .sort((a, b) => {
           if (!a.dueDate || !b.dueDate) return 0
