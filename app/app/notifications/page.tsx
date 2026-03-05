@@ -69,8 +69,8 @@ import {
   getLimitsAction,
   subscribeToPushAction,
   unsubscribeFromPushAction,
-  getPushSubscriptionStatusAction,
 } from "@/lib/actions/notifications";
+import { usePushNotificationStore } from "@/lib/stores/push-notifications";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -455,35 +455,16 @@ function PresetCard({
 
 function PushNotificationManager() {
   const [isSupported, setIsSupported] = React.useState(false);
-  const [isSubscribed, setIsSubscribed] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [isChecking, setIsChecking] = React.useState(true);
   const isMobile = useIsMobile();
   const { canInstall, isInstalling, installApp, isIos } = usePwaInstall();
-
-  async function checkSubscription() {
-    const result = await getPushSubscriptionStatusAction();
-    setIsSubscribed(result.isSubscribed);
-  }
+  const { isSubscribed, setSubscribed } = usePushNotificationStore();
 
   React.useEffect(() => {
     if ("serviceWorker" in navigator && "PushManager" in window) {
       setIsSupported(true);
-      checkSubscription().finally(() => setIsChecking(false));
-    } else {
-      setIsChecking(false);
     }
   }, []);
-
-  if (isChecking) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <Spinner className="size-8" />
-        </CardContent>
-      </Card>
-    );
-  }
 
   async function subscribeToPush() {
     setIsLoading(true);
@@ -503,7 +484,7 @@ function PushNotificationManager() {
         endpoint: serializedSub.endpoint,
         keys: serializedSub.keys,
       });
-      setIsSubscribed(true);
+      setSubscribed(true);
     } catch (error) {
       console.error("Failed to subscribe:", error);
       toast.error("Failed to subscribe to push notifications. Make sure you've added this app to your home screen and granted notification permission.");
@@ -520,7 +501,7 @@ function PushNotificationManager() {
         await sub.unsubscribe();
         await unsubscribeFromPushAction(sub.endpoint);
       }
-      setIsSubscribed(false);
+      setSubscribed(false);
     } catch (error) {
       console.error("Failed to unsubscribe:", error);
     }
