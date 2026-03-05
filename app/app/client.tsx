@@ -29,6 +29,7 @@ import {
   Bell,
   DollarSign,
 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { ProAdCard } from "@/components/pro-ad-card";
 import {
   applyPresetToExamAction,
@@ -188,7 +189,7 @@ function ExamCard({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" disabled={isLoading} className={disabled ? "text-muted-foreground" : ""}>
-                    <Bell className="size-4" />
+                    {isLoading ? <Spinner /> : <Bell className="size-4" />}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -310,7 +311,7 @@ function AssignmentCard({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" disabled={isLoading} className={disabled ? "text-muted-foreground" : ""}>
-                    <Bell className="size-4" />
+                    {isLoading ? <Spinner /> : <Bell className="size-4" />}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
