@@ -65,6 +65,14 @@ export async function redeemCodeAction(code: string) {
     return { error: "Pro users cannot redeem codes" };
   }
 
+  if (currentRole === "basic" && codeRecord.type !== "upgrade") {
+    return { error: "Basic users can only redeem upgrade codes" };
+  }
+
+  if (currentRole === "free" && codeRecord.type === "upgrade") {
+    return { error: "Upgrade codes can only be used by basic users" };
+  }
+
   const isActive = currentEndsAt && new Date(currentEndsAt) > now;
   const baseDate = isActive ? new Date(currentEndsAt) : now;
 
