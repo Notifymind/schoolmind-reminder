@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { RequireAuth } from "@/components/require-auth"
 import { MobileNavbar } from "@/components/mobile-navbar"
 import { NotificationFab } from "@/components/notification-fab"
+import { PwaInstallPrompt } from "@/components/pwa-install-prompt"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 
@@ -76,6 +77,7 @@ export default function AppLayout({
         </SidebarInset>
         <MobileNavbar />
         <NotificationFab />
+        <PwaInstallPrompt />
       </SidebarProvider>
     </RequireAuth>
   )
