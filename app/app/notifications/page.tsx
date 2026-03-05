@@ -32,7 +32,10 @@ import {
   Smartphone,
   FileText,
   ClipboardList,
+  Download,
 } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { usePwaInstall } from "@/hooks/use-pwa-install";
 import {
   Dialog,
   DialogContent,
@@ -454,6 +457,8 @@ function PushNotificationManager() {
   const [isSubscribed, setIsSubscribed] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isChecking, setIsChecking] = React.useState(true);
+  const isMobile = useIsMobile();
+  const { canInstall, isInstalling, installApp } = usePwaInstall();
 
   async function checkSubscription() {
     const result = await getPushSubscriptionStatusAction();
@@ -543,25 +548,39 @@ function PushNotificationManager() {
         <CardDescription>Receive notifications on your device</CardDescription>
       </CardHeader>
       <CardContent>
-        {isSubscribed ? (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Check className="size-4 text-green-500" />
-              <span className="text-sm">Notifications enabled</span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={unsubscribeFromPush}
-              disabled={isLoading}
-            >
-              Disable
+        {isMobile && canInstall ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Install the app for the best notification experience.
+            </p>
+            <Button onClick={installApp} disabled={isInstalling}>
+              {isInstalling ? <Spinner className="size-4 mr-2" /> : <Download className="size-4 mr-2" />}
+              {isInstalling ? "Installing..." : "Install App"}
             </Button>
           </div>
         ) : (
-          <Button onClick={subscribeToPush} disabled={isLoading}>
-            {isLoading ? "Enabling..." : "Enable Notifications"}
-          </Button>
+          <>
+            {isSubscribed ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Check className="size-4 text-green-500" />
+                  <span className="text-sm">Notifications enabled</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={unsubscribeFromPush}
+                  disabled={isLoading}
+                >
+                  Disable
+                </Button>
+              </div>
+            ) : (
+              <Button onClick={subscribeToPush} disabled={isLoading}>
+                {isLoading ? "Enabling..." : "Enable Notifications"}
+              </Button>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
