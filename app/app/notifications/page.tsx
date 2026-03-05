@@ -33,6 +33,7 @@ import {
   FileText,
   ClipboardList,
   Download,
+  Share,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
@@ -458,7 +459,7 @@ function PushNotificationManager() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [isChecking, setIsChecking] = React.useState(true);
   const isMobile = useIsMobile();
-  const { canInstall, isInstalling, installApp } = usePwaInstall();
+  const { canInstall, isInstalling, installApp, isIos } = usePwaInstall();
 
   async function checkSubscription() {
     const result = await getPushSubscriptionStatusAction();
@@ -526,7 +527,7 @@ function PushNotificationManager() {
     setIsLoading(false);
   }
 
-  if (!isSupported) {
+  if (!isSupported && !isIos) {
     return (
       <Card>
         <CardContent className="py-4">
@@ -557,6 +558,17 @@ function PushNotificationManager() {
               {isInstalling ? <Spinner className="size-4 mr-2" /> : <Download className="size-4 mr-2" />}
               {isInstalling ? "Installing..." : "Install App"}
             </Button>
+          </div>
+        ) : isMobile && isIos ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Install the app for the best notification experience.
+            </p>
+            <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+              <li>Tap the <Share className="size-4 inline mx-1" /> Share button in Safari</li>
+              <li>Scroll down and tap &quot;Add to Home Screen&quot;</li>
+              <li>Open the app from your home screen</li>
+            </ol>
           </div>
         ) : (
           <>

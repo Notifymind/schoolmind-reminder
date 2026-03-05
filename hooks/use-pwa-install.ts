@@ -7,12 +7,22 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
+function isIosDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  return /iPad|iPhone|iPod/.test(ua) || 
+    (ua.includes("Mac") && "ontouchend" in document);
+}
+
 export function usePwaInstall() {
   const [deferredPrompt, setDeferredPrompt] = React.useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalling, setIsInstalling] = React.useState(false);
   const [isInstalled, setIsInstalled] = React.useState(false);
+  const [isIos, setIsIos] = React.useState(false);
 
   React.useEffect(() => {
+    setIsIos(isIosDevice());
+
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -54,5 +64,6 @@ export function usePwaInstall() {
     isInstalling,
     installApp,
     isInstalled,
+    isIos: isIos && !isInstalled,
   };
 }
