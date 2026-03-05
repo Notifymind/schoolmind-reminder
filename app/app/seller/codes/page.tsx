@@ -58,6 +58,7 @@ interface Code {
   sellerId: string;
   redeemedBy: string | null;
   redeemedAt: Date | null;
+  wasRedeemedAt: Date | null;
   createdAt: Date;
 }
 
@@ -122,7 +123,7 @@ export default function CodesPage() {
     await navigator.clipboard.writeText(code.code);
   }
 
-  const unredeemedCodes = codes.filter((c) => !c.redeemedBy);
+  const unredeemedCodes = codes.filter((c) => !c.wasRedeemedAt);
   const totalPages = Math.ceil(unredeemedCodes.length / ITEMS_PER_PAGE);
   const paginatedCodes = unredeemedCodes.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -339,7 +340,7 @@ export default function CodesPage() {
               </div>
               <div>
                 <p className="text-muted-foreground">Status</p>
-                <p>{viewingCode?.redeemedBy ? "Redeemed" : "Unredeemed"}</p>
+                <p>{viewingCode?.wasRedeemedAt ? "Redeemed" : "Unredeemed"}</p>
               </div>
             </div>
           </div>
