@@ -1,10 +1,40 @@
+const CACHE_NAME = "schoolmind-v1";
+
+self.addEventListener("install", (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
+
+  event.respondWith(
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
+    })
+  );
+});
+
 self.addEventListener("push", function (event) {
   if (event.data) {
     const data = event.data.json();
     const options = {
       body: data.body,
-      icon: data.icon || "/icon-192x192.svg",
-      badge: "/icon-192x192.svg",
+      icon: data.icon || "/android-chrome-192x192.png",
+      badge: "/android-chrome-192x192.png",
       vibrate: [100, 50, 100],
       data: {
         dateOfArrival: Date.now(),
