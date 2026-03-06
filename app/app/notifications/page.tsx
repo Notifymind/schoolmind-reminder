@@ -360,7 +360,7 @@ function PresetCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2">
         {(preset.isActiveForExams || preset.isActiveForAssignments) && (
           <div className="flex flex-wrap gap-2">
             {preset.isActiveForExams && (
