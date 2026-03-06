@@ -22,19 +22,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import {
-  Bell,
-  Plus,
-  Trash2,
-  Check,
-  Clock,
-  Calendar,
-  Edit2,
-  Smartphone,
-  FileText,
-  ClipboardList,
-  Download,
-  Share,
-} from "lucide-react";
+   Bell,
+   Plus,
+   Trash2,
+   Check,
+   Clock,
+   Calendar,
+   Edit2,
+   Smartphone,
+   FileText,
+   ClipboardList,
+   Download,
+   Share,
+   Save,
+   Star,
+ } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
 import {
@@ -160,15 +162,16 @@ type Limits = {
 
 type ActivatingButton = { presetId: string; type: "exams" | "assignments" | "applyExams" | "applyAssignments" } | null;
 
+type ApplyDialogState = { presetId: string; exams: boolean; assignments: boolean } | null;
+type DefaultDialogState = { presetId: string; exams: boolean; assignments: boolean } | null;
+
 function PresetCard({
   preset,
   limits,
   hasAssignmentsPermission,
   activatingButton,
-  onActivateForExams,
-  onActivateForAssignments,
-  onApplyToAllExams,
-  onApplyToAllAssignments,
+  onSetDefault,
+  onApplyToAll,
   onDelete,
   onEdit,
   onAddTime,
@@ -178,10 +181,8 @@ function PresetCard({
   limits: Limits;
   hasAssignmentsPermission: boolean;
   activatingButton: ActivatingButton;
-  onActivateForExams: () => void;
-  onActivateForAssignments: () => void;
-  onApplyToAllExams: () => void;
-  onApplyToAllAssignments: () => void;
+  onSetDefault: (exams: boolean, assignments: boolean) => Promise<void>;
+  onApplyToAll: (exams: boolean, assignments: boolean) => Promise<void>;
   onDelete: () => Promise<void>;
   onEdit: (name: string) => Promise<void>;
   onAddTime: (daysBefore: number, time: string) => Promise<void>;
@@ -197,6 +198,14 @@ function PresetCard({
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isSavingEdit, setIsSavingEdit] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [isDefaultDialogOpen, setIsDefaultDialogOpen] = React.useState(false);
+  const [isApplyDialogOpen, setIsApplyDialogOpen] = React.useState(false);
+  const [defaultExams, setDefaultExams] = React.useState(preset.isActiveForExams);
+  const [defaultAssignments, setDefaultAssignments] = React.useState(preset.isActiveForAssignments);
+  const [applyExams, setApplyExams] = React.useState(false);
+  const [applyAssignments, setApplyAssignments] = React.useState(false);
+  const [isSettingDefault, setIsSettingDefault] = React.useState(false);
+  const [isApplying, setIsApplying] = React.useState(false);
 
   const isActivating = activatingButton !== null;
   const isActivatingExams = activatingButton?.presetId === preset.id && activatingButton?.type === "exams";
@@ -242,6 +251,39 @@ function PresetCard({
     await onDelete();
   };
 
+  const handleOpenDefaultDialog = () => {
+    setDefaultExams(preset.isActiveForExams);
+    setDefaultAssignments(preset.isActiveForAssignments);
+    setIsDefaultDialogOpen(true);
+  };
+
+  const handleOpenApplyDialog = () => {
+    setApplyExams(false);
+    setApplyAssignments(false);
+    setIsApplyDialogOpen(true);
+  };
+
+  const handleSetDefault = async () => {
+    setIsSettingDefault(true);
+    try {
+      await onSetDefault(defaultExams, defaultAssignments);
+      setIsDefaultDialogOpen(false);
+    } finally {
+      setIsSettingDefault(false);
+    }
+  };
+
+  const handleApply = async () => {
+    if (!applyExams && !applyAssignments) return;
+    setIsApplying(true);
+    try {
+      await onApplyToAll(applyExams, applyAssignments);
+      setIsApplyDialogOpen(false);
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
   return (
     <Card className={preset.isActiveForExams || preset.isActiveForAssignments ? "border-primary" : ""}>
       <CardHeader>
@@ -276,79 +318,65 @@ function PresetCard({
           </div>
           <div className="flex gap-1">
             {!isEditing && (
-               <Button
-                 variant="ghost"
-                 size="icon"
-                 onClick={() => setIsEditing(true)}
-                 title="Edit"
-                 disabled={isActivating || isDeleting}
-               >
-                 <Edit2 className="size-4" />
-               </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleOpenDefaultDialog}
+                  title="Make Default"
+                  disabled={isActivating || isDeleting || isSettingDefault}
+                >
+                  {isSettingDefault ? <Spinner className="size-4" /> : <Star className="size-4" />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleOpenApplyDialog}
+                  title="Apply to All"
+                  disabled={isActivating || isDeleting || isApplying}
+                >
+                  {isApplying ? <Spinner className="size-4" /> : <Save className="size-4" />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsEditing(true)}
+                  title="Edit"
+                  disabled={isActivating || isDeleting}
+                >
+                  <Edit2 className="size-4" />
+                </Button>
+              </>
             )}
             <Button
-               variant="ghost"
-               size="icon"
-               onClick={handleDelete}
-               title="Delete"
-               disabled={isActivating || isDeleting}
-             >
-               {isDeleting ? <Spinner className="size-4" /> : <Trash2 className="size-4 text-destructive" />}
+              variant="ghost"
+              size="icon"
+              onClick={handleDelete}
+              title="Delete"
+              disabled={isActivating || isDeleting}
+            >
+              {isDeleting ? <Spinner className="size-4" /> : <Trash2 className="size-4 text-destructive" />}
             </Button>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button
-              variant={preset.isActiveForExams ? "default" : "outline"}
-              size="sm"
-              onClick={onActivateForExams}
-              className="flex-1"
-              disabled={isActivating && !isActivatingExams}
-            >
-              {isActivatingExams && <Spinner className="size-4 mr-2" />}
-              <FileText className="size-4 mr-2" />
-              {isActivatingExams ? "Activating..." : preset.isActiveForExams ? "Active for Exams" : "Activate for Exams"}
-            </Button>
-            <Button
-              variant={preset.isActiveForAssignments ? "default" : "outline"}
-              size="sm"
-              onClick={onActivateForAssignments}
-              className="flex-1"
-              disabled={!hasAssignmentsPermission || (isActivating && !isActivatingAssignments)}
-            >
-              {isActivatingAssignments && <Spinner className="size-4 mr-2" />}
-              <ClipboardList className="size-4 mr-2" />
-              {isActivatingAssignments ? "Activating..." : preset.isActiveForAssignments ? "Active for Assignments" : "Activate for Assignments"}
-            </Button>
+        {(preset.isActiveForExams || preset.isActiveForAssignments) && (
+          <div className="flex flex-wrap gap-2">
+            {preset.isActiveForExams && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                <FileText className="size-3" />
+                <span>Default for Exams</span>
+              </div>
+            )}
+            {preset.isActiveForAssignments && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                <ClipboardList className="size-3" />
+                <span>Default for Assignments</span>
+              </div>
+            )}
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onApplyToAllExams}
-              className="flex-1"
-              disabled={isActivating && !isApplyingExams}
-            >
-              {isApplyingExams && <Spinner className="size-4 mr-2" />}
-              <FileText className="size-4 mr-2" />
-              {isApplyingExams ? "Applying..." : "Apply to All Exams"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onApplyToAllAssignments}
-              className="flex-1"
-              disabled={!hasAssignmentsPermission || (isActivating && !isApplyingAssignments)}
-            >
-              {isApplyingAssignments && <Spinner className="size-4 mr-2" />}
-              <ClipboardList className="size-4 mr-2" />
-              {isApplyingAssignments ? "Applying..." : "Apply to All Assignments"}
-            </Button>
-          </div>
-        </div>
+        )}
 
         {preset.times.length > 0 ? (
           <div className="space-y-2">
@@ -449,6 +477,127 @@ function PresetCard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isDefaultDialogOpen} onOpenChange={setIsDefaultDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Make Preset Default</DialogTitle>
+            <DialogDescription>
+              Choose what this preset should be the default for:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="size-4" />
+                <label htmlFor="default-exams" className="text-sm font-medium">
+                  Exams
+                </label>
+              </div>
+              <Button
+                id="default-exams"
+                variant={defaultExams ? "default" : "outline"}
+                size="sm"
+                onClick={() => setDefaultExams(!defaultExams)}
+              >
+                {defaultExams ? "Default" : "Not Default"}
+              </Button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="size-4" />
+                <label htmlFor="default-assignments" className="text-sm font-medium">
+                  Assignments
+                </label>
+              </div>
+              <Button
+                id="default-assignments"
+                variant={defaultAssignments ? "default" : "outline"}
+                size="sm"
+                onClick={() => setDefaultAssignments(!defaultAssignments)}
+                disabled={!hasAssignmentsPermission}
+              >
+                {defaultAssignments ? "Default" : "Not Default"}
+              </Button>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDefaultDialogOpen(false)}
+              disabled={isSettingDefault}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSetDefault} disabled={isSettingDefault}>
+              {isSettingDefault ? <Spinner className="size-4" /> : "Save"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isApplyDialogOpen} onOpenChange={setIsApplyDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Apply Preset to All</DialogTitle>
+            <DialogDescription>
+              Apply this preset to all current items. This will update existing notifications.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="size-4" />
+                <label htmlFor="apply-exams" className="text-sm font-medium">
+                  Exams
+                </label>
+              </div>
+              <Button
+                id="apply-exams"
+                variant={applyExams ? "default" : "outline"}
+                size="sm"
+                onClick={() => setApplyExams(!applyExams)}
+              >
+                {applyExams ? "Selected" : "Select"}
+              </Button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="size-4" />
+                <label htmlFor="apply-assignments" className="text-sm font-medium">
+                  Assignments
+                </label>
+              </div>
+              <Button
+                id="apply-assignments"
+                variant={applyAssignments ? "default" : "outline"}
+                size="sm"
+                onClick={() => setApplyAssignments(!applyAssignments)}
+                disabled={!hasAssignmentsPermission}
+              >
+                {applyAssignments ? "Selected" : "Select"}
+              </Button>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsApplyDialogOpen(false)}
+              disabled={isApplying}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleApply}
+              disabled={isApplying || (!applyExams && !applyAssignments)}
+            >
+              {isApplying ? <Spinner className="size-4" /> : "Apply"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
@@ -643,48 +792,46 @@ export default function NotificationsPage() {
      await loadPresets();
   }
 
-  async function handleActivateForExams(presetId: string) {
-    setActivatingButton({ presetId, type: "exams" });
+  async function handleSetDefault(presetId: string, exams: boolean, assignments: boolean): Promise<void> {
+    setActivatingButton({ presetId, type: exams ? "exams" : "assignments" });
     try {
-      await activatePresetForExamsAction(presetId);
-      await loadPresets();
-    } finally {
-      setActivatingButton(null);
-    }
-  }
-
-  async function handleActivateForAssignments(presetId: string) {
-    setActivatingButton({ presetId, type: "assignments" });
-    try {
-      await activatePresetForAssignmentsAction(presetId);
-      await loadPresets();
-    } finally {
-      setActivatingButton(null);
-    }
-  }
-
-  async function handleApplyToAllExams(presetId: string) {
-    setActivatingButton({ presetId, type: "applyExams" });
-    try {
-      const result = await applyPresetToAllCurrentExamsAction(presetId);
-      if ("error" in result) {
-        toast.error(result.error);
-      } else {
-        toast.success(`Applied to ${result.applied} exam(s)`);
+      if (exams) {
+        await activatePresetForExamsAction(presetId);
       }
+      if (assignments) {
+        await activatePresetForAssignmentsAction(presetId);
+      }
+      await loadPresets();
     } finally {
       setActivatingButton(null);
     }
   }
 
-  async function handleApplyToAllAssignments(presetId: string) {
-    setActivatingButton({ presetId, type: "applyAssignments" });
+  async function handleApplyToAll(presetId: string, exams: boolean, assignments: boolean): Promise<void> {
+    setActivatingButton({ presetId, type: exams ? "applyExams" : "applyAssignments" });
     try {
-      const result = await applyPresetToAllCurrentAssignmentsAction(presetId);
-      if ("error" in result) {
-        toast.error(result.error);
-      } else {
-        toast.success(`Applied to ${result.applied} assignment(s)`);
+      const results: string[] = [];
+      
+      if (exams) {
+        const result = await applyPresetToAllCurrentExamsAction(presetId);
+        if ("error" in result) {
+          toast.error(result.error);
+          return;
+        }
+        results.push(`${result.applied} exam(s)`);
+      }
+      
+      if (assignments) {
+        const result = await applyPresetToAllCurrentAssignmentsAction(presetId);
+        if ("error" in result) {
+          toast.error(result.error);
+          return;
+        }
+        results.push(`${result.applied} assignment(s)`);
+      }
+      
+      if (results.length > 0) {
+        toast.success(`Applied to ${results.join(" and ")}`);
       }
     } finally {
       setActivatingButton(null);
@@ -742,10 +889,8 @@ export default function NotificationsPage() {
                   limits={limits}
                   hasAssignmentsPermission={hasAssignmentsPermission ?? false}
                   activatingButton={activatingButton}
-                  onActivateForExams={() => handleActivateForExams(preset.id)}
-                  onActivateForAssignments={() => handleActivateForAssignments(preset.id)}
-                  onApplyToAllExams={() => handleApplyToAllExams(preset.id)}
-                  onApplyToAllAssignments={() => handleApplyToAllAssignments(preset.id)}
+                  onSetDefault={(exams, assignments) => handleSetDefault(preset.id, exams, assignments)}
+                  onApplyToAll={(exams, assignments) => handleApplyToAll(preset.id, exams, assignments)}
                   onDelete={() => handleDeletePreset(preset.id)}
                   onEdit={(name) => handleEditPreset(preset.id, name)}
                   onAddTime={(days, time) =>
