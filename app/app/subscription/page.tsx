@@ -230,13 +230,19 @@ export default function SubscriptionPage() {
             </CardHeader>
             <CardContent>
               {trialCode ? (
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 p-3 bg-muted rounded-md font-mono text-lg">
-                    {trialCode}
+                <div className="rounded-md bg-muted p-4">
+                  <p className="text-xs text-muted-foreground mb-1">Code</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-mono text-lg select-all">{trialCode}</p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={copyTrialCode}
+                      title="Copy code"
+                    >
+                      <Copy className="size-4" />
+                    </Button>
                   </div>
-                  <Button variant="outline" size="icon" onClick={copyTrialCode}>
-                    <Copy className="size-4" />
-                  </Button>
                 </div>
               ) : (
                 <Button
