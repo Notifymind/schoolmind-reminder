@@ -14,14 +14,21 @@ function isIosDevice(): boolean {
     (ua.includes("Mac") && "ontouchend" in document);
 }
 
+function isAndroidDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Android/i.test(navigator.userAgent);
+}
+
 export function usePwaInstall() {
   const [deferredPrompt, setDeferredPrompt] = React.useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalling, setIsInstalling] = React.useState(false);
   const [isInstalled, setIsInstalled] = React.useState(false);
   const [isIos, setIsIos] = React.useState(false);
+  const [isAndroid, setIsAndroid] = React.useState(false);
 
   React.useEffect(() => {
     setIsIos(isIosDevice());
+    setIsAndroid(isAndroidDevice());
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -65,5 +72,6 @@ export function usePwaInstall() {
     installApp,
     isInstalled,
     isIos: isIos && !isInstalled,
+    isAndroid: isAndroid && !isInstalled,
   };
 }

@@ -606,7 +606,7 @@ function PushNotificationManager() {
   const [isSupported, setIsSupported] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const isMobile = useIsMobile();
-  const { canInstall, isInstalling, installApp, isIos } = usePwaInstall();
+  const { canInstall, isInstalling, installApp, isIos, isAndroid } = usePwaInstall();
   const { isSubscribed, setSubscribed } = usePushNotificationStore();
 
   React.useEffect(() => {
@@ -679,7 +679,17 @@ function PushNotificationManager() {
         <CardDescription>Receive notifications on your device</CardDescription>
       </CardHeader>
       <CardContent>
-        {isMobile && canInstall ? (
+        {isAndroid ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Install the app for the best notification experience.
+            </p>
+            <Button onClick={installApp} disabled={isInstalling}>
+              {isInstalling ? <Spinner className="size-4 mr-2" /> : <Download className="size-4 mr-2" />}
+              {isInstalling ? "Installing..." : "Install App"}
+            </Button>
+          </div>
+        ) : isMobile && canInstall ? (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
               Install the app for the best notification experience.
