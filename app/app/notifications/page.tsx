@@ -285,7 +285,7 @@ function PresetCard({
   };
 
   return (
-    <Card className={(preset.isActiveForExams || preset.isActiveForAssignments ? "border-primary " : "") + "gap-1"}>
+    <Card className={(preset.isActiveForExams || preset.isActiveForAssignments ? "border-primary " : "") + "gap-0"}>
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
