@@ -97,6 +97,12 @@ export default function SubscriptionPage() {
       setCode("");
       const status = await getSubscriptionStatusAction();
       setSubscriptionStatus(status);
+      const permissionResult = await authClient.admin.hasPermission({
+        permission: {
+          trialCode: ["generate"],
+        },
+      });
+      setHasTrialPermission(permissionResult.data?.success ?? false);
     }
 
     setIsRedeeming(false);
