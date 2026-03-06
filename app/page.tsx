@@ -17,8 +17,7 @@ const features = [
   {
     icon: Calendar,
     title: "Exam Notifications",
-    description:
-      "Get reminded before your exams so you never miss one again.",
+    description: "Get reminded before your exams so you never miss one again.",
   },
   {
     icon: ClipboardList,
@@ -41,14 +40,12 @@ const features = [
   {
     icon: Smartphone,
     title: "PWA Support",
-    description:
-      "Install NotifyMind as an app on your phone for quick access.",
+    description: "Install NotifyMind as an app on your phone for quick access.",
   },
   {
     icon: Users,
     title: "Class Sync",
-    description:
-      "Automatically synced with your class data from SchoolMind.",
+    description: "Automatically synced with your class data from SchoolMind.",
   },
 ];
 
@@ -67,7 +64,8 @@ const steps = [
   {
     number: "03",
     title: "Stay Informed",
-    description: "Receive automatic reminders for all your exams and assignments.",
+    description:
+      "Receive automatic reminders for all your exams and assignments.",
   },
 ];
 
@@ -148,7 +146,7 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild>
                 <Link href="/register">
-                  Get Started Free <ArrowRight className="size-4 ml-2" />
+                  Get Started <ArrowRight className="size-4 ml-2" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
@@ -277,7 +275,7 @@ export default function LandingPage() {
                 key={plan.name}
                 className={cn(
                   "relative p-6 rounded-xl border bg-card",
-                  plan.popular && "border-primary shadow-lg scale-105"
+                  plan.popular && "border-primary shadow-lg scale-105",
                 )}
               >
                 {plan.popular && (
@@ -318,12 +316,13 @@ export default function LandingPage() {
                           "size-4",
                           feature.included
                             ? "text-primary"
-                            : "text-muted-foreground opacity-50"
+                            : "text-muted-foreground opacity-50",
                         )}
                       />
                       <span
                         className={cn(
-                          !feature.included && "text-muted-foreground line-through"
+                          !feature.included &&
+                            "text-muted-foreground line-through",
                         )}
                       >
                         {feature.text}
@@ -358,7 +357,7 @@ export default function LandingPage() {
           </p>
           <Button size="lg" asChild>
             <Link href="/register">
-              Get Started Free <ArrowRight className="size-4 ml-2" />
+              Get Started <ArrowRight className="size-4 ml-2" />
             </Link>
           </Button>
         </div>
