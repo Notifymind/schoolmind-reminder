@@ -213,8 +213,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <Bell className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Schoolmind</span>
-                  <span className="truncate text-xs">Reminder</span>
+                  <span className="truncate font-semibold">NotifyMind</span>
+                  <span className="truncate text-xs">Schoolmind Reminders</span>
                 </div>
               </Link>
             </SidebarMenuButton>

@@ -1,4 +1,4 @@
-const CACHE_NAME = "schoolmind-v1";
+const CACHE_NAME = "notifymind-v1";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

@@ -26,7 +26,7 @@ type PendingNotificationItem = {
 };
 
 webpush.setVapidDetails(
-  "mailto:schoolmind@example.com",
+  "mailto:notifymind@example.com",
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
   process.env.VAPID_PRIVATE_KEY!
 );
@@ -165,7 +165,7 @@ export async function testNotificationToAdminsAction() {
   };
 
   const title = "🧪 Test Notification";
-  const body = "This is a test notification from SchoolMind Reminder.\nIf you received this, your notification setup is working!";
+  const body = "This is a test notification from NotifyMind.\nIf you received this, your notification setup is working!";
 
   for (const admin of admins) {
     const subscriptions = await getAllPushSubscriptions();

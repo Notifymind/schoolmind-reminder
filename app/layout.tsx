@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Schoolmind Reminder",
-  description: "Get reminders for your schoolmind assignments, because schoolmind is to shitty to do it themselves.",
+  title: "NotifyMind",
+  description: "Get reminders for your schoolmind assignments, because schoolmind is too shitty to do it themselves.",
 };
 
 export default function RootLayout({
