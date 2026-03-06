@@ -271,7 +271,7 @@ export default function LandingPage() {
               Choose the plan that works best for you
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {pricingPlans.map((plan) => (
               <div
                 key={plan.name}
