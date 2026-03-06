@@ -680,25 +680,15 @@ function PushNotificationManager() {
       </CardHeader>
       <CardContent>
         {isAndroid ? (
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Install the app for the best notification experience.
-            </p>
-            <Button onClick={installApp} disabled={isInstalling}>
-              {isInstalling ? <Spinner className="size-4 mr-2" /> : <Download className="size-4 mr-2" />}
-              {isInstalling ? "Installing..." : "Install App"}
-            </Button>
-          </div>
+          <Button onClick={installApp} disabled={isInstalling}>
+            {isInstalling ? <Spinner className="size-4 mr-2" /> : <Download className="size-4 mr-2" />}
+            {isInstalling ? "Installing..." : "Install App"}
+          </Button>
         ) : isMobile && canInstall ? (
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Install the app for the best notification experience.
-            </p>
-            <Button onClick={installApp} disabled={isInstalling}>
-              {isInstalling ? <Spinner className="size-4 mr-2" /> : <Download className="size-4 mr-2" />}
-              {isInstalling ? "Installing..." : "Install App"}
-            </Button>
-          </div>
+          <Button onClick={installApp} disabled={isInstalling}>
+            {isInstalling ? <Spinner className="size-4 mr-2" /> : <Download className="size-4 mr-2" />}
+            {isInstalling ? "Installing..." : "Install App"}
+          </Button>
         ) : isMobile && isIos ? (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
