@@ -690,16 +690,11 @@ function PushNotificationManager() {
             {isInstalling ? "Installing..." : "Install App"}
           </Button>
         ) : isMobile && isIos ? (
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Install the app for the best notification experience.
-            </p>
-            <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+          <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
               <li>Tap the <Share className="size-4 inline mx-1" /> Share button in Safari</li>
               <li>Scroll down and tap &quot;Add to Home Screen&quot;</li>
               <li>Open the app from your home screen</li>
-            </ol>
-          </div>
+             </ol>
         ) : (
           <>
             {isSubscribed ? (
