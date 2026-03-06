@@ -73,23 +73,6 @@ const steps = [
 
 const pricingPlans = [
   {
-    name: "Free",
-    price: "0 KM",
-    period: "forever",
-    description: "Get started with basic reminders",
-    features: [
-      { text: "Exam access", included: true },
-      { text: "1 notification preset", included: true },
-      { text: "2 notifications per preset", included: true },
-      { text: "Push notifications", included: true },
-      { text: "Assignment access", included: false },
-      { text: "Trial codes for friends", included: false },
-    ],
-    cta: "Get Started",
-    href: "/register",
-    popular: false,
-  },
-  {
     name: "Basic",
     price: "3 KM",
     period: "/month",
