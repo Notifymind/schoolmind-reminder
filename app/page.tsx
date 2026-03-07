@@ -52,17 +52,21 @@ const features = [
 const steps = [
   {
     number: "01",
-    title: "Register & Select Class",
-    description: "Create your account and choose your class to get started.",
+    title: "Register",
+    description: "Create your account to get started.",
   },
   {
     number: "02",
-    title: "Configure Notifications",
-    description:
-      "Set up your notification preferences and custom reminder schedules.",
+    title: "Redeem Code",
+    description: "Redeem a code from your classes seller.",
   },
   {
     number: "03",
+    title: "Configure Notifications",
+    description: "Set up your notification preferences.",
+  },
+  {
+    number: "04",
     title: "Stay Informed",
     description:
       "Receive automatic reminders for all your exams and assignments.",
@@ -239,7 +243,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-20 px-4">
+      <section className="py-20 px-0">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">How It Works</h2>
@@ -247,7 +251,7 @@ export default function LandingPage() {
               Get started in three simple steps
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-4 gap-8">
             {steps.map((step) => (
               <div key={step.number} className="text-center">
                 <div className="size-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mx-auto mb-4">
