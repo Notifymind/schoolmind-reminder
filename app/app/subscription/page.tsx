@@ -12,12 +12,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Check, X, Gift, Copy, Loader2 } from "lucide-react";
+import { Check, X, Gift } from "lucide-react";
 import { toast } from "sonner";
-import { authClient } from "@/lib/auth-client";
 import {
   redeemCodeAction,
-  generateTrialCodeAction,
   getSubscriptionStatusAction,
 } from "@/lib/actions/subscription";
 import { RequireNotAdminSeller } from "@/components/require-not-admin-seller";
@@ -28,7 +26,6 @@ const features = [
   { name: "App Notifications", basic: true, pro: true },
   { name: "Max. notifications", basic: "2", pro: "5" },
   { name: "Notification Presets", basic: "1", pro: "5" },
-  { name: "Trial Code for Friend", basic: false, pro: true },
   { name: "Price/Month", basic: "3KM", pro: "6KM" },
   { name: "Price/Year:", basic: "24KM", pro: "40KM (saves 8KM)" },
 ];
@@ -36,20 +33,15 @@ const features = [
 export default function SubscriptionPage() {
   usePageTitle("Subscription");
 
-  const { data: session } = authClient.useSession();
   const [code, setCode] = React.useState("");
   const [isRedeeming, setIsRedeeming] = React.useState(false);
-  const [isGeneratingTrial, setIsGeneratingTrial] = React.useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = React.useState<{
     role: string;
     subscriptionEndsAt: Date | null;
     isActive: boolean;
-    lastTrialCodeGenerated: Date | null;
   } | null>(null);
-  const [trialCode, setTrialCode] = React.useState<string | null>(null);
 
   const searchParams = useSearchParams();
-  const [hasTrialPermission, setHasTrialPermission] = React.useState(false);
 
   React.useEffect(() => {
     const codeParam = searchParams.get("code");
@@ -66,22 +58,6 @@ export default function SubscriptionPage() {
     loadStatus();
   }, []);
 
-  React.useEffect(() => {
-    async function checkPermission() {
-      if (session) {
-        const result = await authClient.admin.hasPermission({
-          permission: {
-            trialCode: ["generate"],
-          },
-        });
-        setHasTrialPermission(result.data?.success ?? false);
-      } else {
-        setHasTrialPermission(false);
-      }
-    }
-    checkPermission();
-  }, [session]);
-
   async function handleRedeemCode(e: React.FormEvent) {
     e.preventDefault();
     if (!code.trim()) return;
@@ -97,63 +73,10 @@ export default function SubscriptionPage() {
       setCode("");
       const status = await getSubscriptionStatusAction();
       setSubscriptionStatus(status);
-      const permissionResult = await authClient.admin.hasPermission({
-        permission: {
-          trialCode: ["generate"],
-        },
-      });
-      setHasTrialPermission(permissionResult.data?.success ?? false);
     }
 
     setIsRedeeming(false);
   }
-
-  async function handleGenerateTrialCode() {
-    setIsGeneratingTrial(true);
-    setTrialCode(null);
-
-    const result = await generateTrialCodeAction();
-
-    if (result.error) {
-      toast.error(result.error);
-    } else if (result.code) {
-      setTrialCode(result.code.code);
-      toast.success("Trial code generated! Share it with a friend.");
-      const status = await getSubscriptionStatusAction();
-      setSubscriptionStatus(status);
-    }
-
-    setIsGeneratingTrial(false);
-  }
-
-  async function copyTrialCode() {
-    if (trialCode) {
-      await navigator.clipboard.writeText(trialCode);
-      toast.success("Code copied to clipboard!");
-    }
-  }
-
-  const [canGenerateTrial, setCanGenerateTrial] = React.useState(false);
-  const [daysUntilNextTrial, setDaysUntilNextTrial] = React.useState(0);
-
-  React.useEffect(() => {
-    if (!hasTrialPermission || !subscriptionStatus) {
-      setCanGenerateTrial(false);
-      setDaysUntilNextTrial(0);
-      return;
-    }
-    const lastGenerated = subscriptionStatus.lastTrialCodeGenerated;
-    if (!lastGenerated) {
-      setCanGenerateTrial(true);
-      setDaysUntilNextTrial(0);
-      return;
-    }
-    const daysSince = Math.floor(
-      (Date.now() - new Date(lastGenerated).getTime()) / (1000 * 60 * 60 * 24),
-    );
-    setCanGenerateTrial(daysSince >= 30);
-    setDaysUntilNextTrial(Math.max(0, 30 - daysSince));
-  }, [hasTrialPermission, subscriptionStatus]);
 
   return (
     <RequireNotAdminSeller>
@@ -215,55 +138,6 @@ export default function SubscriptionPage() {
             </CardContent>
           </form>
         </Card>
-
-        {hasTrialPermission && (
-          <Card className="w-full max-w-2xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Gift className="size-5" />
-                Trial Code for Friends
-              </CardTitle>
-              <CardDescription>
-                Generate a 7-day trial code to share with a friend. You can
-                generate one trial code per month.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {trialCode ? (
-                <div className="rounded-md bg-muted p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Code</p>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-mono text-lg select-all">{trialCode}</p>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={copyTrialCode}
-                      title="Copy code"
-                    >
-                      <Copy className="size-4" />
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <Button
-                  onClick={handleGenerateTrialCode}
-                  disabled={isGeneratingTrial || !canGenerateTrial}
-                >
-                  {isGeneratingTrial ? (
-                    <>
-                      <Loader2 className="size-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : canGenerateTrial ? (
-                    "Generate Trial Code"
-                  ) : (
-                    `Available in ${daysUntilNextTrial} day(s)`
-                  )}
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
         <div className="w-full max-w-2xl overflow-x-auto">
           <table className="w-full border-collapse">

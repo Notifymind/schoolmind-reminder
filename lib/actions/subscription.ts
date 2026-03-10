@@ -7,26 +7,13 @@ import {
   setUserSubscription,
   extendSubscription,
   redeemCodeInDb,
-  updateLastTrialCodeGenerated,
 } from "@/db";
 
 const DURATION_DAYS: Record<string, number> = {
   month: 30,
   school_year: 365,
-  trial: 7,
+  trial: 14,
 };
-
-async function hasTrialCodePermission(userId: string): Promise<boolean> {
-  const result = await auth.api.userHasPermission({
-    body: {
-      userId,
-      permission: {
-        trialCode: ["generate"],
-      },
-    },
-  });
-  return result?.success ?? false;
-}
 
 export async function redeemCodeAction(code: string) {
   const session = await auth.api.getSession({
@@ -130,82 +117,18 @@ export async function redeemCodeAction(code: string) {
   };
 }
 
-export async function generateTrialCodeAction() {
-  const session = await auth.api.getSession({
-    headers: await import("next/headers").then((m) => m.headers()),
-  });
-
-  if (!session?.user?.id) {
-    return { error: "Not authenticated" };
-  }
-
-  if (!(await hasTrialCodePermission(session.user.id))) {
-    return { error: "Only Pro users can generate trial codes" };
-  }
-
-  const userSubscription = await getUserSubscription(session.user.id);
-  if (!userSubscription) {
-    return { error: "User not found" };
-  }
-
-  const lastGenerated = userSubscription.lastTrialCodeGenerated;
-  const now = new Date();
-
-  if (lastGenerated) {
-    const lastGeneratedDate = new Date(lastGenerated);
-    const daysSinceLastGenerated = Math.floor(
-      (now.getTime() - lastGeneratedDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-
-    if (daysSinceLastGenerated < 30) {
-      const daysUntilNext = 30 - daysSinceLastGenerated;
-      return {
-        error: `You can generate another trial code in ${daysUntilNext} day(s)`,
-        daysUntilNext,
-      };
-    }
-  }
-
-  const { createCode } = await import("@/db");
-  const { getCodeByCode } = await import("@/db");
-
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const generatePart = () => {
-    let result = "";
-    for (let i = 0; i < 5; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  };
-
-  let codeString = `${generatePart()}-${generatePart()}`;
-  let attempts = 0;
-  while (await getCodeByCode(codeString)) {
-    codeString = `${generatePart()}-${generatePart()}`;
-    attempts++;
-    if (attempts > 100) {
-      return { error: "Failed to generate unique code. Please try again." };
-    }
-  }
-
-  const code = await createCode(codeString, "trial", "trial", "0", session.user.id, session.user.class);
-  await updateLastTrialCodeGenerated(session.user.id);
-
-  return { code };
-}
-
 export async function getSubscriptionStatusAction() {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
   });
 
   if (!session?.user?.id) {
-    return { role: "free", subscriptionEndsAt: null, isActive: false, lastTrialCodeGenerated: null };
+    return { role: "free", subscriptionEndsAt: null, isActive: false };
   }
 
   const subscription = await getUserSubscription(session.user.id);
   if (!subscription) {
-    return { role: "free", subscriptionEndsAt: null, isActive: false, lastTrialCodeGenerated: null };
+    return { role: "free", subscriptionEndsAt: null, isActive: false };
   }
 
   const now = new Date();
@@ -216,6 +139,5 @@ export async function getSubscriptionStatusAction() {
     role: subscription.role,
     subscriptionEndsAt: endsAt,
     isActive,
-    lastTrialCodeGenerated: subscription.lastTrialCodeGenerated,
   };
 }

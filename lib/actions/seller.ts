@@ -9,17 +9,19 @@ import {
   deleteCodeById,
   getCodeByCode,
   db,
+  incrementTrialCodesGenerated,
 } from "@/db";
 import { codes, balanceHistory, user } from "@/db/schema";
 import { eq, desc, or } from "drizzle-orm";
 
-export type CodeType = "basic" | "pro" | "upgrade";
-export type CodeDuration = "month" | "school_year";
+export type CodeType = "basic" | "pro" | "upgrade" | "trial";
+export type CodeDuration = "month" | "school_year" | "trial";
 
 const PRICING = {
-  basic: { month: 2, school_year: 16 },
-  pro: { month: 4, school_year: 24 },
-  upgrade: { month: 2, school_year: 16 },
+  basic: { month: 2, school_year: 16, trial: 0 },
+  pro: { month: 4, school_year: 24, trial: 0 },
+  upgrade: { month: 2, school_year: 16, trial: 0 },
+  trial: { month: 0, school_year: 0, trial: 0 },
 } as const;
 
 async function hasCodePermission(userId: string): Promise<boolean> {
@@ -79,6 +81,43 @@ export async function generateCodeAction(
   }
 
   const isAdmin = await hasAdminPermission(session.user.id);
+
+  if (type === "trial") {
+    if (!isAdmin) {
+      const { maxTrialCodes, trialCodesGenerated } = await getSellerBalance(session.user.id);
+      if (trialCodesGenerated >= maxTrialCodes) {
+        return {
+          error: `You have reached your trial code limit of ${maxTrialCodes}. Contact an admin to reset your limit.`,
+        };
+      }
+    }
+
+    let codeString = generateCodeString();
+    let attempts = 0;
+    while (await getCodeByCode(codeString)) {
+      codeString = generateCodeString();
+      attempts++;
+      if (attempts > 100) {
+        return { error: "Failed to generate unique code. Please try again." };
+      }
+    }
+
+    const code = await createCode(
+      codeString,
+      "trial",
+      "trial",
+      "0",
+      session.user.id,
+      session.user.class,
+    );
+
+    if (!isAdmin) {
+      await incrementTrialCodesGenerated(session.user.id);
+    }
+
+    return { code };
+  }
+
   const price = getCodePrice(type, duration);
 
   if (!isAdmin) {
@@ -173,15 +212,15 @@ export async function getBalanceAction() {
   });
 
   if (!session?.user?.id) {
-    return { balance: "0", maxDebt: "0" };
+    return { balance: "0", maxDebt: "0", maxTrialCodes: 0, trialCodesGenerated: 0 };
   }
 
   if (!(await hasCodePermission(session.user.id))) {
-    return { balance: "0", maxDebt: "0" };
+    return { balance: "0", maxDebt: "0", maxTrialCodes: 0, trialCodesGenerated: 0 };
   }
 
-  const { balance, maxDebt } = await getSellerBalance(session.user.id);
-  return { balance, maxDebt };
+  const { balance, maxDebt, maxTrialCodes, trialCodesGenerated } = await getSellerBalance(session.user.id);
+  return { balance, maxDebt, maxTrialCodes, trialCodesGenerated };
 }
 
 export type Transaction = {

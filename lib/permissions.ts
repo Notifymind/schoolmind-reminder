@@ -3,7 +3,6 @@ import { defaultStatements, adminAc } from "better-auth/plugins/admin/access";
 
 export const statement = {
   ...defaultStatements,
-  trialCode: ["generate"],
   assignments: ["access"],
   exams: ["access"],
   seller: ["access"],
@@ -19,7 +18,6 @@ export const basicRole = ac.newRole({
 export const proRole = ac.newRole({
   ...basicRole.statements,
   assignments: ["access"],
-  trialCode: ["generate"],
 });
 
 export const sellerRole = ac.newRole({

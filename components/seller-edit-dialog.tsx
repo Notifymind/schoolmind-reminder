@@ -37,6 +37,8 @@ interface Seller {
   balance: string;
   maxDebt: string;
   class: string | null;
+  maxTrialCodes: number;
+  trialCodesGenerated: number;
 }
 
 interface Class {
@@ -61,6 +63,7 @@ export function SellerEditDialog({
   onCreateClass,
 }: SellerEditDialogProps) {
   const [maxDebt, setMaxDebt] = React.useState("0");
+  const [maxTrialCodes, setMaxTrialCodes] = React.useState("0");
   const [selectedClass, setSelectedClass] = React.useState<string | null>(null);
   const [classes, setClasses] = React.useState<Class[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -76,6 +79,7 @@ export function SellerEditDialog({
   React.useEffect(() => {
     if (open && seller) {
       setMaxDebt(seller.maxDebt);
+      setMaxTrialCodes(seller.maxTrialCodes.toString());
       setSelectedClass(seller.class);
       loadClasses();
     }
@@ -87,7 +91,7 @@ export function SellerEditDialog({
 
     setIsLoading(true);
 
-    const result = await updateSellerAction(seller.id, maxDebt, selectedClass);
+    const result = await updateSellerAction(seller.id, maxDebt, parseInt(maxTrialCodes), selectedClass);
 
     if ("error" in result && result.error) {
       toast.error(result.error);
@@ -114,7 +118,7 @@ export function SellerEditDialog({
         <DialogHeader>
           <DialogTitle>Edit Seller</DialogTitle>
           <DialogDescription>
-            Update {seller.name}&apos;s class and maximum debt.
+            Update {seller.name}&apos;s class, maximum debt, and trial code limit.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -199,6 +203,20 @@ export function SellerEditDialog({
                 onChange={(e) => setMaxDebt(e.target.value)}
                 required
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="maxTrialCodes">Maximum Trial Codes</Label>
+              <Input
+                id="maxTrialCodes"
+                type="number"
+                min="0"
+                value={maxTrialCodes}
+                onChange={(e) => setMaxTrialCodes(e.target.value)}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Trial codes used: {seller.trialCodesGenerated}
+              </p>
             </div>
           </div>
           <DialogFooter className="mt-6">

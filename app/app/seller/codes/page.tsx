@@ -30,21 +30,31 @@ import {
   type CodeDuration,
 } from "@/lib/actions/seller";
 
-const PRICING = {
-  basic: { month: 2, school_year: 16 },
-  pro: { month: 4, school_year: 24 },
-  upgrade: { month: 2, school_year: 8 },
-} as const;
+const PRICING: Record<CodeType, Record<CodeDuration, number>> = {
+  basic: { month: 2, school_year: 16, trial: 0 },
+  pro: { month: 4, school_year: 24, trial: 0 },
+  upgrade: { month: 2, school_year: 8, trial: 0 },
+  trial: { month: 0, school_year: 0, trial: 0 },
+};
 
 const CODE_TYPE_LABELS: Record<CodeType, string> = {
   basic: "Basic Code",
   pro: "Pro Code",
   upgrade: "Upgrade Code (Basic to Pro)",
+  trial: "Trial Code (14 days)",
 };
 
 const DURATION_LABELS: Record<CodeDuration, string> = {
   month: "Month",
   school_year: "School Year",
+  trial: "14 Days",
+};
+
+const DURATION_MAP: Record<CodeType, CodeDuration[]> = {
+  basic: ["month", "school_year"],
+  pro: ["month", "school_year"],
+  upgrade: ["month", "school_year"],
+  trial: ["trial"],
 };
 
 const ITEMS_PER_PAGE = 10;
@@ -67,6 +77,8 @@ export default function CodesPage() {
   const [codes, setCodes] = React.useState<Code[]>([]);
   const [balance, setBalance] = React.useState("0");
   const [maxDebt, setMaxDebt] = React.useState("0");
+  const [maxTrialCodes, setMaxTrialCodes] = React.useState(0);
+  const [trialCodesGenerated, setTrialCodesGenerated] = React.useState(0);
   const [codeType, setCodeType] = React.useState<CodeType>("basic");
   const [duration, setDuration] = React.useState<CodeDuration>("month");
   const [isGenerating, setIsGenerating] = React.useState(false);
@@ -74,10 +86,12 @@ export default function CodesPage() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [viewingCode, setViewingCode] = React.useState<Code | null>(null);
 
-  const price = PRICING[codeType][duration];
+  const isTrialCode = codeType === "trial";
+  const price = isTrialCode ? 0 : PRICING[codeType][duration];
   const currentBalance = parseFloat(balance);
   const maxDebtValue = parseFloat(maxDebt);
-  const wouldExceedDebt = currentBalance - price < -maxDebtValue;
+  const wouldExceedDebt = !isTrialCode && currentBalance - price < -maxDebtValue;
+  const trialCodesExhausted = isTrialCode && trialCodesGenerated >= maxTrialCodes;
 
   async function loadData() {
     const [codesResult, balanceResult] = await Promise.all([
@@ -87,11 +101,21 @@ export default function CodesPage() {
     setCodes(codesResult.codes as Code[]);
     setBalance(balanceResult.balance);
     setMaxDebt(balanceResult.maxDebt);
+    setMaxTrialCodes(balanceResult.maxTrialCodes);
+    setTrialCodesGenerated(balanceResult.trialCodesGenerated);
   }
 
   React.useEffect(() => {
     loadData().finally(() => setIsInitialLoading(false));
   }, []);
+
+  React.useEffect(() => {
+    if (codeType === "trial") {
+      setDuration("trial");
+    } else if (duration === "trial") {
+      setDuration("month");
+    }
+  }, [codeType, duration]);
 
   async function handleGenerateCode() {
     setIsGenerating(true);
@@ -156,6 +180,9 @@ export default function CodesPage() {
             </span>
           )}
           </p>
+          <p className="text-muted-foreground text-sm">
+            Trial Codes: {trialCodesGenerated} / {maxTrialCodes} used
+          </p>
         </div>
       </div>
 
@@ -187,28 +214,37 @@ export default function CodesPage() {
               </select>
             </div>
 
-            <div className="flex-1 space-y-2">
-              <label className="text-sm font-medium">Duration</label>
-              <select
-                value={duration}
-                onChange={(e) => setDuration(e.target.value as CodeDuration)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                {Object.entries(DURATION_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label} ({PRICING[codeType][value as CodeDuration]} KM)
-                  </option>
-                ))}
-              </select>
-            </div>
+            {!isTrialCode && (
+              <div className="flex-1 space-y-2">
+                <label className="text-sm font-medium">Duration</label>
+                <select
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value as CodeDuration)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  {DURATION_MAP[codeType].map((d) => (
+                    <option key={d} value={d}>
+                      {DURATION_LABELS[d]} ({PRICING[codeType][d]} KM)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="flex flex-col gap-1">
-              <span className="text-sm text-muted-foreground">
-                Cost: {price} KM
-              </span>
+              {!isTrialCode && (
+                <span className="text-sm text-muted-foreground">
+                  Cost: {price} KM
+                </span>
+              )}
+              {isTrialCode && (
+                <span className="text-sm text-muted-foreground">
+                  Free ({trialCodesGenerated}/{maxTrialCodes} used)
+                </span>
+              )}
               <Button
                 onClick={handleGenerateCode}
-                disabled={isGenerating || wouldExceedDebt}
+                disabled={isGenerating || wouldExceedDebt || trialCodesExhausted}
               >
                 {isGenerating ? "Generating..." : "Generate Code"}
               </Button>
@@ -219,6 +255,12 @@ export default function CodesPage() {
             <p className="mt-4 text-sm text-destructive">
               Cannot generate code: would exceed maximum debt of{" "}
               {maxDebtValue.toFixed(2)} KM
+            </p>
+          )}
+
+          {trialCodesExhausted && (
+            <p className="mt-4 text-sm text-destructive">
+              You have reached your trial code limit of {maxTrialCodes}. Contact an admin to reset your limit.
             </p>
           )}
         </CardContent>

@@ -8,6 +8,7 @@ import {
   upgradeToSellerAction,
   removeSellerAction,
   getClassesAction,
+  resetSellerTrialCodesAction,
 } from "@/lib/actions/admin";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,7 +47,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChevronsUpDown, Check, Pencil, Trash2, UserPlus } from "lucide-react";
+import { ChevronsUpDown, Check, Pencil, Trash2, UserPlus, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AddClassDialog } from "@/components/add-class-dialog";
 import { SellerEditDialog } from "@/components/seller-edit-dialog";
@@ -66,6 +67,8 @@ interface Seller {
   balance: string;
   maxDebt: string;
   class: string | null;
+  maxTrialCodes: number;
+  trialCodesGenerated: number;
   createdAt: Date | null;
 }
 
@@ -89,6 +92,7 @@ export default function AdminSellersPage() {
 
   const [addDialogOpen, setAddDialogOpen] = React.useState(false);
   const [maxDebt, setMaxDebt] = React.useState("0");
+  const [maxTrialCodes, setMaxTrialCodes] = React.useState("0");
   const [selectedClass, setSelectedClass] = React.useState<string | null>(null);
   const [classPopoverOpen, setClassPopoverOpen] = React.useState(false);
 
@@ -144,6 +148,7 @@ export default function AdminSellersPage() {
     setSearchedUsers([]);
     setUserPopoverOpen(false);
     setMaxDebt("0");
+    setMaxTrialCodes("0");
     setSelectedClass(user.class);
   };
 
@@ -173,6 +178,7 @@ export default function AdminSellersPage() {
     const result = await upgradeToSellerAction(
       selectedUser.id,
       maxDebt,
+      parseInt(maxTrialCodes, 10),
       selectedClass
     );
 
@@ -197,6 +203,20 @@ export default function AdminSellersPage() {
   const handleDeleteClick = (seller: Seller) => {
     setDeletingSeller(seller);
     setDeleteDialogOpen(true);
+  };
+
+  const handleResetTrialCodes = async (seller: Seller) => {
+    setIsLoading(true);
+    const result = await resetSellerTrialCodesAction(seller.id);
+
+    if ("error" in result && result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success("Trial codes reset successfully");
+      loadSellers();
+    }
+
+    setIsLoading(false);
   };
 
   const handleConfirmDelete = async () => {
@@ -345,9 +365,21 @@ export default function AdminSellersPage() {
                       >
                         Balance: {parseFloat(seller.balance).toFixed(2)} KM
                       </span>
+                      <span>
+                        Trial Codes: {seller.trialCodesGenerated}/{seller.maxTrialCodes}
+                      </span>
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleResetTrialCodes(seller)}
+                      title="Reset trial codes"
+                      disabled={isLoading}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -375,7 +407,7 @@ export default function AdminSellersPage() {
           <DialogHeader>
             <DialogTitle>Add Seller</DialogTitle>
             <DialogDescription>
-              Set the maximum debt and class for {selectedUser?.name}.
+              Set the maximum debt, trial codes limit, and class for {selectedUser?.name}.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -464,6 +496,16 @@ export default function AdminSellersPage() {
                 min="0"
                 value={maxDebt}
                 onChange={(e) => setMaxDebt(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="maxTrialCodes">Maximum Trial Codes</Label>
+              <Input
+                id="maxTrialCodes"
+                type="number"
+                min="0"
+                value={maxTrialCodes}
+                onChange={(e) => setMaxTrialCodes(e.target.value)}
               />
             </div>
           </div>
