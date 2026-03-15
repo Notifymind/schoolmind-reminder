@@ -162,9 +162,6 @@ type Limits = {
 
 type ActivatingButton = { presetId: string; type: "exams" | "assignments" | "applyExams" | "applyAssignments" } | null;
 
-type ApplyDialogState = { presetId: string; exams: boolean; assignments: boolean } | null;
-type DefaultDialogState = { presetId: string; exams: boolean; assignments: boolean } | null;
-
 function PresetCard({
   preset,
   limits,
@@ -208,10 +205,6 @@ function PresetCard({
   const [isApplying, setIsApplying] = React.useState(false);
 
   const isActivating = activatingButton !== null;
-  const isActivatingExams = activatingButton?.presetId === preset.id && activatingButton?.type === "exams";
-  const isActivatingAssignments = activatingButton?.presetId === preset.id && activatingButton?.type === "assignments";
-  const isApplyingExams = activatingButton?.presetId === preset.id && activatingButton?.type === "applyExams";
-  const isApplyingAssignments = activatingButton?.presetId === preset.id && activatingButton?.type === "applyAssignments";
 
   const handleSaveEdit = async () => {
     if (editName.trim()) {

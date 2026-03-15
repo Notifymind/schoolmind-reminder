@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { usePageTitle } from "@/app/app/layout";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -37,17 +36,17 @@ export default function HistoryPage() {
 
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
-  async function loadData() {
+  const loadData = React.useCallback(async () => {
     setIsLoading(true);
     const result = await getTransactionHistoryAction(ITEMS_PER_PAGE, (currentPage - 1) * ITEMS_PER_PAGE);
     setTransactions(result.transactions);
     setTotal(result.total);
     setIsLoading(false);
-  }
+  }, [currentPage]);
 
   React.useEffect(() => {
     loadData();
-  }, [currentPage]);
+  }, [loadData]);
 
   if (isLoading && currentPage === 1) {
     return (

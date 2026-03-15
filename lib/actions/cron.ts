@@ -15,16 +15,6 @@ import { exams, assignments } from "@/db/schema";
 type Exam = typeof exams.$inferSelect;
 type Assignment = typeof assignments.$inferSelect;
 
-type PendingNotificationItem = {
-  userId: string;
-  examId: number | null;
-  assignmentId: number | null;
-  daysBefore: number;
-  item: Exam | Assignment;
-  preset: { id: number; name: string };
-  time: { id: number; daysBefore: number; time: string };
-};
-
 webpush.setVapidDetails(
   "mailto:notifymind@example.com",
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
@@ -51,7 +41,6 @@ export async function processNotificationsAction() {
       const exam = !isAssignment ? examOrAssignment as Exam : null;
 
       const itemName = assignment?.title || exam?.title || assignment?.subject || exam?.subject || "Untitled";
-      const typeLabel = assignment ? "Assignment" : "Exam";
       const dueDate = assignment?.date || exam?.date || "TBD";
       const dueTime = assignment?.time || exam?.time;
       const dueDateDisplay = dueTime ? `${dueDate} at ${dueTime}` : dueDate;
