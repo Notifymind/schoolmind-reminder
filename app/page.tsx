@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { cn } from "@/lib/utils";
@@ -12,6 +13,11 @@ import {
   Check,
   ArrowRight,
 } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "NotifyMind - Smart Reminders for SchoolMind",
+  description: "Never miss an exam or assignment again. Get smart reminders for your SchoolMind exams and assignments.",
+};
 
 const features = [
   {

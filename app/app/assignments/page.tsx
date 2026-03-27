@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth"
 import { getUserClass, getAssignmentsByClass, getPresetsWithTimes, getNotificationPreferencesForAssignments, getNotificationPresetById, getNotificationTimes } from "@/db"
 import { assignments } from "@/db/schema"
 import { AssignmentsClient } from "./client"
 import { Suspense } from "react"
+
+export const metadata: Metadata = {
+  title: "Upcoming Assignments - NotifyMind",
+  description: "View and manage notifications for your upcoming assignments",
+};
 
 
 type Assignment = typeof assignments.$inferSelect

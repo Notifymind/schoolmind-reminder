@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { AuthRedirect } from "@/components/auth-redirect"
 import { LoginForm } from "@/components/login-form"
 import { ModeToggle } from "@/components/mode-toggle"
+
+export const metadata: Metadata = {
+  title: "Sign In - NotifyMind",
+  description: "Sign in to your NotifyMind account",
+};
 
 export default function Page() {
   return (

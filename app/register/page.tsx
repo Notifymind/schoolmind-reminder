@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { AuthRedirect } from "@/components/auth-redirect"
 import { ModeToggle } from "@/components/mode-toggle"
 import { RegisterForm } from "@/components/register-form"
+
+export const metadata: Metadata = {
+  title: "Create Account - NotifyMind",
+  description: "Create a NotifyMind account to get started",
+};
 
 export default function Page() {
   return (

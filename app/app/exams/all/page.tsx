@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth"
 import { getUserClass, getExamsByClass, getPresetsWithTimes, getNotificationPreferencesForExams, getNotificationPresetById, getNotificationTimes } from "@/db"
 import { exams } from "@/db/schema"
 import { ExamsClient } from "../client"
+
+export const metadata: Metadata = {
+  title: "All Exams - NotifyMind",
+  description: "View all your exams",
+};
 
 
 type Exam = typeof exams.$inferSelect
