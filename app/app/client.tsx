@@ -27,7 +27,7 @@ import {
   CalendarClock,
   BookOpen,
   Bell,
-  DollarSign,
+  Users,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { ProAdCard } from "@/components/pro-ad-card";
@@ -445,15 +445,14 @@ export function HomeClient({
       <div className="flex flex-1 items-center justify-center -mt-16">
         <div className="bg-card rounded-xl border p-8 max-w-md text-center">
           <div className="bg-primary/10 mx-auto mb-4 flex size-16 items-center justify-center rounded-full">
-            <DollarSign className="text-primary size-8" />
+            <Users className="text-primary size-8" />
           </div>
-          <h2 className="text-xl font-semibold">Subscription Required</h2>
+          <h2 className="text-xl font-semibold">No Class Assigned</h2>
           <p className="text-muted-foreground mt-2">
-            You need an active subscription to access your class. Subscribe now
-            to see upcoming exams and assignments.
+            You haven&apos;t been assigned to a class yet. Redeem a class assignment code from your seller to get started.
           </p>
           <Button asChild className="mt-6">
-            <Link href="/app/subscription">View Plans</Link>
+            <Link href="/app/subscription">Redeem Code</Link>
           </Button>
         </div>
       </div>
