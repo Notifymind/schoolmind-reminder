@@ -27,7 +27,7 @@ const features = [
   { name: "Max. notifications", free: "2", pro: "5" },
   { name: "Notification Presets", free: "1", pro: "5" },
   { name: "Price/Month", free: "Free", pro: "4KM" },
-  { name: "Price/Year:", free: "Free", pro: "32KM (saves 16KM)" },
+  { name: "Price/Year:", free: "Free", pro: "32KM" },
 ];
 
 function SubscriptionContent() {
