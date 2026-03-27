@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { usePageTitle } from "@/app/app/layout";
-import { SubscriptionPrompt } from "@/components/subscription-prompt"
 import { ProAdCard } from "@/components/pro-ad-card";
 import { Pagination } from "@/components/ui/pagination";
 import {
@@ -269,14 +268,11 @@ export function AssignmentsClient({
   };
 
   if (!hasPermission) {
-    if (userRole === "basic") {
-      return (
-        <div className="flex flex-1 items-center justify-center -mt-16">
-          <ProAdCard />
-        </div>
-      )
-    }
-    return <SubscriptionPrompt />
+    return (
+      <div className="flex flex-1 items-center justify-center -mt-16">
+        <ProAdCard />
+      </div>
+    )
   }
 
   return (
