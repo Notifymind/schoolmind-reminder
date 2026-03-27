@@ -3,12 +3,9 @@
 import { usePageTitle } from "@/app/app/layout";
 
 const prices = [
-  { plan: "Basic / Month", price: "2 KM", retail: "3 KM", commission: "1 KM" },
-  { plan: "Basic / Year", price: "16 KM", retail: "24 KM", commission: "8 KM" },
-  { plan: "Pro / Month", price: "4 KM", retail: "6 KM", commission: "2 KM" },
-  { plan: "Pro / Year", price: "24 KM", retail: "40 KM", commission: "16 KM" },
-  { plan: "Upgrade / Month", price: "2 KM", retail: "3 KM", commission: "1 KM" },
-  { plan: "Upgrade / Year", price: "8 KM", retail: "16 KM", commission: "8 KM" },
+  { plan: "Pro / Month", price: "4 KM", retail: "4 KM", commission: "0 KM" },
+  { plan: "Pro / Year", price: "32 KM", retail: "32 KM", commission: "0 KM" },
+  { plan: "Assign (Class)", price: "0 KM", retail: "Free", commission: "0 KM" },
 ];
 
 export default function PricesPage() {
