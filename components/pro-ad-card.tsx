@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Sparkles, Bell, CalendarClock } from "lucide-react"
+import { Sparkles, Bell, CalendarClock, Layers } from "lucide-react"
 
 export function ProAdCard() {
   return (
@@ -35,8 +35,8 @@ export function ProAdCard() {
             <span>More notification times</span>
           </li>
           <li className="flex items-center gap-2">
-            <Sparkles className="size-4 text-primary" />
-            <span>Trial codes for friends</span>
+            <Layers className="size-4 text-primary" />
+            <span>More notification presets</span>
           </li>
         </ul>
         <Button asChild className="w-full">
