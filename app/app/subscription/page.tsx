@@ -30,9 +30,7 @@ const features = [
   { name: "Price/Year:", basic: "24KM", pro: "40KM (saves 8KM)" },
 ];
 
-export default function SubscriptionPage() {
-  usePageTitle("Subscription");
-
+function SubscriptionContent() {
   const [code, setCode] = React.useState("");
   const [isRedeeming, setIsRedeeming] = React.useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = React.useState<{
@@ -79,107 +77,123 @@ export default function SubscriptionPage() {
   }
 
   return (
-    <RequireNotAdminSeller>
-      <div className="flex flex-1 flex-col items-center justify-center gap-6">
-        {subscriptionStatus?.isActive && (
-          <Card className="w-full max-w-2xl border-green-500/50 bg-green-500/5">
-            <CardHeader>
-              <CardTitle className="text-green-600 dark:text-green-400">
-                Active Subscription
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>
-                You have an active{" "}
-                <strong>{subscriptionStatus.role.toUpperCase()}</strong>{" "}
-                subscription
-                {subscriptionStatus.subscriptionEndsAt && (
-                  <>
-                    {" "}
-                    until{" "}
-                    <strong>
-                      {new Date(
-                        subscriptionStatus.subscriptionEndsAt,
-                      ).toLocaleDateString("de-DE")}
-                    </strong>
-                  </>
-                )}
-                .
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        <Card className="w-full max-w-2xl">
+    <div className="flex flex-1 flex-col items-center justify-center gap-6">
+      {subscriptionStatus?.isActive && (
+        <Card className="w-full max-w-2xl border-green-500/50 bg-green-500/5">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Gift className="size-5" />
-              Redeem Code
+            <CardTitle className="text-green-600 dark:text-green-400">
+              Active Subscription
             </CardTitle>
-            <CardDescription>
-              Enter a gift or promotional code to activate your subscription.
-              <br />
-              You can buy gift codes from your classes seller.
-            </CardDescription>
           </CardHeader>
-          <form onSubmit={handleRedeemCode}>
-            <CardContent>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter your code"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  className="font-mono uppercase"
-                />
-                <Button type="submit" disabled={isRedeeming || !code.trim()}>
-                  {isRedeeming ? "Redeeming..." : "Redeem"}
-                </Button>
-              </div>
-            </CardContent>
-          </form>
+          <CardContent>
+            <p>
+              You have an active{" "}
+              <strong>{subscriptionStatus.role.toUpperCase()}</strong>{" "}
+              subscription
+              {subscriptionStatus.subscriptionEndsAt && (
+                <>
+                  {" "}
+                  until{" "}
+                  <strong>
+                    {new Date(
+                      subscriptionStatus.subscriptionEndsAt,
+                    ).toLocaleDateString("de-DE")}
+                  </strong>
+                </>
+              )}
+              .
+            </p>
+          </CardContent>
         </Card>
+      )}
 
-        <div className="w-full max-w-2xl overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left p-3 font-medium">Feature</th>
-                <th className="text-center p-3 font-medium">Basic</th>
-                <th className="text-center p-3 font-medium">Pro</th>
+      <Card className="w-full max-w-2xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Gift className="size-5" />
+            Redeem Code
+          </CardTitle>
+          <CardDescription>
+            Enter a gift or promotional code to activate your subscription.
+            <br />
+            You can buy gift codes from your classes seller.
+          </CardDescription>
+        </CardHeader>
+        <form onSubmit={handleRedeemCode}>
+          <CardContent>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter your code"
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                className="font-mono uppercase"
+              />
+              <Button type="submit" disabled={isRedeeming || !code.trim()}>
+                {isRedeeming ? "Redeeming..." : "Redeem"}
+              </Button>
+            </div>
+          </CardContent>
+        </form>
+      </Card>
+
+      <div className="w-full max-w-2xl overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left p-3 font-medium">Feature</th>
+              <th className="text-center p-3 font-medium">Basic</th>
+              <th className="text-center p-3 font-medium">Pro</th>
+            </tr>
+          </thead>
+          <tbody>
+            {features.map((feature) => (
+              <tr key={feature.name} className="border-b">
+                <td className="p-3">{feature.name}</td>
+                <td className="text-center p-3">
+                  {typeof feature.basic === "boolean" ? (
+                    feature.basic ? (
+                      <Check className="text-primary mx-auto size-5" />
+                    ) : (
+                      <X className="text-muted-foreground mx-auto size-5" />
+                    )
+                  ) : (
+                    feature.basic
+                  )}
+                </td>
+                <td className="text-center p-3">
+                  {typeof feature.pro === "boolean" ? (
+                    feature.pro ? (
+                      <Check className="text-primary mx-auto size-5" />
+                    ) : (
+                      <X className="text-muted-foreground mx-auto size-5" />
+                    )
+                  ) : (
+                    feature.pro
+                  )}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {features.map((feature, index) => (
-                <tr key={index} className="border-b">
-                  <td className="p-3">{feature.name}</td>
-                  <td className="text-center p-3">
-                    {typeof feature.basic === "boolean" ? (
-                      feature.basic ? (
-                        <Check className="text-primary mx-auto size-5" />
-                      ) : (
-                        <X className="text-muted-foreground mx-auto size-5" />
-                      )
-                    ) : (
-                      feature.basic
-                    )}
-                  </td>
-                  <td className="text-center p-3">
-                    {typeof feature.pro === "boolean" ? (
-                      feature.pro ? (
-                        <Check className="text-primary mx-auto size-5" />
-                      ) : (
-                        <X className="text-muted-foreground mx-auto size-5" />
-                      )
-                    ) : (
-                      feature.pro
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
+    </div>
+  );
+}
+
+export default function SubscriptionPage() {
+  usePageTitle("Subscription");
+
+  return (
+    <RequireNotAdminSeller>
+      <React.Suspense
+        fallback={
+          <div className="flex flex-1 items-center justify-center">
+            <div className="text-muted-foreground">Loading...</div>
+          </div>
+        }
+      >
+        <SubscriptionContent />
+      </React.Suspense>
     </RequireNotAdminSeller>
   );
 }

@@ -200,8 +200,9 @@ export default function CodesPage() {
         <CardContent>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <div className="flex-1 space-y-2">
-              <label className="text-sm font-medium">Code Type</label>
+              <label htmlFor="codeType" className="text-sm font-medium">Code Type</label>
               <select
+                id="codeType"
                 value={codeType}
                 onChange={(e) => setCodeType(e.target.value as CodeType)}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -216,8 +217,9 @@ export default function CodesPage() {
 
             {!isTrialCode && (
               <div className="flex-1 space-y-2">
-                <label className="text-sm font-medium">Duration</label>
+                <label htmlFor="duration" className="text-sm font-medium">Duration</label>
                 <select
+                  id="duration"
                   value={duration}
                   onChange={(e) => setDuration(e.target.value as CodeDuration)}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -120,7 +121,7 @@ export function RegisterForm({
                   {isLoading ? "Creating account..." : "Create account"}
                 </Button>
                 <FieldDescription className="text-center">
-                  Already have an account? <a href="/login">Login</a>
+                  Already have an account? <Link href="/login">Login</Link>
                 </FieldDescription>
               </Field>
             </FieldGroup>

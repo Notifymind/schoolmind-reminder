@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { getUserClass, getAssignmentsByClass, getPresetsWithTimes, getNotificationPreferencesForAssignments, getNotificationPresetById, getNotificationTimes } from "@/db"
 import { assignments } from "@/db/schema"
 import { AssignmentsClient } from "./client"
+import { Suspense } from "react"
 
 
 type Assignment = typeof assignments.$inferSelect
@@ -92,15 +93,17 @@ export default async function UpcomingAssignmentsPage() {
     }
   }
   return (
-    <AssignmentsClient 
-      assignments={assignmentsList} 
-      hasClass={hasClass}
-      hasPermission={hasPermission}
-      isLoggedIn={!!session?.user?.id}
-      userRole={userRole}
-      presets={presets}
-      assignmentPresets={assignmentPresets}
-      title="Upcoming Assignments"
-    />
+    <Suspense fallback={<div className="flex flex-1 items-center justify-center"><div className="text-muted-foreground">Loading...</div></div>}>
+      <AssignmentsClient 
+        assignments={assignmentsList} 
+        hasClass={hasClass}
+        hasPermission={hasPermission}
+        isLoggedIn={!!session?.user?.id}
+        userRole={userRole}
+        presets={presets}
+        assignmentPresets={assignmentPresets}
+        title="Upcoming Assignments"
+      />
+    </Suspense>
   )
 }

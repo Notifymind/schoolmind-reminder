@@ -68,6 +68,7 @@ export function SellerEditDialog({
   const [classes, setClasses] = React.useState<Class[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [classPopoverOpen, setClassPopoverOpen] = React.useState(false);
+  const classListId = React.useId();
 
   const loadClasses = React.useCallback(async () => {
     const result = await getClassesAction();
@@ -130,6 +131,8 @@ export function SellerEditDialog({
                   <Button
                     variant="outline"
                     role="combobox"
+                    aria-expanded={classPopoverOpen}
+                    aria-controls={classListId}
                     className="w-full justify-between"
                   >
                     {selectedClass || "Select class..."}
@@ -137,7 +140,7 @@ export function SellerEditDialog({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0" align="start">
-                  <Command>
+                  <Command id={classListId}>
                     <CommandInput
                       placeholder="Search class..."
                       onKeyDown={(e) => {

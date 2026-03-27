@@ -89,6 +89,8 @@ export default function AdminSellersPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [isInitialLoading, setIsInitialLoading] = React.useState(true);
   const [isSearching, setIsSearching] = React.useState(false);
+  const userListId = React.useId();
+  const classListId = React.useId();
 
   const [addDialogOpen, setAddDialogOpen] = React.useState(false);
   const [maxDebt, setMaxDebt] = React.useState("0");
@@ -272,6 +274,8 @@ export default function AdminSellersPage() {
                   <Button
                     variant="outline"
                     role="combobox"
+                    aria-expanded={userPopoverOpen}
+                    aria-controls={userListId}
                     className="w-full justify-between"
                   >
                     {selectedUser
@@ -281,7 +285,7 @@ export default function AdminSellersPage() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0" align="start">
-                  <Command>
+                  <Command id={userListId}>
                     <CommandInput
                       placeholder="Type to search..."
                       value={userSearch}
@@ -418,6 +422,8 @@ export default function AdminSellersPage() {
                   <Button
                     variant="outline"
                     role="combobox"
+                    aria-expanded={classPopoverOpen}
+                    aria-controls={classListId}
                     className="w-full justify-between"
                   >
                     {selectedClass || "Select class..."}
@@ -425,7 +431,7 @@ export default function AdminSellersPage() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0" align="start">
-                  <Command>
+                  <Command id={classListId}>
                     <CommandInput
                       placeholder="Search class..."
                       onKeyDown={(e) => {

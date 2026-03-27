@@ -49,6 +49,7 @@ export default function AdminBalancePage() {
   const [amount, setAmount] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [isInitialLoading, setIsInitialLoading] = React.useState(true);
+  const sellerListId = React.useId();
 
   React.useEffect(() => {
     setIsInitialLoading(false);
@@ -149,6 +150,8 @@ export default function AdminBalancePage() {
                 <Button
                   variant="outline"
                   role="combobox"
+                  aria-expanded={sellerPopoverOpen}
+                  aria-controls={sellerListId}
                   className="w-full justify-between"
                 >
                   {selectedSeller
@@ -158,7 +161,7 @@ export default function AdminBalancePage() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-full p-0" align="start">
-                <Command>
+                <Command id={sellerListId}>
                   <CommandInput
                     placeholder="Type to search..."
                     value={sellerSearch}

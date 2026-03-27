@@ -27,8 +27,8 @@ export default function PricesPage() {
             </tr>
           </thead>
           <tbody>
-            {prices.map((p, i) => (
-              <tr key={i} className="border-b">
+            {prices.map((p) => (
+              <tr key={p.plan} className="border-b">
                 <td className="p-3">{p.plan}</td>
                 <td className="p-3 text-right">{p.price}</td>
                 <td className="p-3 text-right">{p.retail}</td>

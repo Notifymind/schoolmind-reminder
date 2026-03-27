@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { getUserClass, getExamsByClass, getPresetsWithTimes, getNotificationPreferencesForExams, getNotificationPresetById, getNotificationTimes } from "@/db"
 import { exams } from "@/db/schema"
 import { ExamsClient } from "./client"
+import { Suspense } from "react"
 
 type Exam = typeof exams.$inferSelect
 
@@ -82,14 +83,16 @@ export default async function UpcomingExamsPage() {
   }
 
   return (
-    <ExamsClient 
-      exams={examsList} 
-      hasClass={hasClass}
-      hasPermission={hasPermission}
-      isLoggedIn={!!session?.user?.id}
-      presets={presets}
-      examPresets={examPresets}
-      title="Upcoming Exams"
-    />
+    <Suspense fallback={<div className="flex flex-1 items-center justify-center"><div className="text-muted-foreground">Loading...</div></div>}>
+      <ExamsClient 
+        exams={examsList} 
+        hasClass={hasClass}
+        hasPermission={hasPermission}
+        isLoggedIn={!!session?.user?.id}
+        presets={presets}
+        examPresets={examPresets}
+        title="Upcoming Exams"
+      />
+    </Suspense>
   )
 }
