@@ -688,6 +688,10 @@ export async function extendSubscription(userId: string, newEndsAt: Date, newRol
   await db.update(user).set(updateData).where(eq(user.id, userId));
 }
 
+export async function setUserClass(userId: string, className: string) {
+  await db.update(user).set({ class: className }).where(eq(user.id, userId));
+}
+
 export async function redeemCodeInDb(codeId: string, userId: string) {
   const result = await db
     .update(codes)

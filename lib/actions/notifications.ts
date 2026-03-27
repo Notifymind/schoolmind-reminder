@@ -33,14 +33,13 @@ import {
 } from "@/db";
 
 const PRESET_LIMITS = {
-  free: { presets: 0, timesPerPreset: 0 },
-  basic: { presets: 1, timesPerPreset: 2 },
+  free: { presets: 1, timesPerPreset: 2 },
   pro: { presets: 5, timesPerPreset: 7 },
   seller: { presets: 5, timesPerPreset: 7 },
   admin: { presets: 5, timesPerPreset: 7 },
 } as const;
 
-type UserRole = "free" | "basic" | "pro" | "seller" | "admin";
+type UserRole = "free" | "pro" | "seller" | "admin";
 
 function getLimits(role: UserRole) {
   return PRESET_LIMITS[role] ?? PRESET_LIMITS.free;

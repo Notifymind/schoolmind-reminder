@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { usePageTitle } from "@/app/app/layout";
-import { SubscriptionGate } from "@/components/subscription-prompt";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -852,8 +851,7 @@ export default function NotificationsPage() {
   const canAddPreset = presets.length < limits.presets;
 
   return (
-    <SubscriptionGate permission={{ exams: ["access"] }}>
-      <div className="flex flex-1 flex-col gap-6 items-center">
+    <div className="flex flex-1 flex-col gap-6 items-center">
         <div className="grid gap-6 w-full max-w-2xl">
           <div>
             <h1 className="text-2xl font-semibold">Notification Settings</h1>
@@ -946,6 +944,5 @@ export default function NotificationsPage() {
           )}
         </div>
       </div>
-    </SubscriptionGate>
   );
 }

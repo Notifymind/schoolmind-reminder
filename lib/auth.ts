@@ -4,9 +4,9 @@ import { passkey } from "@better-auth/passkey";
 import { admin } from "better-auth/plugins";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { ac, basicRole, proRole, sellerRole, adminRole } from "./permissions";
+import { ac, freeRole, proRole, sellerRole, adminRole } from "./permissions";
 
-export const roleNames = ["free", "basic", "pro", "seller", "admin"] as const;
+export const roleNames = ["free", "pro", "seller", "admin"] as const;
 export type Role = (typeof roleNames)[number];
 
 export const auth = betterAuth({
@@ -23,7 +23,7 @@ export const auth = betterAuth({
       defaultRole: "free",
       ac,
       roles: {
-        basic: basicRole,
+        free: freeRole,
         pro: proRole,
         seller: sellerRole,
         admin: adminRole,

@@ -5,14 +5,14 @@ import {
   getCodeByCode,
   getUserSubscription,
   setUserSubscription,
-  extendSubscription,
   redeemCodeInDb,
+  setUserClass,
 } from "@/db";
 
 const DURATION_DAYS: Record<string, number> = {
   month: 30,
   school_year: 365,
-  trial: 14,
+  once: 0,
 };
 
 export async function redeemCodeAction(code: string) {
@@ -48,73 +48,55 @@ export async function redeemCodeAction(code: string) {
   const currentEndsAt = userSubscription.subscriptionEndsAt;
   const now = new Date();
 
-  if (currentRole === "pro") {
-    return { error: "Pro users cannot redeem codes" };
+  if (codeRecord.type === "pro") {
+    if (currentRole === "pro") {
+      return { error: "Pro users cannot redeem pro codes" };
+    }
+
+    const isActive = currentEndsAt && new Date(currentEndsAt) > now;
+    const baseDate = isActive ? new Date(currentEndsAt) : now;
+
+    const durationDays = DURATION_DAYS[codeRecord.duration];
+    if (!durationDays) {
+      return { error: "Invalid code duration" };
+    }
+
+    const newEndsAt = new Date(baseDate);
+    newEndsAt.setDate(newEndsAt.getDate() + durationDays);
+
+    await setUserSubscription(session.user.id, "pro", newEndsAt, codeRecord.className);
+
+    const redeemed = await redeemCodeInDb(codeRecord.id, session.user.id);
+    if (!redeemed) {
+      return { error: "Failed to redeem code. Please try again." };
+    }
+
+    return {
+      success: true,
+      message: `Code redeemed successfully! Your subscription is now active until ${newEndsAt.toLocaleDateString("de-DE")}.`,
+      newEndsAt,
+    };
   }
 
-  if (currentRole === "basic" && codeRecord.type !== "upgrade") {
-    return { error: "Basic users can only redeem upgrade codes" };
+  if (codeRecord.type === "assign") {
+    if (!codeRecord.className) {
+      return { error: "This code has no class assigned" };
+    }
+
+    await setUserClass(session.user.id, codeRecord.className);
+
+    const redeemed = await redeemCodeInDb(codeRecord.id, session.user.id);
+    if (!redeemed) {
+      return { error: "Failed to redeem code. Please try again." };
+    }
+
+    return {
+      success: true,
+      message: `Code redeemed successfully! You have been assigned to class ${codeRecord.className}.`,
+    };
   }
 
-  if (currentRole === "free" && codeRecord.type === "upgrade") {
-    return { error: "Upgrade codes can only be used by basic users" };
-  }
-
-  const isActive = currentEndsAt && new Date(currentEndsAt) > now;
-  const baseDate = isActive ? new Date(currentEndsAt) : now;
-
-  const durationDays = DURATION_DAYS[codeRecord.duration];
-  if (!durationDays) {
-    return { error: "Invalid code duration" };
-  }
-
-  const newEndsAt = new Date(baseDate);
-  newEndsAt.setDate(newEndsAt.getDate() + durationDays);
-
-  switch (codeRecord.type) {
-    case "basic":
-      await setUserSubscription(session.user.id, "basic", newEndsAt, codeRecord.className);
-      break;
-
-    case "pro":
-      await setUserSubscription(session.user.id, "pro", newEndsAt, codeRecord.className);
-      break;
-
-    case "upgrade":
-      if (currentRole !== "basic") {
-        return { error: "Upgrade codes can only be used by basic users" };
-      }
-      if (codeRecord.duration === "month" && isActive) {
-        const remainingDays = Math.ceil((new Date(currentEndsAt).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        if (remainingDays > 30) {
-          return { error: "Your basic subscription has more than a month remaining. You need a year upgrade code to extend it." };
-        }
-      }
-      await extendSubscription(session.user.id, newEndsAt, "pro", codeRecord.className);
-      break;
-
-    case "trial":
-      if (currentRole === "free") {
-        await setUserSubscription(session.user.id, "basic", newEndsAt, codeRecord.className);
-      } else {
-        await extendSubscription(session.user.id, newEndsAt, undefined, codeRecord.className);
-      }
-      break;
-
-    default:
-      return { error: "Invalid code type" };
-  }
-
-  const redeemed = await redeemCodeInDb(codeRecord.id, session.user.id);
-  if (!redeemed) {
-    return { error: "Failed to redeem code. Please try again." };
-  }
-
-  return {
-    success: true,
-    message: `Code redeemed successfully! Your subscription is now active until ${newEndsAt.toLocaleDateString("de-DE")}.`,
-    newEndsAt,
-  };
+  return { error: "Invalid code type" };
 }
 
 export async function getSubscriptionStatusAction() {

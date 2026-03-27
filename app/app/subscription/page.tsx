@@ -21,13 +21,13 @@ import {
 import { RequireNotAdminSeller } from "@/components/require-not-admin-seller";
 
 const features = [
-  { name: "Exam Access", basic: true, pro: true },
-  { name: "Assignment Access", basic: false, pro: true },
-  { name: "App Notifications", basic: true, pro: true },
-  { name: "Max. notifications", basic: "2", pro: "5" },
-  { name: "Notification Presets", basic: "1", pro: "5" },
-  { name: "Price/Month", basic: "3KM", pro: "6KM" },
-  { name: "Price/Year:", basic: "24KM", pro: "40KM (saves 8KM)" },
+  { name: "Exam Access", free: true, pro: true },
+  { name: "Assignment Access", free: false, pro: true },
+  { name: "App Notifications", free: true, pro: true },
+  { name: "Max. notifications", free: "2", pro: "5" },
+  { name: "Notification Presets", free: "1", pro: "5" },
+  { name: "Price/Month", free: "Free", pro: "6KM" },
+  { name: "Price/Year:", free: "Free", pro: "40KM (saves 8KM)" },
 ];
 
 function SubscriptionContent() {
@@ -141,7 +141,7 @@ function SubscriptionContent() {
           <thead>
             <tr className="border-b">
               <th className="text-left p-3 font-medium">Feature</th>
-              <th className="text-center p-3 font-medium">Basic</th>
+              <th className="text-center p-3 font-medium">Free</th>
               <th className="text-center p-3 font-medium">Pro</th>
             </tr>
           </thead>
@@ -150,14 +150,14 @@ function SubscriptionContent() {
               <tr key={feature.name} className="border-b">
                 <td className="p-3">{feature.name}</td>
                 <td className="text-center p-3">
-                  {typeof feature.basic === "boolean" ? (
-                    feature.basic ? (
+                  {typeof feature.free === "boolean" ? (
+                    feature.free ? (
                       <Check className="text-primary mx-auto size-5" />
                     ) : (
                       <X className="text-muted-foreground mx-auto size-5" />
                     )
                   ) : (
-                    feature.basic
+                    feature.free
                   )}
                 </td>
                 <td className="text-center p-3">

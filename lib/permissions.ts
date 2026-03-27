@@ -11,12 +11,12 @@ export const statement = {
 
 export const ac = createAccessControl(statement);
 
-export const basicRole = ac.newRole({
+export const freeRole = ac.newRole({
   exams: ["access"],
 });
 
 export const proRole = ac.newRole({
-  ...basicRole.statements,
+  ...freeRole.statements,
   assignments: ["access"],
 });
 
