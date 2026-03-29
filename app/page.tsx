@@ -12,6 +12,8 @@ import {
   Users,
   Check,
   ArrowRight,
+  MessageSquareDashed,
+  MessageSquare,
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -91,8 +93,8 @@ const pricingPlans = [
       { text: "Exam access", included: true },
       { text: "Assignment access", included: false },
       { text: "Push notifications", included: true },
-      { text: "notification preset", number: "1", included: true },
-      { text: "notifications per preset", number: "2", included: true },
+      { text: "notification preset", number: "1", included: true, icon: "preset" },
+      { text: "notifications per preset", number: "2", included: true, icon: "notifications" },
     ],
     cta: "Get Started",
     href: "/register",
@@ -109,8 +111,8 @@ const pricingPlans = [
       { text: "Exam access", included: true },
       { text: "Assignment access", included: true },
       { text: "Push notifications", included: true },
-      { text: "notification presets", number: "5", included: true },
-      { text: "notifications per preset", number: "10", included: true },
+      { text: "notification presets", number: "5", included: true, icon: "preset" },
+      { text: "notifications per preset", number: "10", included: true, icon: "notifications" },
     ],
     cta: "Get Started",
     href: "/register",
@@ -313,23 +315,41 @@ export default function LandingPage() {
                 <ul className="space-y-3 mb-6">
                   {plan.features.map((feature) => (
                     <li key={feature.text} className="flex items-center gap-2">
-                      <Check
-                        className={cn(
-                          "size-4",
-                          feature.included
-                            ? "text-primary"
-                            : "text-muted-foreground opacity-50",
-                        )}
-                      />
+                      {feature.icon === "preset" ? (
+                        <MessageSquareDashed
+                          className={cn(
+                            "size-4",
+                            feature.included
+                              ? "text-primary"
+                              : "text-muted-foreground opacity-50",
+                          )}
+                        />
+                      ) : feature.icon === "notifications" ? (
+                        <MessageSquare
+                          className={cn(
+                            "size-4",
+                            feature.included
+                              ? "text-primary"
+                              : "text-muted-foreground opacity-50",
+                          )}
+                        />
+                      ) : (
+                        <Check
+                          className={cn(
+                            "size-4",
+                            feature.included
+                              ? "text-primary"
+                              : "text-muted-foreground opacity-50",
+                          )}
+                        />
+                      )}
                       <span
                         className={cn(
                           !feature.included &&
                             "text-muted-foreground line-through",
                         )}
                       >
-                        {feature.number && (
-                          <span className={plan.popular ? "text-green-500" : ""}>{feature.number} </span>
-                        )}
+                        {feature.number && <span>{feature.number} </span>}
                         {feature.text}
                       </span>
                     </li>
