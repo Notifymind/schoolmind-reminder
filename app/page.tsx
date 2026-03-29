@@ -316,23 +316,45 @@ export default function LandingPage() {
                   {plan.features.map((feature) => (
                     <li key={feature.text} className="flex items-center gap-2">
                       {feature.icon === "preset" ? (
-                        <MessageSquareDashed
-                          className={cn(
-                            "size-4",
-                            feature.included
-                              ? "text-primary"
-                              : "text-muted-foreground opacity-50",
-                          )}
-                        />
+                        plan.popular ? (
+                          <MessageSquare
+                            className={cn(
+                              "size-4",
+                              feature.included
+                                ? "text-primary"
+                                : "text-muted-foreground opacity-50",
+                            )}
+                          />
+                        ) : (
+                          <MessageSquareDashed
+                            className={cn(
+                              "size-4",
+                              feature.included
+                                ? "text-primary"
+                                : "text-muted-foreground opacity-50",
+                            )}
+                          />
+                        )
                       ) : feature.icon === "notifications" ? (
-                        <MessageSquare
-                          className={cn(
-                            "size-4",
-                            feature.included
-                              ? "text-primary"
-                              : "text-muted-foreground opacity-50",
-                          )}
-                        />
+                        plan.popular ? (
+                          <MessageSquare
+                            className={cn(
+                              "size-4",
+                              feature.included
+                                ? "text-primary"
+                                : "text-muted-foreground opacity-50",
+                            )}
+                          />
+                        ) : (
+                          <MessageSquareDashed
+                            className={cn(
+                              "size-4",
+                              feature.included
+                                ? "text-primary"
+                                : "text-muted-foreground opacity-50",
+                            )}
+                          />
+                        )
                       ) : (
                         <Check
                           className={cn(
