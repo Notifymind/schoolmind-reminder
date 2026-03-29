@@ -24,7 +24,7 @@ const features = [
   { name: "Exam Access", free: true, pro: true },
   { name: "Assignment Access", free: false, pro: true },
   { name: "App Notifications", free: true, pro: true },
-  { name: "Max. notifications per Preset", free: "2", pro: "7" },
+  { name: "Max. notifications per Preset", free: "2", pro: "10" },
   { name: "Notification Presets", free: "1", pro: "5" },
   { name: "Price/Month", free: "Free", pro: "3KM" },
   { name: "Price/Year:", free: "Free", pro: "24KM" },

@@ -110,7 +110,7 @@ const pricingPlans = [
       { text: "Push notifications", included: true },
       { text: "Assignment access", included: true },
       { text: "notification presets", number: "5", included: true },
-      { text: "notifications per preset", number: "5", included: true },
+      { text: "notifications per preset", number: "10", included: true },
     ],
     cta: "Get Started",
     href: "/register",
