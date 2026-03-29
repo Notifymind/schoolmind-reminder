@@ -89,10 +89,10 @@ const pricingPlans = [
     description: "Perfect for exam preparation",
     features: [
       { text: "Exam access", included: true },
-      { text: "1 notification preset", included: true },
-      { text: "2 notifications per preset", included: true },
       { text: "Push notifications", included: true },
       { text: "Assignment access", included: false },
+      { text: "notification preset", number: "1", included: true },
+      { text: "notifications per preset", number: "2", included: true },
     ],
     cta: "Get Started",
     href: "/register",
@@ -107,10 +107,10 @@ const pricingPlans = [
     description: "Full access to all features",
     features: [
       { text: "Exam access", included: true },
-      { text: "5 notification presets", included: true },
-      { text: "5 notifications per preset", included: true },
       { text: "Push notifications", included: true },
       { text: "Assignment access", included: true },
+      { text: "notification presets", number: "5", included: true },
+      { text: "notifications per preset", number: "5", included: true },
     ],
     cta: "Get Started",
     href: "/register",
@@ -327,6 +327,9 @@ export default function LandingPage() {
                             "text-muted-foreground line-through",
                         )}
                       >
+                        {feature.number && (
+                          <strong className="text-primary">{feature.number} </strong>
+                        )}
                         {feature.text}
                       </span>
                     </li>
