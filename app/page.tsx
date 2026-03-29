@@ -89,8 +89,8 @@ const pricingPlans = [
     description: "Perfect for exam preparation",
     features: [
       { text: "Exam access", included: true },
-      { text: "Push notifications", included: true },
       { text: "Assignment access", included: false },
+      { text: "Push notifications", included: true },
       { text: "notification preset", number: "1", included: true },
       { text: "notifications per preset", number: "2", included: true },
     ],
@@ -107,8 +107,8 @@ const pricingPlans = [
     description: "Full access to all features",
     features: [
       { text: "Exam access", included: true },
-      { text: "Push notifications", included: true },
       { text: "Assignment access", included: true },
+      { text: "Push notifications", included: true },
       { text: "notification presets", number: "5", included: true },
       { text: "notifications per preset", number: "10", included: true },
     ],
