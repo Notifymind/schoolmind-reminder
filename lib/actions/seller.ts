@@ -17,7 +17,7 @@ export type CodeType = "pro" | "assign";
 export type CodeDuration = "month" | "school_year" | "once";
 
 const PRICING = {
-  pro: { month: 4, school_year: 32, once: 0 },
+  pro: { month: 2, school_year: 16, once: 0 },
   assign: { month: 0, school_year: 0, once: 0 },
 } as const;
 

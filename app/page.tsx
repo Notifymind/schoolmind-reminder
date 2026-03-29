@@ -81,10 +81,10 @@ const steps = [
 
 const pricingPlans = [
   {
-    name: "Basic",
-    price: "3 KM",
+    name: "Free",
+    price: "0 KM",
     period: "/month",
-    yearlyPrice: "24 KM",
+    yearlyPrice: "0 KM",
     yearlyPeriod: "/year",
     description: "Perfect for exam preparation",
     features: [
@@ -101,11 +101,10 @@ const pricingPlans = [
   },
   {
     name: "Pro",
-    price: "6 KM",
+    price: "3 KM",
     period: "/month",
-    yearlyPrice: "40 KM",
+    yearlyPrice: "24 KM",
     yearlyPeriod: "/year",
-    yearlySavings: "Save 8 KM",
     description: "Full access to all features",
     features: [
       { text: "Exam access", included: true },
@@ -307,11 +306,6 @@ export default function LandingPage() {
                       <span className="text-muted-foreground">
                         {plan.yearlyPeriod}
                       </span>
-                      {plan.yearlySavings && (
-                        <span className="ml-2 px-2 py-0.5 bg-green-500/10 text-green-600 text-sm font-medium rounded-full">
-                          {plan.yearlySavings}
-                        </span>
-                      )}
                     </div>
                   )}
                   <p className="text-sm text-muted-foreground mt-2">
