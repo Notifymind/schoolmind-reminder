@@ -328,7 +328,7 @@ export default function LandingPage() {
                         )}
                       >
                         {feature.number && (
-                          <span className={plan.popular ? "text-green-600" : ""}>{feature.number} </span>
+                          <span className={plan.popular ? "text-green-500" : ""}>{feature.number} </span>
                         )}
                         {feature.text}
                       </span>
