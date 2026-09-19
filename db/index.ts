@@ -16,6 +16,7 @@ import {
   userNotifications,
 } from "./schema";
 import { generateId } from "@/lib/utils";
+import { isNotificationDue } from "@/lib/notification-schedule";
 
 const db = drizzle(process.env.DATABASE_URL!);
 
@@ -394,12 +395,7 @@ export async function getPendingNotificationsForCron() {
       if (examPrefsForUser.has(exam.id)) continue;
 
       for (const time of times) {
-        const notificationTime = new Date(exam.dueDate);
-        notificationTime.setDate(notificationTime.getDate() - time.daysBefore);
-        const [hours, minutes] = time.time.split(":").map(Number);
-        notificationTime.setHours(hours, minutes, 0, 0);
-
-        if (notificationTime <= nowWithBuffer) {
+        if (isNotificationDue(exam.dueDate, time.daysBefore, time.time, nowWithBuffer)) {
           const alreadySent = await db
             .select()
             .from(sentNotifications)
@@ -452,12 +448,7 @@ export async function getPendingNotificationsForCron() {
       if (assignmentPrefsForUser.has(assignment.id)) continue;
 
       for (const time of times) {
-        const notificationTime = new Date(assignment.dueDate);
-        notificationTime.setDate(notificationTime.getDate() - time.daysBefore);
-        const [hours, minutes] = time.time.split(":").map(Number);
-        notificationTime.setHours(hours, minutes, 0, 0);
-
-        if (notificationTime <= nowWithBuffer) {
+        if (isNotificationDue(assignment.dueDate, time.daysBefore, time.time, nowWithBuffer)) {
           const alreadySent = await db
             .select()
             .from(sentNotifications)
@@ -502,12 +493,7 @@ export async function getPendingNotificationsForCron() {
       if (exam.length === 0 || !exam[0].dueDate) continue;
 
       for (const time of times) {
-        const notificationTime = new Date(exam[0].dueDate);
-        notificationTime.setDate(notificationTime.getDate() - time.daysBefore);
-        const [hours, minutes] = time.time.split(":").map(Number);
-        notificationTime.setHours(hours, minutes, 0, 0);
-
-        if (notificationTime <= nowWithBuffer) {
+        if (isNotificationDue(exam[0].dueDate, time.daysBefore, time.time, nowWithBuffer)) {
           const alreadySent = await db
             .select()
             .from(sentNotifications)
@@ -539,12 +525,7 @@ export async function getPendingNotificationsForCron() {
       if (assignment.length === 0 || !assignment[0].dueDate) continue;
 
       for (const time of times) {
-        const notificationTime = new Date(assignment[0].dueDate);
-        notificationTime.setDate(notificationTime.getDate() - time.daysBefore);
-        const [hours, minutes] = time.time.split(":").map(Number);
-        notificationTime.setHours(hours, minutes, 0, 0);
-
-        if (notificationTime <= nowWithBuffer) {
+        if (isNotificationDue(assignment[0].dueDate, time.daysBefore, time.time, nowWithBuffer)) {
           const alreadySent = await db
             .select()
             .from(sentNotifications)
