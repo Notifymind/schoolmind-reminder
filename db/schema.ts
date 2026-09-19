@@ -360,7 +360,7 @@ export const pushSubscriptions = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    endpoint: text("endpoint").notNull(),
+    endpoint: text("endpoint").notNull().unique(),
     p256dh: text("p256dh").notNull(),
     auth: text("auth").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -479,3 +479,14 @@ export const balanceHistoryRelations = relations(balanceHistory, ({ one }) => ({
     relationName: "adminBalanceHistory",
   }),
 }));
+
+// Each device is retried independently. Removing a subscription cancels its queue.
+export const pushDeliveries = pgTable("push_deliveries", {
+  id: text("id").primaryKey(),
+  subscriptionId: text("subscription_id").notNull().references(() => pushSubscriptions.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  payload: text("payload").notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  nextAttemptAt: timestamp("next_attempt_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [index("push_deliveries_due_idx").on(table.nextAttemptAt)]);

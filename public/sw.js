@@ -33,6 +33,7 @@ self.addEventListener("push", function (event) {
     const data = event.data.json();
     const options = {
       body: data.body,
+      tag: data.tag,
       icon: data.icon || "/android-chrome-192x192.png",
       badge: "/android-chrome-192x192.png",
       vibrate: [100, 50, 100],

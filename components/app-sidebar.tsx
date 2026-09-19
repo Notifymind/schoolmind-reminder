@@ -1,5 +1,8 @@
 "use client"
 
+import { disablePush } from "@/lib/push-client";
+import { toast } from "sonner";
+
 import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
@@ -387,7 +390,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   Toggle theme
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onClick={() => authClient.signOut()}>
+                <DropdownMenuItem variant="destructive" onClick={async () => {
+                  try {
+                    await disablePush(async () => {
+                      const result = await authClient.signOut();
+                      if (result.error) throw new Error(result.error.message);
+                    });
+                  } catch {
+                    toast.error("Could not safely log out. Please retry while online.");
+                  }
+                }}>
                   <LogOut />
                   Log out
                 </DropdownMenuItem>

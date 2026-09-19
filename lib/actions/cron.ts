@@ -1,14 +1,15 @@
-"use server";
+// Server-only job helpers; these are not client-callable Server Actions.
 
 import webpush from "web-push";
+import { deliverPushQueue } from "@/lib/push-delivery";
 import {
   getPendingNotificationsForCron,
-  markNotificationSent,
+  queueReminder,
   getUsersByRole,
-  getAllPushSubscriptions,
+  getPushSubscriptions,
+  deletePushSubscription,
   getExpiredSubscriptions,
   downgradeExpiredUser,
-  createUserNotification,
 } from "@/db";
 import { exams, assignments } from "@/db/schema";
 
@@ -59,46 +60,16 @@ export async function processNotificationsAction() {
       }
 
       const notificationType = isAssignment ? "assignment_reminder" : "exam_reminder";
-      await createUserNotification(userId, title, body, notificationType);
-      await markNotificationSent(userId, examId, assignmentId, daysBefore);
-
-      const subscriptions = await getAllPushSubscriptions();
-      const userSubs = subscriptions.filter((s) => s.userId === userId);
-
-      let pushSent = false;
-      for (const sub of userSubs) {
-        try {
-          await webpush.sendNotification(
-            {
-              endpoint: sub.endpoint,
-              keys: {
-                p256dh: sub.p256dh,
-                auth: sub.auth,
-              },
-            },
-            JSON.stringify({
-              title,
-              body,
-              icon: "/icon-192x192.png",
-            })
-          );
-          pushSent = true;
-        } catch (error) {
-          console.error("[Push] Error sending to subscription:", error);
-        }
-      }
-
-      if (pushSent) {
-        results.sent++;
-      } else {
-        console.log(`[Notification] No push subscriptions for user ${userId}`);
-      }
+      await queueReminder(userId, examId, assignmentId, daysBefore, title, body, notificationType);
     } catch (error) {
       console.error(`[Notification] Error processing notification:`, error);
       results.errors++;
     }
   }
 
+  const deliveries = await deliverPushQueue();
+  results.sent = deliveries.sent;
+  results.errors += deliveries.errors;
   return results;
 }
 
@@ -157,8 +128,7 @@ export async function testNotificationToAdminsAction() {
   const body = "This is a test notification from NotifyMind.\nIf you received this, your notification setup is working!";
 
   for (const admin of admins) {
-    const subscriptions = await getAllPushSubscriptions();
-    const adminSubs = subscriptions.filter((s) => s.userId === admin.id);
+    const adminSubs = await getPushSubscriptions(admin.id);
 
     if (adminSubs.length === 0) {
       results.details.push({
@@ -189,7 +159,8 @@ export async function testNotificationToAdminsAction() {
         );
         sent = true;
       } catch (error) {
-        console.error("[Push] Error sending test notification:", error);
+        if ([404, 410].includes((error as { statusCode: number }).statusCode)) await deletePushSubscription(admin.id, sub.endpoint);
+        console.error("[Push] Test delivery failed");
       }
     }
 
@@ -219,8 +190,7 @@ export async function sendPushNotificationAction(
   title: string,
   body: string
 ) {
-  const subscriptions = await getAllPushSubscriptions();
-  const userSubs = subscriptions.filter((s) => s.userId === userId);
+  const userSubs = await getPushSubscriptions(userId);
 
   if (userSubs.length === 0) {
     return { success: false, error: "No push subscriptions found" };
@@ -245,7 +215,8 @@ export async function sendPushNotificationAction(
       );
       sent = true;
     } catch (error) {
-      console.error("[Push] Error sending notification:", error);
+      if ([404, 410].includes((error as { statusCode: number }).statusCode)) await deletePushSubscription(userId, sub.endpoint);
+      console.error("[Push] Delivery failed");
     }
   }
 
