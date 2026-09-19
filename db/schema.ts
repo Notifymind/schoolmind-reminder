@@ -495,3 +495,24 @@ export const pushDeliveries = pgTable("push_deliveries", {
   nextAttemptAt: timestamp("next_attempt_at").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [index("push_deliveries_due_idx").on(table.nextAttemptAt)]);
+
+export const proPlans = pgTable("pro_plans", {
+  id: varchar("id", { length: 20 }).primaryKey(),
+  label: varchar("label", { length: 100 }).notNull(),
+  price: numeric("price", { precision: 10, scale: 2 }).notNull(),
+  duration: integer("duration").notNull(),
+  unit: varchar("unit", { length: 10 }).notNull(),
+}, table => [
+  check("pro_price_positive", sql`${table.price} > 0`),
+  check("pro_duration_valid", sql`${table.duration} BETWEEN 1 AND 3650`),
+  check("pro_unit_valid", sql`${table.unit} IN ('days', 'months')`),
+]);
+
+export const giftCardOptions = pgTable("gift_card_options", {
+  id: serial("id").primaryKey(),
+  value: numeric("value", { precision: 10, scale: 2 }).notNull(),
+  sellerCost: numeric("seller_cost", { precision: 10, scale: 2 }).notNull(),
+}, table => [
+  check("gift_value_positive", sql`${table.value} > 0`),
+  check("gift_cost_nonnegative", sql`${table.sellerCost} >= 0`),
+]);

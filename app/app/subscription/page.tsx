@@ -20,7 +20,8 @@ import {
   subscribeToProAction,
   cancelProRenewalAction,
 } from "@/lib/actions/subscription";
-import { PRO_PLANS, type ProPlan } from "@/lib/billing";
+import { type ProPlan } from "@/lib/billing";
+import { getProPlansAction } from "@/lib/actions/billing-options";
 import { authClient } from "@/lib/auth-client";
 import { RequireNotAdminSeller } from "@/components/require-not-admin-seller";
 
@@ -30,8 +31,6 @@ const features = [
   { name: "App Notifications", free: true, pro: true },
   { name: "Max. notifications per Preset", free: "2", pro: "10" },
   { name: "Notification Presets", free: "1", pro: "5" },
-  { name: "Price/Month", free: "Free", pro: "3KM" },
-  { name: "Price/Year:", free: "Free", pro: "24KM" },
 ];
 
 function SubscriptionContent() {
@@ -39,9 +38,12 @@ function SubscriptionContent() {
   const [code, setCode] = React.useState("");
   const [isRedeeming, setIsRedeeming] = React.useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = React.useState<Awaited<ReturnType<typeof getSubscriptionStatusAction>>>(null);
+  const [plans, setPlans] = React.useState<ProPlan[]>([]);
+  React.useEffect(() => { getProPlansAction().then(setPlans).catch(() => toast.error("Could not load Pro pricing. Please reload.")); }, []);
+  const renewalPlan = plans.find(plan => plan.id === subscriptionStatus?.plan);
   const [isUpdating, setIsUpdating] = React.useState(false);
 
-  async function updateSubscription(plan?: ProPlan) {
+  async function updateSubscription(plan?: string) {
     setIsUpdating(true);
     try {
       const result = plan ? await subscribeToProAction(plan) : await cancelProRenewalAction();
@@ -142,16 +144,16 @@ function SubscriptionContent() {
         <CardContent className="space-y-4">
           {subscriptionStatus?.autoRenew ? (
             <>
-              <p>Automatic renewal is on{subscriptionStatus.plan === "month" ? ": 3 KM every 30 days" : ": 24 KM every 365 days"}.</p>
+              <p>Automatic renewal is on{renewalPlan ? `: ${renewalPlan.price} KM every ${renewalPlan.duration} ${renewalPlan.unit}` : ""}.</p>
               <Button variant="outline" disabled={isUpdating} onClick={() => updateSubscription()}>Cancel automatic renewal</Button>
             </>
           ) : (
             <>
               <p>{subscriptionStatus?.isActive ? "Choose a plan to enable renewal when your current access ends. No charge today." : "Choose your Pro plan. The first payment is taken now."}</p>
               <div className="flex flex-wrap gap-3">
-                {(Object.keys(PRO_PLANS) as ProPlan[]).map(plan => (
-                  <Button key={plan} disabled={!subscriptionStatus || isUpdating || isRedeeming} onClick={() => updateSubscription(plan)}>
-                    {PRO_PLANS[plan].label}: {PRO_PLANS[plan].price} KM / {PRO_PLANS[plan].days} days
+                {plans.map(plan => (
+                  <Button key={plan.id} disabled={!subscriptionStatus || isUpdating || isRedeeming} onClick={() => updateSubscription(plan.id)}>
+                    {plan.label}: {plan.price} KM / {plan.duration} {plan.unit}
                   </Button>
                 ))}
               </div>

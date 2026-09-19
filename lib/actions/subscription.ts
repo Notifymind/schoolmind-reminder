@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { cancelProRenewal, getBillingStatus, redeemGiftCard, subscribeToPro } from "@/db/billing";
-import { isProPlan } from "@/lib/billing";
+
 
 async function currentUserId() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -23,7 +23,7 @@ export async function redeemCodeAction(code: string) {
 export async function subscribeToProAction(plan: string) {
   const id = await currentUserId();
   if (!id) return { error: "Not authenticated" };
-  if (!isProPlan(plan)) return { error: "Invalid Pro plan" };
+  if (typeof plan !== "string" || !plan || plan.length > 20) return { error: "Invalid Pro plan" };
   const result = await subscribeToPro(id, plan);
   revalidatePath("/app", "layout");
   return result;

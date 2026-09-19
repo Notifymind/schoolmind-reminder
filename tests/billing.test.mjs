@@ -57,6 +57,7 @@ test('gift card billing against embedded PostgreSQL', async t => {
     INSERT INTO codes (id, code, type, duration, value, seller_id) VALUES
     ('legacy', 'AAAAA-BBBBB', 'pro', 'month', 2, 'seller');`);
   await pg.exec(fs.readFileSync('drizzle/0009_gift_card_billing.sql', 'utf8'));
+  await pg.exec(fs.readFileSync('drizzle/0010_billing_options.sql', 'utf8'));
   const account = async id => (await db.select().from(schema.user).where(orm.eq(schema.user.id, id)))[0];
   const expire = async (id = 'buyer') => db.update(schema.user).set({ subscriptionEndsAt: new Date(Date.now() - 1000) }).where(orm.eq(schema.user.id, id));
 
@@ -66,7 +67,7 @@ test('gift card billing against embedded PostgreSQL', async t => {
     assert.equal((await account('buyer')).subscriptionAutoRenew, false);
   });
   await t.test('seller pays full face value and cannot exceed debt under concurrent requests', async () => {
-    const results = await Promise.all([billing.createGiftCard('seller', 24), billing.createGiftCard('seller', 24)]);
+    const results = await Promise.all([billing.createGiftCard('seller', 4), billing.createGiftCard('seller', 4)]);
     assert.equal(results.filter(r => r.code).length, 1);
     assert.equal((await account('seller')).balance, '0.00');
     const code = results.find(r => r.code).code;
@@ -78,7 +79,7 @@ test('gift card billing against embedded PostgreSQL', async t => {
     for (const value of [NaN, -3, 0, 1.5, Infinity, '3', 'assign']) assert.ok((await billing.createGiftCard('seller', value)).error);
   });
   await t.test('admin-issued cards cannot create money through refunds', async () => {
-    const { code } = await billing.createGiftCard('admin', 24);
+    const { code } = await billing.createGiftCard('admin', 4);
     assert.equal(code.sellerCost, '0.00');
     await billing.deleteGiftCard(code.id, 'admin');
     assert.equal((await account('admin')).balance, '0.00');
@@ -91,7 +92,7 @@ test('gift card billing against embedded PostgreSQL', async t => {
     assert.ok((await billing.deleteGiftCard('legacy', 'seller')).error);
   });
   await t.test('failed credit rolls back redemption', async () => {
-    const { code } = await billing.createGiftCard('seller', 3);
+    const { code } = await billing.createGiftCard('seller', 1);
     await db.update(schema.user).set({ walletBalance: '99999999.99' }).where(orm.eq(schema.user.id, 'buyer'));
     await assert.rejects(billing.redeemGiftCard(code.code, 'buyer'));
     await db.update(schema.user).set({ walletBalance: '3.00' }).where(orm.eq(schema.user.id, 'buyer'));
@@ -118,7 +119,7 @@ test('gift card billing against embedded PostgreSQL', async t => {
     assert.ok((await billing.subscribeToPro('buyer', 'invalid')).error);
   });
   await t.test('cancel preserves paid time; enabling renewal does not charge early', async () => {
-    const { code } = await billing.createGiftCard('admin', 24);
+    const { code } = await billing.createGiftCard('admin', 4);
     await billing.redeemGiftCard(code.code, 'buyer');
     await billing.subscribeToPro('buyer', 'school_year');
     const before = await account('buyer');
@@ -130,6 +131,35 @@ test('gift card billing against embedded PostgreSQL', async t => {
     assert.equal((await account('buyer')).walletBalance, '0.00');
     await billing.cancelProRenewal('buyer'); await expire();
     assert.equal(await billing.settleSubscription('buyer'), 'downgraded');
+  });
+  await t.test('custom options use configured costs, preserve issued cards, and refund original cost', async () => {
+    const [option] = await db.insert(schema.giftCardOptions).values({ value: '12.00', sellerCost: '5.50' }).returning();
+    const before = Number((await account('seller')).balance);
+    const { code } = await billing.createGiftCard('seller', option.id);
+    assert.equal(code.value, '12.00');
+    assert.equal(code.sellerCost, '5.50');
+    assert.equal(Number((await account('seller')).balance), before - 5.5);
+    await db.update(schema.giftCardOptions).set({ value: '15.00', sellerCost: '6.25' }).where(orm.eq(schema.giftCardOptions.id, option.id));
+    await billing.deleteGiftCard(code.id, 'seller');
+    assert.equal(Number((await account('seller')).balance), before);
+    const next = await billing.createGiftCard('seller', option.id);
+    assert.equal(next.code.value, '15.00');
+    assert.equal(next.code.sellerCost, '6.25');
+    assert.ok((await billing.createGiftCard('seller', 999)).error);
+  });
+  await t.test('custom plans support months and edited terms at renewal without changing paid access', async () => {
+    await db.insert(schema.proPlans).values({ id: 'quarter', label: 'Three months', price: '12.00', duration: 3, unit: 'months' });
+    await db.update(schema.user).set({ walletBalance: '40.00' }).where(orm.eq(schema.user.id, 'buyer'));
+    assert.equal((await billing.subscribeToPro('buyer', 'quarter')).success, true);
+    const before = await account('buyer');
+    assert.equal(before.walletBalance, '28.00');
+    assert.ok(before.subscriptionEndsAt > new Date(Date.now() + 89 * 86400000));
+    await db.update(schema.proPlans).set({ price: '10.00', duration: 2 }).where(orm.eq(schema.proPlans.id, 'quarter'));
+    assert.equal((await account('buyer')).subscriptionEndsAt.getTime(), before.subscriptionEndsAt.getTime());
+    await expire();
+    assert.equal(await billing.settleSubscription('buyer'), 'renewed');
+    assert.equal((await account('buyer')).walletBalance, '18.00');
+    assert.ok((await account('buyer')).subscriptionEndsAt < new Date(Date.now() + 63 * 86400000));
   });
   await t.test('redemption stays spent after redeemer account deletion', async () => {
     await db.delete(schema.user).where(orm.eq(schema.user.id, 'buyer'));
@@ -158,7 +188,7 @@ test('billing actions require authentication and validate input before changing 
   assert.equal(calls.length, 0);
   session = { user: { id: 'buyer' } };
   for (const value of [null, 3, '', 'unknown']) assert.ok((await actions.redeemCodeAction(value)).error);
-  for (const value of [null, 'toString', '__proto__', 'free']) assert.ok((await actions.subscribeToProAction(value)).error);
+  for (const value of [null, '', 3, 'x'.repeat(21)]) assert.ok((await actions.subscribeToProAction(value)).error);
   assert.equal(calls.length, 0);
   await actions.redeemCodeAction(' aaaaa-bbbbb ');
   await actions.subscribeToProAction('month');
@@ -166,4 +196,37 @@ test('billing actions require authentication and validate input before changing 
   assert.deepEqual(calls, [
     ['redeem', 'AAAAA-BBBBB', 'buyer'], ['subscribe', 'buyer', 'month'], ['cancel', 'buyer'],
   ]);
+});
+
+
+test('month durations clamp to the last day and preserve UTC time', () => {
+  const { subscriptionEnd } = load('lib/billing.ts');
+  assert.equal(subscriptionEnd({ duration: 1, unit: 'months' }, new Date('2028-01-31T14:30:00Z')).toISOString(), '2028-02-29T14:30:00.000Z');
+});
+
+test('only admins can save billing options; invalid inputs never reach the database', async () => {
+  let session = null;
+  let allowed = false;
+  const actions = load('lib/actions/billing-options.ts', {
+    'next/headers': { headers: async () => ({}) },
+    'next/cache': { revalidatePath: () => {} },
+    'node:crypto': { randomUUID },
+    'drizzle-orm': orm,
+    '@/db': { db: {} },
+    '@/db/schema': {},
+    '@/lib/auth': { auth: { api: { getSession: async () => session, userHasPermission: async () => ({ success: allowed }) } } },
+  });
+  const plan = { label: 'Three months', price: '12', duration: 3, unit: 'months' };
+  const gift = { value: '12', sellerCost: '10' };
+  for (const user of [null, { user: { id: 'seller' } }]) {
+    session = user;
+    assert.ok((await actions.saveProPlanAction(plan)).error);
+    assert.ok((await actions.saveGiftCardOptionAction(gift)).error);
+  }
+  allowed = true;
+  for (const price of ['-1', '0', 'NaN', '1.001', '100000000', null]) assert.ok((await actions.saveProPlanAction({ ...plan, price })).error);
+  for (const duration of [0, -1, 1.5, 3651, NaN]) assert.ok((await actions.saveProPlanAction({ ...plan, duration })).error);
+  assert.ok((await actions.saveProPlanAction({ ...plan, unit: 'years' })).error);
+  for (const sellerCost of ['-1', 'NaN', '1.001', null]) assert.ok((await actions.saveGiftCardOptionAction({ ...gift, sellerCost })).error);
+  assert.ok((await actions.saveGiftCardOptionAction({ ...gift, value: '0' })).error);
 });

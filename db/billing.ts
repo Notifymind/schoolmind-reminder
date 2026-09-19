@@ -1,18 +1,21 @@
 import { randomInt } from "node:crypto";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { codes, user } from "@/db/schema";
+import { codes, user, proPlans, giftCardOptions } from "@/db/schema";
 import { generateId } from "@/lib/utils";
-import { GIFT_CARD_VALUES, isProPlan, PRO_PLANS, subscriptionEnd, type ProPlan } from "@/lib/billing";
+import { subscriptionEnd } from "@/lib/billing";
 
-export async function createGiftCard(sellerId: string, value: number) {
-  if (!GIFT_CARD_VALUES.some(amount => amount === value)) return { error: "Choose a valid gift card value" };
+export async function createGiftCard(sellerId: string, optionId: number) {
+  if (!Number.isSafeInteger(optionId) || optionId <= 0) return { error: "Choose a valid gift card option" };
   return db.transaction(async tx => {
     const [seller] = await tx.select().from(user).where(eq(user.id, sellerId)).for("update");
     const roles = seller?.role.split(",") ?? [];
     if (!roles.includes("seller") && !roles.includes("admin")) return { error: "Seller access required" };
-    const cost = roles.includes("admin") ? 0 : value;
-    if (Math.round(Number(seller.balance) * 100) - cost * 100 < -Math.round(Number(seller.maxDebt) * 100)) return { error: "This gift card would exceed your maximum debt" };
+    const [option] = await tx.select().from(giftCardOptions).where(eq(giftCardOptions.id, optionId));
+    if (!option) return { error: "Gift card option not found" };
+    const value = Number(option.value);
+    const cost = roles.includes("admin") ? 0 : Number(option.sellerCost);
+    if (Math.round(Number(seller.balance) * 100) - Math.round(cost * 100) < -Math.round(Number(seller.maxDebt) * 100)) return { error: "This gift card would exceed your maximum debt" };
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     for (let attempt = 0; attempt < 10; attempt++) {
       const part = () => Array.from({ length: 5 }, () => chars[randomInt(chars.length)]).join("");
@@ -54,11 +57,13 @@ export async function redeemGiftCard(codeString: string, userId: string) {
   });
 }
 
-export async function subscribeToPro(userId: string, plan: ProPlan) {
-  if (!isProPlan(plan)) return { error: "Invalid Pro plan" };
+export async function subscribeToPro(userId: string, plan: string) {
+  if (typeof plan !== "string" || !plan || plan.length > 20) return { error: "Invalid Pro plan" };
   return db.transaction(async tx => {
     const [account] = await tx.select().from(user).where(eq(user.id, userId)).for("update");
     if (!account || !["free", "pro"].includes(account.role)) return { error: "This account cannot subscribe to Pro" };
+    const [option] = await tx.select().from(proPlans).where(eq(proPlans.id, plan));
+    if (!option) return { error: "Invalid Pro plan" };
     const now = new Date();
     // Existing paid time is preserved. Re-enabling renewal never bills early.
     if (account.role === "pro" && account.subscriptionEndsAt && account.subscriptionEndsAt > now) {
@@ -66,11 +71,11 @@ export async function subscribeToPro(userId: string, plan: ProPlan) {
       await tx.update(user).set({ subscriptionPlan: plan, subscriptionAutoRenew: true }).where(eq(user.id, userId));
       return { success: true };
     }
-    const price = PRO_PLANS[plan].price;
+    const price = Number(option.price);
     if (Number(account.walletBalance) < price) return { error: `You need ${price} KM in your balance to subscribe` };
     await tx.update(user).set({
       walletBalance: sql`${user.walletBalance} - ${price}`, role: "pro", subscriptionPlan: plan,
-      subscriptionAutoRenew: true, subscriptionEndsAt: subscriptionEnd(plan, now),
+      subscriptionAutoRenew: true, subscriptionEndsAt: subscriptionEnd(option, now),
     }).where(eq(user.id, userId));
     return { success: true };
   });
@@ -87,10 +92,11 @@ export async function settleSubscription(userId: string) {
     const now = new Date();
     if (!account || !["pro", "basic"].includes(account.role) || !account.subscriptionEndsAt || account.subscriptionEndsAt > now) return "unchanged";
     const plan = account.subscriptionPlan;
-    if (account.subscriptionAutoRenew && isProPlan(plan) && Number(account.walletBalance) >= PRO_PLANS[plan].price) {
+    const [option] = plan ? await tx.select().from(proPlans).where(eq(proPlans.id, plan)) : [];
+    if (account.subscriptionAutoRenew && option && Number(account.walletBalance) >= Number(option.price)) {
       await tx.update(user).set({
-        walletBalance: sql`${user.walletBalance} - ${PRO_PLANS[plan].price}`,
-        role: "pro", subscriptionEndsAt: subscriptionEnd(plan, now),
+        walletBalance: sql`${user.walletBalance} - ${Number(option.price)}`,
+        role: "pro", subscriptionEndsAt: subscriptionEnd(option, now),
       }).where(eq(user.id, userId));
       return "renewed";
     }
