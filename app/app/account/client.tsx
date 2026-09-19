@@ -39,7 +39,10 @@ type Passkey = {
   createdAt: Date;
 };
 
-export function AccountClient({ children }: { children: React.ReactNode }) {
+export function AccountClient({ children, deletionBlockedByDebt }: {
+  children: React.ReactNode;
+  deletionBlockedByDebt: boolean;
+}) {
   usePageTitle("Account Settings");
   const router = useRouter();
   const { data: session } = authClient.useSession();
@@ -291,9 +294,14 @@ export function AccountClient({ children }: { children: React.ReactNode }) {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {deletionBlockedByDebt && (
+              <p className="mb-4 text-sm text-muted-foreground">
+                Please settle your seller debt before deleting your account.
+              </p>
+            )}
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive">Delete Account</Button>
+                <Button variant="destructive" disabled={deletionBlockedByDebt}>Delete Account</Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
@@ -307,8 +315,10 @@ export function AccountClient({ children }: { children: React.ReactNode }) {
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
+                    disabled={deletionBlockedByDebt}
                     variant="destructive"
                     onClick={async () => {
+                      if (deletionBlockedByDebt) return;
                       const result = await authClient.deleteUser();
                       if (result.error) {
                         toast.error(result.error.message || "Failed to delete account");
