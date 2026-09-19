@@ -104,6 +104,35 @@ function SubscriptionContent() {
     <div className="flex flex-1 flex-col items-center justify-center gap-6">
       <Card className="w-full max-w-2xl">
         <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Gift className="size-5" />
+            Redeem Code
+          </CardTitle>
+          <CardDescription>
+            Enter a gift card code to add money to your balance.
+            <br />
+            Buy gift cards from your class seller. Redeeming a card does not start a subscription.
+          </CardDescription>
+        </CardHeader>
+        <form onSubmit={handleRedeemCode}>
+          <CardContent>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter your code"
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                className="font-mono uppercase"
+              />
+              <Button type="submit" disabled={isRedeeming || isUpdating || !code.trim()}>
+                {isRedeeming ? "Redeeming..." : "Redeem"}
+              </Button>
+            </div>
+          </CardContent>
+        </form>
+      </Card>
+
+      <Card className="w-full max-w-2xl">
+        <CardHeader>
           <CardTitle>Balance: {subscriptionStatus ? `${subscriptionStatus.balance} KM` : "Loading..."}</CardTitle>
           <CardDescription>
             Add money with a gift card, then subscribe to Pro. Renewals use your balance.
@@ -159,34 +188,6 @@ function SubscriptionContent() {
         </Card>
       )}
 
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Gift className="size-5" />
-            Redeem Code
-          </CardTitle>
-          <CardDescription>
-            Enter a gift card code to add money to your balance.
-            <br />
-            Buy gift cards from your class seller. Redeeming a card does not start a subscription.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleRedeemCode}>
-          <CardContent>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Enter your code"
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                className="font-mono uppercase"
-              />
-              <Button type="submit" disabled={isRedeeming || isUpdating || !code.trim()}>
-                {isRedeeming ? "Redeeming..." : "Redeem"}
-              </Button>
-            </div>
-          </CardContent>
-        </form>
-      </Card>
 
       <div className="w-full max-w-2xl overflow-x-auto">
         <table className="w-full border-collapse">
