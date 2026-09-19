@@ -981,3 +981,11 @@ export { db };
 export async function getClassNames() {
   return db.select({ name: schoolclass.name }).from(schoolclass).orderBy(schoolclass.name);
 }
+
+export async function hasSellerDebt(userId: string) {
+  const [account] = await db
+    .select({ role: user.role, balance: user.balance })
+    .from(user)
+    .where(eq(user.id, userId));
+  return !!account?.role?.split(",").includes("seller") && Number(account.balance) < 0;
+}

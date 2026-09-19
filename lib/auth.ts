@@ -1,8 +1,9 @@
+import { APIError } from "better-auth/api";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { passkey } from "@better-auth/passkey";
 import { admin } from "better-auth/plugins";
-import { db } from "@/db";
+import { db, hasSellerDebt } from "@/db";
 import * as schema from "@/db/schema";
 import { ac, freeRole, proRole, sellerRole, adminRole } from "./permissions";
 
@@ -33,6 +34,13 @@ export const auth = betterAuth({
   user: {
     deleteUser: {
       enabled: true,
+      beforeDelete: async (user) => {
+        if (await hasSellerDebt(user.id)) {
+          throw new APIError("FORBIDDEN", {
+            message: "Please settle your seller debt before deleting your account.",
+          });
+        }
+      },
     },
     additionalFields: {
       class: {

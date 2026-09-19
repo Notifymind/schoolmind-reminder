@@ -27,6 +27,7 @@ test('an existing user can change class; invalid selections never write', async 
     '@/db': {
       getClassNames: async () => [{ name: '1A' }, { name: '2B' }],
       getUserClass: async () => '1A',
+      getUserRole: async () => 'free',
       setUserClass: async (...args) => { saved = args; },
     },
   });
@@ -56,4 +57,30 @@ test('class codes cannot be generated, even by an admin', async () => {
   });
   assert.ok((await generateCodeAction('assign', 'once')).error);
   assert.equal(created, false);
+});
+
+
+test('sellers cannot change class even when the session role is stale', async () => {
+  let role = 'seller';
+  let saved = false;
+  const { selectClassAction } = loadAction('lib/actions/classes.ts', {
+    'next/headers': { headers: async () => ({}) },
+    'next/cache': { revalidatePath: () => {} },
+    '@/lib/auth': { auth: { api: {
+      getSession: async () => ({ user: { id: 'seller-user', role: 'free' } }),
+    } } },
+    '@/db': {
+      getUserRole: async () => role,
+      getClassNames: async () => [{ name: '2B' }],
+      setUserClass: async () => { saved = true; },
+    },
+  });
+  for (const sellerRole of ['seller', 'admin,seller']) {
+    role = sellerRole;
+    assert.match((await selectClassAction('2B')).error, /Sellers cannot change/);
+    assert.equal(saved, false);
+  }
+  role = 'admin';
+  assert.equal((await selectClassAction('2B')).success, true);
+  assert.equal(saved, true);
 });
