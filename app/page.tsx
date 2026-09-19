@@ -2,7 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Bell,
   Calendar,
@@ -12,8 +13,11 @@ import {
   Users,
   Check,
   ArrowRight,
-  MessageSquareDashed,
-  MessageSquare,
+  Sparkles,
+  Shield,
+  Zap,
+  BookOpen,
+  CalendarClock,
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -21,116 +25,21 @@ export const metadata: Metadata = {
   description: "Never miss an exam or assignment again. Get smart reminders for your SchoolMind exams and assignments.",
 };
 
-const features = [
-  {
-    icon: Calendar,
-    title: "Exam Notifications",
-    description: "Get reminded before your exams so you never miss one again.",
-  },
-  {
-    icon: ClipboardList,
-    title: "Assignment Tracking",
-    description:
-      "Stay on top of your assignments with timely deadline reminders.",
-  },
-  {
-    icon: Clock,
-    title: "Custom Presets",
-    description:
-      "Create notification schedules that work for you - remind me 2 days before at 9:00 AM.",
-  },
-  {
-    icon: Bell,
-    title: "Push Notifications",
-    description:
-      "Receive alerts directly on your device, even when the app is closed.",
-  },
-  {
-    icon: Smartphone,
-    title: "PWA Support",
-    description: "Install NotifyMind as an app on your phone for quick access.",
-  },
-  {
-    icon: Users,
-    title: "Class Sync",
-    description: "Automatically synced with your class data from SchoolMind.",
-  },
-];
-
-const steps = [
-  {
-    number: "01",
-    title: "Register",
-    description: "Create your account to get started.",
-  },
-  {
-    number: "02",
-    title: "Redeem Code",
-    description: "Redeem a code from your classes seller.",
-  },
-  {
-    number: "03",
-    title: "Configure Notifications",
-    description: "Set up your notification preferences.",
-  },
-  {
-    number: "04",
-    title: "Stay Informed",
-    description:
-      "Receive automatic reminders for all your exams and assignments.",
-  },
-];
-
-const pricingPlans = [
-  {
-    name: "Free",
-    price: "0 KM",
-    period: "/month",
-    yearlyPrice: "0 KM",
-    yearlyPeriod: "/year",
-    description: "Perfect for exam preparation",
-    features: [
-      { text: "Exam access", included: true },
-      { text: "Assignment access", included: false },
-      { text: "Push notifications", included: true },
-      { text: "notification preset", number: "1", included: true, icon: "preset" },
-      { text: "notifications per preset", number: "2", included: true, icon: "notifications" },
-    ],
-    cta: "Get Started",
-    href: "/register",
-    popular: false,
-  },
-  {
-    name: "Pro",
-    price: "3 KM",
-    period: "/month",
-    yearlyPrice: "24 KM",
-    yearlyPeriod: "/year",
-    description: "Full access to all features",
-    features: [
-      { text: "Exam access", included: true },
-      { text: "Assignment access", included: true },
-      { text: "Push notifications", included: true },
-      { text: "notification presets", number: "5", included: true, icon: "preset" },
-      { text: "notifications per preset", number: "10", included: true, icon: "notifications" },
-    ],
-    cta: "Get Started",
-    href: "/register",
-    popular: true,
-  },
-];
-
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b bg-background/80 backdrop-blur-sm">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="font-semibold text-xl">
-            NotifyMind
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between max-w-7xl">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="bg-primary text-primary-foreground flex aspect-square size-9 items-center justify-center rounded-lg">
+              <Bell className="size-5" />
+            </div>
+            <span className="font-semibold text-lg">NotifyMind</span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <ModeToggle />
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" asChild className="hidden sm:inline-flex">
               <Link href="/login">Sign In</Link>
             </Button>
             <Button asChild>
@@ -140,284 +49,436 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      <section className="pt-32 pb-20 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-              Never Miss an Exam or
-              <br />
-              Assignment Again
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              Get smart reminders for your SchoolMind exams and assignments.
-              Because SchoolMind is too shitty to do it themselves.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild>
-                <Link href="/register">
-                  Get Started <ArrowRight className="size-4 ml-2" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/login">Sign In</Link>
-              </Button>
-            </div>
-          </div>
-
-          <div className="relative mx-auto max-w-4xl">
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10 pointer-events-none" />
-            <div className="rounded-xl border bg-card shadow-2xl overflow-hidden">
-              <div className="h-8 bg-muted border-b flex items-center px-4 gap-2">
-                <div className="size-3 rounded-full bg-red-500" />
-                <div className="size-3 rounded-full bg-yellow-500" />
-                <div className="size-3 rounded-full bg-green-500" />
-              </div>
-              <div className="p-6 bg-muted/30">
-                <div className="grid gap-4">
-                  <div className="flex items-center gap-4 p-4 rounded-lg bg-background border">
-                    <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Calendar className="size-5 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">Mathematics Exam</p>
-                      <p className="text-sm text-muted-foreground">
-                        Tomorrow at 9:00 AM
-                      </p>
-                    </div>
-                    <div className="px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-600 text-sm font-medium">
-                      In 1 day
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 p-4 rounded-lg bg-background border">
-                    <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <ClipboardList className="size-5 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">Physics Assignment</p>
-                      <p className="text-sm text-muted-foreground">
-                        Due in 3 days
-                      </p>
-                    </div>
-                    <div className="px-3 py-1 rounded-full bg-green-500/10 text-green-600 text-sm font-medium">
-                      In 3 days
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 p-4 rounded-lg bg-background border">
-                    <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Calendar className="size-5 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">Chemistry Exam</p>
-                      <p className="text-sm text-muted-foreground">
-                        Next Monday at 11:00 AM
-                      </p>
-                    </div>
-                    <div className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 text-sm font-medium">
-                      In 5 days
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20 px-4 bg-muted/30">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Everything You Need</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Powerful features to keep you on track with your school work
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature) => (
-              <div
-                key={feature.title}
-                className="p-6 rounded-xl border bg-card hover:shadow-lg transition-shadow"
-              >
-                <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                  <feature.icon className="size-6 text-primary" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20 px-0">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">How It Works</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Get started in three simple steps
-            </p>
-          </div>
-          <div className="grid md:grid-cols-4 gap-8">
-            {steps.map((step) => (
-              <div key={step.number} className="text-center">
-                <div className="size-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mx-auto mb-4">
-                  {step.number}
-                </div>
-                <h3 className="font-semibold text-lg mb-2">{step.title}</h3>
-                <p className="text-muted-foreground">{step.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20 px-4 bg-muted/30">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Simple Pricing</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Choose the plan that works best for you
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-            {pricingPlans.map((plan) => (
-              <div
-                key={plan.name}
-                className={cn(
-                  "relative p-6 rounded-xl border bg-card",
-                  plan.popular && "border-primary shadow-lg scale-105",
-                )}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-primary text-primary-foreground text-sm font-medium rounded-full">
-                    Most Popular
-                  </div>
-                )}
-                <div className="text-center mb-6">
-                  <h3 className="font-semibold text-lg mb-2">{plan.name}</h3>
-                  <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className="text-muted-foreground">{plan.period}</span>
-                  </div>
-                  {plan.yearlyPrice && (
-                    <div className="mt-2">
-                      <span className="text-lg font-semibold">
-                        {plan.yearlyPrice}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {plan.yearlyPeriod}
-                      </span>
-                    </div>
-                  )}
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {plan.description}
-                  </p>
-                </div>
-                <ul className="space-y-3 mb-6">
-                  {plan.features.map((feature) => (
-                    <li key={feature.text} className="flex items-center gap-2">
-                      {feature.icon === "preset" ? (
-                        plan.popular ? (
-                          <MessageSquare
-                            className={cn(
-                              "size-4",
-                              feature.included
-                                ? "text-primary"
-                                : "text-muted-foreground opacity-50",
-                            )}
-                          />
-                        ) : (
-                          <MessageSquareDashed
-                            className={cn(
-                              "size-4",
-                              feature.included
-                                ? "text-primary"
-                                : "text-muted-foreground opacity-50",
-                            )}
-                          />
-                        )
-                      ) : feature.icon === "notifications" ? (
-                        plan.popular ? (
-                          <MessageSquare
-                            className={cn(
-                              "size-4",
-                              feature.included
-                                ? "text-primary"
-                                : "text-muted-foreground opacity-50",
-                            )}
-                          />
-                        ) : (
-                          <MessageSquareDashed
-                            className={cn(
-                              "size-4",
-                              feature.included
-                                ? "text-primary"
-                                : "text-muted-foreground opacity-50",
-                            )}
-                          />
-                        )
-                      ) : (
-                        <Check
-                          className={cn(
-                            "size-4",
-                            feature.included
-                              ? "text-primary"
-                              : "text-muted-foreground opacity-50",
-                          )}
-                        />
-                      )}
-                      <span
-                        className={cn(
-                          !feature.included &&
-                            "text-muted-foreground line-through",
-                        )}
-                      >
-                        {feature.number && <span>{feature.number} </span>}
-                        {feature.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  className="w-full"
-                  variant={plan.popular ? "default" : "outline"}
-                  asChild
-                >
-                  <Link href={plan.href}>{plan.cta}</Link>
+      {/* Hero Section */}
+      <section className="pt-32 pb-16 px-4">
+        <div className="container mx-auto max-w-7xl">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <Badge variant="secondary" className="mb-4">
+                <Sparkles className="size-3 mr-1" />
+                Smart Notifications for Students
+              </Badge>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+                Never Miss an Exam or Assignment Again
+              </h1>
+              <p className="text-lg text-muted-foreground mb-8 max-w-xl">
+                Get intelligent reminders for your SchoolMind exams and assignments.
+                Set custom notification schedules that work for you.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button size="lg" asChild className="text-base">
+                  <Link href="/register">
+                    Get Started Free <ArrowRight className="size-4 ml-2" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild className="text-base">
+                  <Link href="/login">Sign In</Link>
                 </Button>
               </div>
+              <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Check className="size-4 text-primary" />
+                  <span>Free tier available</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="size-4 text-primary" />
+                  <span>No credit card required</span>
+                </div>
+              </div>
+            </div>
+
+            {/* App Preview */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/5 rounded-3xl blur-3xl" />
+              <Card className="relative border-2 shadow-2xl">
+                <CardHeader className="border-b bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                        <Bell className="size-4" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-sm">NotifyMind</CardTitle>
+                        <CardDescription className="text-xs">Dashboard</CardDescription>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">Live</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 space-y-3">
+                  {/* Exam Card Preview */}
+                  <Card className="border">
+                    <CardHeader className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <CardTitle className="text-sm">Mathematics Exam</CardTitle>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <BookOpen className="size-3" />
+                              Mathematics
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="size-3" />
+                              Tomorrow
+                            </span>
+                            <span className="flex items-center gap-1 text-orange-500">
+                              <CalendarClock className="size-3" />
+                              In 1 day
+                            </span>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="icon" className="size-8">
+                          <Bell className="size-4" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                  </Card>
+
+                  {/* Assignment Card Preview */}
+                  <Card className="border">
+                    <CardHeader className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <CardTitle className="text-sm">Physics Assignment</CardTitle>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <BookOpen className="size-3" />
+                              Physics
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="size-3" />
+                              In 3 days
+                            </span>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="icon" className="size-8">
+                          <Bell className="size-4" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                  </Card>
+
+                  {/* Another Exam Card Preview */}
+                  <Card className="border opacity-75">
+                    <CardHeader className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <CardTitle className="text-sm">Chemistry Exam</CardTitle>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <BookOpen className="size-3" />
+                              Chemistry
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="size-3" />
+                              Next week
+                            </span>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="icon" className="size-8">
+                          <Bell className="size-4" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-7xl">
+          <div className="text-center mb-16">
+            <Badge variant="outline" className="mb-4">Features</Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Everything You Need to Stay on Track</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Powerful features designed to keep you organized and never miss a deadline
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="border-2 hover:border-primary/50 transition-colors">
+              <CardHeader>
+                <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <Calendar className="size-6 text-primary" />
+                </div>
+                <CardTitle className="text-lg">Exam Notifications</CardTitle>
+                <CardDescription>
+                  Get reminded before your exams so you never miss one again. Automatic sync with SchoolMind.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-2 hover:border-primary/50 transition-colors">
+              <CardHeader>
+                <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <ClipboardList className="size-6 text-primary" />
+                </div>
+                <CardTitle className="text-lg">Assignment Tracking</CardTitle>
+                <CardDescription>
+                  Stay on top of your assignments with timely deadline reminders and progress tracking.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-2 hover:border-primary/50 transition-colors">
+              <CardHeader>
+                <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <Clock className="size-6 text-primary" />
+                </div>
+                <CardTitle className="text-lg">Custom Presets</CardTitle>
+                <CardDescription>
+                  Create notification schedules that work for you. Remind me 2 days before at 9:00 AM.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-2 hover:border-primary/50 transition-colors">
+              <CardHeader>
+                <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <Bell className="size-6 text-primary" />
+                </div>
+                <CardTitle className="text-lg">Push Notifications</CardTitle>
+                <CardDescription>
+                  Receive alerts directly on your device, even when the app is closed or in the background.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-2 hover:border-primary/50 transition-colors">
+              <CardHeader>
+                <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <Smartphone className="size-6 text-primary" />
+                </div>
+                <CardTitle className="text-lg">PWA Support</CardTitle>
+                <CardDescription>
+                  Install NotifyMind as an app on your phone or desktop for quick access and offline support.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-2 hover:border-primary/50 transition-colors">
+              <CardHeader>
+                <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <Users className="size-6 text-primary" />
+                </div>
+                <CardTitle className="text-lg">Class Sync</CardTitle>
+                <CardDescription>
+                  Automatically synced with your class data from SchoolMind. No manual entry required.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto max-w-7xl">
+          <div className="text-center mb-16">
+            <Badge variant="outline" className="mb-4">Simple Process</Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Get Started in Minutes</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Four simple steps to never miss another deadline
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              {
+                number: "01",
+                title: "Register",
+                description: "Create your free account to get started with NotifyMind.",
+                icon: Shield,
+              },
+              {
+                number: "02",
+                title: "Redeem Code",
+                description: "Redeem a subscription code from your class seller.",
+                icon: Sparkles,
+              },
+              {
+                number: "03",
+                title: "Configure",
+                description: "Set up your notification preferences and custom presets.",
+                icon: Clock,
+              },
+              {
+                number: "04",
+                title: "Stay Informed",
+                description: "Receive automatic reminders for all your exams and assignments.",
+                icon: Zap,
+              },
+            ].map((step) => (
+              <div key={step.number} className="relative">
+                <div className="flex flex-col items-center text-center">
+                  <div className="size-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mb-4">
+                    {step.number}
+                  </div>
+                  <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                    <step.icon className="size-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-lg mb-2">{step.title}</h3>
+                  <p className="text-sm text-muted-foreground">{step.description}</p>
+                </div>
+              </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-7xl">
+          <div className="text-center mb-16">
+            <Badge variant="outline" className="mb-4">Pricing</Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Choose the plan that works best for your needs
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Free Plan */}
+            <Card className="border-2">
+              <CardHeader>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-2xl font-bold">Free</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Perfect for exam preparation</p>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-5xl font-bold">0 KM</span>
+                    <span className="text-muted-foreground">/month</span>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3">
+                    <Check className="size-5 text-primary flex-shrink-0" />
+                    <span>Exam access</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-muted-foreground">
+                    <Check className="size-5 opacity-30 flex-shrink-0" />
+                    <span className="line-through">Assignment access</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="size-5 text-primary flex-shrink-0" />
+                    <span>Push notifications</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="size-5 text-primary flex-shrink-0" />
+                    <span><strong>1</strong> notification preset</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="size-5 text-primary flex-shrink-0" />
+                    <span><strong>2</strong> notifications per preset</span>
+                  </li>
+                </ul>
+                <Button variant="outline" className="w-full" size="lg" asChild>
+                  <Link href="/register">Get Started</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Pro Plan */}
+            <Card className="border-2 border-primary shadow-lg relative">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <Badge className="px-4 py-1">Most Popular</Badge>
+              </div>
+              <CardHeader>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-2xl font-bold">Pro</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Full access to all features</p>
+                  </div>
+                  <div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-5xl font-bold">3 KM</span>
+                      <span className="text-muted-foreground">/month</span>
+                    </div>
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      or <strong className="text-foreground">24 KM</strong>/year
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3">
+                    <Check className="size-5 text-primary flex-shrink-0" />
+                    <span>Exam access</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="size-5 text-primary flex-shrink-0" />
+                    <span>Assignment access</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="size-5 text-primary flex-shrink-0" />
+                    <span>Push notifications</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="size-5 text-primary flex-shrink-0" />
+                    <span><strong>5</strong> notification presets</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="size-5 text-primary flex-shrink-0" />
+                    <span><strong>10</strong> notifications per preset</span>
+                  </li>
+                </ul>
+                <Button className="w-full" size="lg" asChild>
+                  <Link href="/register">Get Started</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
           <p className="text-center text-sm text-muted-foreground mt-8">
-            Purchase subscription codes from your class seller to upgrade your
-            plan.
+            Purchase subscription codes from your class seller to upgrade your plan.
           </p>
         </div>
       </section>
 
+      {/* CTA Section */}
       <section className="py-20 px-4">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl font-bold mb-4">
-            Ready to Never Miss a Deadline?
-          </h2>
-          <p className="text-xl text-muted-foreground mb-8">
-            Join other students who never miss an exam or assignment.
-          </p>
-          <Button size="lg" asChild>
-            <Link href="/register">
-              Get Started <ArrowRight className="size-4 ml-2" />
-            </Link>
-          </Button>
+        <div className="container mx-auto max-w-4xl">
+          <Card className="border-2 overflow-hidden">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent" />
+              <CardContent className="relative py-16 px-6 text-center">
+                <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+                  Ready to Never Miss a Deadline?
+                </h2>
+                <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+                  Join students who stay organized and never miss an exam or assignment with NotifyMind.
+                </p>
+                <Button size="lg" asChild className="text-base">
+                  <Link href="/register">
+                    Get Started Free <ArrowRight className="size-4 ml-2" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </div>
+          </Card>
         </div>
       </section>
 
-      <footer className="border-t py-8 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-              <p className="font-semibold">NotifyMind</p>
-              <p className="text-sm text-muted-foreground">
-                Smart reminders for SchoolMind
-              </p>
+      {/* Footer */}
+      <footer className="border-t py-12 px-4 bg-muted/20">
+        <div className="container mx-auto max-w-7xl">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-2">
+              <div className="bg-primary text-primary-foreground flex aspect-square size-9 items-center justify-center rounded-lg">
+                <Bell className="size-5" />
+              </div>
+              <div>
+                <p className="font-semibold">NotifyMind</p>
+                <p className="text-sm text-muted-foreground">Smart reminders for SchoolMind</p>
+              </div>
             </div>
             <p className="text-sm text-muted-foreground">
               &copy; {new Date().getFullYear()} NotifyMind. All rights reserved.
