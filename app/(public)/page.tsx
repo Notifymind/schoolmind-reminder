@@ -40,12 +40,20 @@ export default function LandingPage() {
             <div className="flex justify-center">
               <div className="relative p-8 rounded-3xl bg-background">
                 <Image
-                  src="/images/ios-screenshot.png"
+                  src="/images/ios-screenshot-light.png"
                   alt="NotifyMind iOS App"
                   width={355}
                   height={700}
-                  className="rounded-3xl shadow-2xl"
                   priority
+                  className="dark:hidden"
+                />
+                <Image
+                  src="/images/ios-screenshot-dark.png"
+                  alt="NotifyMind iOS App"
+                  width={355}
+                  height={700}
+                  priority
+                  className="hidden dark:block"
                 />
               </div>
             </div>
