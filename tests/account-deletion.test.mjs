@@ -27,6 +27,7 @@ test('deletion hook uses the current seller balance and blocks debt', async () =
     'drizzle-orm': { eq: (_field, id) => { queriedId = id; } },
     './schema': { user: { id: 'id', role: 'role', balance: 'balance' } },
     '@/lib/utils': {},
+    '@/lib/notification-schedule': {},
   });
   const { auth: options } = load('lib/auth.ts', {
     'better-auth': { betterAuth: options => options },
