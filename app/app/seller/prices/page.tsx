@@ -5,7 +5,6 @@ import { usePageTitle } from "@/app/app/layout";
 const prices = [
   { plan: "Pro / Month", price: "2 KM", retail: "3 KM", commission: "1 KM" },
   { plan: "Pro / Year", price: "16 KM", retail: "24 KM", commission: "8 KM" },
-  { plan: "Assign (Class)", price: "0 KM", retail: "Free", commission: "0 KM" },
 ];
 
 export default function PricesPage() {
