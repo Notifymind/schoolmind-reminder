@@ -51,7 +51,9 @@ test('class codes cannot be generated, even by an admin', async () => {
       getSession: async () => ({ user: { id: 'admin' } }),
       userHasPermission: async () => ({ success: true }),
     } } },
-    '@/db': { createCode: async () => { created = true; } },
+    '@/db': {},
+    '@/lib/billing': { GIFT_CARD_VALUES: [3, 6, 12, 24] },
+    '@/db/billing': { createGiftCard: async () => { created = true; } },
     '@/db/schema': {},
     'drizzle-orm': {},
   });

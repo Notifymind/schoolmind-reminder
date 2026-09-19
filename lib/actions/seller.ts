@@ -1,24 +1,11 @@
 "use server";
 
 import { auth } from "@/lib/auth";
-import {
-  getSellerBalance,
-  updateSellerBalance,
-  createCode,
-  getCodesBySeller,
-  deleteCodeById,
-  getCodeByCode,
-  db,
-} from "@/db";
+import { getSellerBalance, getCodesBySeller, db } from "@/db";
+import { GIFT_CARD_VALUES } from "@/lib/billing";
+import { createGiftCard, deleteGiftCard } from "@/db/billing";
 import { codes, balanceHistory, user } from "@/db/schema";
 import { eq, desc, or } from "drizzle-orm";
-
-export type CodeType = "pro";
-export type CodeDuration = "month" | "school_year";
-
-const PRICING = {
-  pro: { month: 2, school_year: 16 },
-} as const;
 
 async function hasCodePermission(userId: string): Promise<boolean> {
   const result = await auth.api.userHasPermission({
@@ -32,124 +19,19 @@ async function hasCodePermission(userId: string): Promise<boolean> {
   return result?.success ?? false;
 }
 
-function getCodePrice(type: CodeType, duration: CodeDuration): number {
-  return PRICING[type][duration];
-}
-
-function generateCodeString(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const generatePart = () => {
-    let result = "";
-    for (let i = 0; i < 5; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  };
-  return `${generatePart()}-${generatePart()}`;
-}
-
-async function hasAdminPermission(userId: string): Promise<boolean> {
-  const result = await auth.api.userHasPermission({
-    body: {
-      userId,
-      permission: {
-        admin: ["access"],
-      },
-    },
-  });
-  return result?.success ?? false;
-}
-
-export async function generateCodeAction(
-  type: CodeType,
-  duration: CodeDuration,
-) {
-  const session = await auth.api.getSession({
-    headers: await import("next/headers").then((m) => m.headers()),
-  });
-
-  if (!session?.user?.id) {
-    return { error: "Not authenticated" };
-  }
-
-  if (!(await hasCodePermission(session.user.id))) {
-    return { error: "You don't have permission to generate codes" };
-  }
-
-  if (type !== "pro" || (duration !== "month" && duration !== "school_year")) {
-    return { error: "Only monthly or school-year Pro codes can be generated" };
-  }
-
-  const isAdmin = await hasAdminPermission(session.user.id);
-
-  const price = getCodePrice(type, duration);
-
-  if (!isAdmin) {
-    const { balance, maxDebt } = await getSellerBalance(session.user.id);
-    const currentBalance = parseFloat(balance);
-    const maxDebtValue = parseFloat(maxDebt);
-    const newBalance = currentBalance - price;
-
-    if (newBalance < -maxDebtValue) {
-      return {
-        error: `Insufficient balance. Generating this code would exceed your maximum debt of ${maxDebtValue} KM.`,
-      };
-    }
-  }
-
-  let codeString = generateCodeString();
-  let attempts = 0;
-  while (await getCodeByCode(codeString)) {
-    codeString = generateCodeString();
-    attempts++;
-    if (attempts > 100) {
-      return { error: "Failed to generate unique code. Please try again." };
-    }
-  }
-
-  const code = await createCode(
-    codeString,
-    type,
-    duration,
-    price.toString(),
-    session.user.id,
-  );
-
-  if (!isAdmin) {
-    const { balance } = await getSellerBalance(session.user.id);
-    const currentBalance = parseFloat(balance);
-    const newBalance = currentBalance - price;
-    await updateSellerBalance(session.user.id, newBalance.toString());
-  }
-
-  return { code };
+export async function generateCodeAction(value: number) {
+  const session = await auth.api.getSession({ headers: await import("next/headers").then(m => m.headers()) });
+  if (!session?.user?.id) return { error: "Not authenticated" };
+  if (!(await hasCodePermission(session.user.id))) return { error: "You don't have permission to generate codes" };
+  if (!GIFT_CARD_VALUES.some(amount => amount === value)) return { error: "Choose a valid gift card value" };
+  return createGiftCard(session.user.id, value);
 }
 
 export async function deleteCodeAction(codeId: string) {
-  const session = await auth.api.getSession({
-    headers: await import("next/headers").then((m) => m.headers()),
-  });
-
-  if (!session?.user?.id) {
-    return { error: "Not authenticated" };
-  }
-
-  if (!(await hasCodePermission(session.user.id))) {
-    return { error: "You don't have permission to delete codes" };
-  }
-
-  const deletedCode = await deleteCodeById(codeId, session.user.id);
-  if (!deletedCode) {
-    return { error: "Code not found or already redeemed" };
-  }
-
-  const { balance } = await getSellerBalance(session.user.id);
-  const currentBalance = parseFloat(balance);
-  const codeValue = parseFloat(deletedCode.value);
-  const newBalance = currentBalance + codeValue;
-  await updateSellerBalance(session.user.id, newBalance.toString());
-
-  return { success: true };
+  const session = await auth.api.getSession({ headers: await import("next/headers").then(m => m.headers()) });
+  if (!session?.user?.id) return { error: "Not authenticated" };
+  if (!(await hasCodePermission(session.user.id))) return { error: "You don't have permission to delete codes" };
+  return deleteGiftCard(codeId, session.user.id);
 }
 
 export async function getCodesAction() {
@@ -183,7 +65,7 @@ export async function getBalanceAction() {
   }
 
   const { balance, maxDebt } = await getSellerBalance(session.user.id);
-  return { balance, maxDebt };
+  return { balance, maxDebt, isAdmin: (await db.select({ role: user.role }).from(user).where(eq(user.id, session.user.id)))[0]?.role.split(",").includes("admin") ?? false };
 }
 
 export type Transaction = {
@@ -241,13 +123,13 @@ export async function getTransactionHistoryAction(limit = 100, offset = 0) {
   const transactions: Transaction[] = [
     ...sellerCodes.map((c) => ({
       id: `code-${c.id}`,
-      type: c.redeemedBy ? ("code_generated" as const) : ("code_generated" as const),
-      amount: `-${c.value}`,
+      type: "code_generated" as const,
+      amount: `-${c.sellerCost}`,
       previousBalance: null,
       newBalance: null,
-      description: c.redeemedBy
-        ? `Code generated: ${c.code} (${c.type}, ${c.duration}) - Redeemed`
-        : `Code generated: ${c.code} (${c.type}, ${c.duration})`,
+      description: c.wasRedeemedAt
+        ? `Code generated: ${c.code} (${c.value} KM ${c.type === "balance" ? "gift card" : "legacy code"}) - Redeemed`
+        : `Code generated: ${c.code} (${c.value} KM ${c.type === "balance" ? "gift card" : "legacy code"})`,
       createdAt: c.createdAt,
     })),
     ...history.map((h) => ({

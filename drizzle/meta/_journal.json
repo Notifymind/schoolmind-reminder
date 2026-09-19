@@ -64,6 +64,13 @@
       "when": 1789836421890,
       "tag": "0008_push_subscription_lifecycle",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789836421891,
+      "tag": "0009_gift_card_billing",
+      "breakpoints": true
     }
   ]
 }

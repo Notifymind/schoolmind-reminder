@@ -1,34 +1,30 @@
 "use client";
 
 import { usePageTitle } from "@/app/app/layout";
-
-const prices = [
-  { plan: "Pro / Month", price: "2 KM", retail: "3 KM", commission: "1 KM" },
-  { plan: "Pro / Year", price: "16 KM", retail: "24 KM", commission: "8 KM" },
-];
+import { GIFT_CARD_VALUES } from "@/lib/billing";
 
 export default function PricesPage() {
-  usePageTitle("Prices");
+  usePageTitle("Gift card prices");
 
   return (
     <div className="grid gap-4 w-full max-w-2xl mx-auto">
+      <p className="text-muted-foreground">
+        Sellers pay the full gift card value. Users redeem cards into their
+        balance and choose their own Pro plan.
+      </p>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b">
-              <th className="text-left p-3 font-medium">Plan</th>
-              <th className="text-right p-3 font-medium">Price</th>
-              <th className="text-right p-3 font-medium">Retail</th>
-              <th className="text-right p-3 font-medium">Commission</th>
+              <th className="text-left p-3 font-medium">Gift card value</th>
+              <th className="text-right p-3 font-medium">Seller cost</th>
             </tr>
           </thead>
           <tbody>
-            {prices.map((p) => (
-              <tr key={p.plan} className="border-b">
-                <td className="p-3">{p.plan}</td>
-                <td className="p-3 text-right">{p.price}</td>
-                <td className="p-3 text-right">{p.retail}</td>
-                <td className="p-3 text-right">{p.commission}</td>
+            {GIFT_CARD_VALUES.map(value => (
+              <tr key={value} className="border-b">
+                <td className="p-3">{value} KM</td>
+                <td className="p-3 text-right">{value} KM</td>
               </tr>
             ))}
           </tbody>

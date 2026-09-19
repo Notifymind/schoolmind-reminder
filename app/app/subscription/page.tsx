@@ -17,7 +17,11 @@ import { toast } from "sonner";
 import {
   redeemCodeAction,
   getSubscriptionStatusAction,
+  subscribeToProAction,
+  cancelProRenewalAction,
 } from "@/lib/actions/subscription";
+import { PRO_PLANS, type ProPlan } from "@/lib/billing";
+import { authClient } from "@/lib/auth-client";
 import { RequireNotAdminSeller } from "@/components/require-not-admin-seller";
 
 const features = [
@@ -31,13 +35,28 @@ const features = [
 ];
 
 function SubscriptionContent() {
+  const { refetch: refreshSession } = authClient.useSession();
   const [code, setCode] = React.useState("");
   const [isRedeeming, setIsRedeeming] = React.useState(false);
-  const [subscriptionStatus, setSubscriptionStatus] = React.useState<{
-    role: string;
-    subscriptionEndsAt: Date | null;
-    isActive: boolean;
-  } | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = React.useState<Awaited<ReturnType<typeof getSubscriptionStatusAction>>>(null);
+  const [isUpdating, setIsUpdating] = React.useState(false);
+
+  async function updateSubscription(plan?: ProPlan) {
+    setIsUpdating(true);
+    try {
+      const result = plan ? await subscribeToProAction(plan) : await cancelProRenewalAction();
+      if ("error" in result && result.error) toast.error(result.error);
+      else {
+        toast.success(plan ? "Pro subscription updated" : "Automatic renewal canceled");
+        setSubscriptionStatus(await getSubscriptionStatusAction());
+        await refreshSession({ query: { disableCookieCache: true } });
+      }
+    } catch {
+      toast.error("Could not update your subscription. Please try again.");
+    } finally {
+      setIsUpdating(false);
+    }
+  }
 
   const searchParams = useSearchParams();
 
@@ -53,7 +72,7 @@ function SubscriptionContent() {
       const status = await getSubscriptionStatusAction();
       setSubscriptionStatus(status);
     }
-    loadStatus();
+    loadStatus().catch(() => toast.error("Could not load your balance. Please reload the page."));
   }, []);
 
   async function handleRedeemCode(e: React.FormEvent) {
@@ -62,22 +81,55 @@ function SubscriptionContent() {
 
     setIsRedeeming(true);
 
-    const result = await redeemCodeAction(code);
+    try {
+      const result = await redeemCodeAction(code);
 
-    if (result.error) {
-      toast.error(result.error);
-    } else if (result.success) {
-      toast.success(result.message);
-      setCode("");
-      const status = await getSubscriptionStatusAction();
-      setSubscriptionStatus(status);
+      if (result.error) {
+        toast.error(result.error);
+      } else if ("success" in result && result.success) {
+        toast.success(result.message);
+        setCode("");
+        const status = await getSubscriptionStatusAction();
+        setSubscriptionStatus(status);
+      }
+
+    } catch {
+      toast.error("Could not redeem your gift card. Please try again.");
+    } finally {
+      setIsRedeeming(false);
     }
-
-    setIsRedeeming(false);
   }
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6">
+      <Card className="w-full max-w-2xl">
+        <CardHeader>
+          <CardTitle>Balance: {subscriptionStatus ? `${subscriptionStatus.balance} KM` : "Loading..."}</CardTitle>
+          <CardDescription>
+            Add money with a gift card, then subscribe to Pro. Renewals use your balance.
+            If you do not have enough money, Pro stops until you subscribe again.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {subscriptionStatus?.autoRenew ? (
+            <>
+              <p>Automatic renewal is on{subscriptionStatus.plan === "month" ? ": 3 KM every 30 days" : ": 24 KM every 365 days"}.</p>
+              <Button variant="outline" disabled={isUpdating} onClick={() => updateSubscription()}>Cancel automatic renewal</Button>
+            </>
+          ) : (
+            <>
+              <p>{subscriptionStatus?.isActive ? "Choose a plan to enable renewal when your current access ends. No charge today." : "Choose your Pro plan. The first payment is taken now."}</p>
+              <div className="flex flex-wrap gap-3">
+                {(Object.keys(PRO_PLANS) as ProPlan[]).map(plan => (
+                  <Button key={plan} disabled={!subscriptionStatus || isUpdating || isRedeeming} onClick={() => updateSubscription(plan)}>
+                    {PRO_PLANS[plan].label}: {PRO_PLANS[plan].price} KM / {PRO_PLANS[plan].days} days
+                  </Button>
+                ))}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
       {subscriptionStatus?.isActive && (
         <Card className="w-full max-w-2xl border-green-500/50 bg-green-500/5">
           <CardHeader>
@@ -114,9 +166,9 @@ function SubscriptionContent() {
             Redeem Code
           </CardTitle>
           <CardDescription>
-            Enter a gift or promotional code to activate your subscription.
+            Enter a gift card code to add money to your balance.
             <br />
-            You can buy gift codes from your classes seller.
+            Buy gift cards from your class seller. Redeeming a card does not start a subscription.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleRedeemCode}>
@@ -128,7 +180,7 @@ function SubscriptionContent() {
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 className="font-mono uppercase"
               />
-              <Button type="submit" disabled={isRedeeming || !code.trim()}>
+              <Button type="submit" disabled={isRedeeming || isUpdating || !code.trim()}>
                 {isRedeeming ? "Redeeming..." : "Redeem"}
               </Button>
             </div>

@@ -1,3 +1,4 @@
+import { settleSubscription } from "@/db/billing";
 // Server-only job helpers; these are not client-callable Server Actions.
 
 import webpush from "web-push";
@@ -9,7 +10,6 @@ import {
   getPushSubscriptions,
   deletePushSubscription,
   getExpiredSubscriptions,
-  downgradeExpiredUser,
 } from "@/db";
 import { exams, assignments } from "@/db/schema";
 
@@ -79,15 +79,16 @@ export async function processExpiredSubscriptionsAction() {
   const results = {
     processed: 0,
     downgraded: 0,
+    renewed: 0,
     errors: 0,
   };
 
   for (const user of expiredUsers) {
     results.processed++;
     try {
-      await downgradeExpiredUser(user.id);
-      results.downgraded++;
-      console.log(`[Subscription] Downgraded user ${user.id} (${user.name}) from ${user.role} to free`);
+      const outcome = await settleSubscription(user.id);
+      if (outcome === "renewed") results.renewed++;
+      if (outcome === "downgraded") results.downgraded++;
     } catch (error) {
       console.error(`[Subscription] Error downgrading user ${user.id}:`, error);
       results.errors++;
@@ -98,14 +99,13 @@ export async function processExpiredSubscriptionsAction() {
 }
 
 export async function runCronJobAction() {
+  console.log("[Cron] Processing subscription renewals and expirations...");
+  const subscriptionResults = await processExpiredSubscriptionsAction();
   console.log("[Cron] Starting notification processing...");
-
   const notificationResults = await processNotificationsAction();
 
   console.log("[Cron] Notification processing complete:", notificationResults);
 
-  console.log("[Cron] Starting subscription expiration check...");
-  const subscriptionResults = await processExpiredSubscriptionsAction();
   console.log("[Cron] Subscription expiration check complete:", subscriptionResults);
 
   return {
