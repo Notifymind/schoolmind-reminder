@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import { Home, FileText, ClipboardList, User, LogOut, Sun, Moon, DollarSign, Bell, Ticket, BarChart3, Users, Wallet, GraduationCap, History } from "lucide-react"
@@ -209,12 +210,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/app">
-                <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <Bell className="size-4" />
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <Image
+                    src="/favicon-32x32.png"
+                    alt="NotifyMind"
+                    width={32}
+                    height={32}
+                    className="rounded-lg"
+                  />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">NotifyMind</span>
-                  <span className="truncate text-xs">Schoolmind Reminders</span>
                 </div>
               </Link>
             </SidebarMenuButton>
