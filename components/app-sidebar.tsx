@@ -208,19 +208,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+            <SidebarMenuButton size="lg" asChild className="h-14 group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:p-2">
               <Link href="/app">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
+                <div className="flex aspect-square size-10 items-center justify-center rounded-lg group-data-[collapsible=icon]:size-8">
                   <Image
-                    src="/favicon-32x32.png"
+                    src="/android-chrome-512x512.png"
                     alt="NotifyMind"
-                    width={32}
-                    height={32}
-                    className="rounded-lg"
+                    width={40}
+                    height={40}
+                    className="rounded-lg group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8"
                   />
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">NotifyMind</span>
+                <div className="grid flex-1 text-left leading-tight">
+                  <span className="truncate text-lg font-bold">NotifyMind</span>
                 </div>
               </Link>
             </SidebarMenuButton>
