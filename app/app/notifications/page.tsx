@@ -603,7 +603,7 @@ function PushNotificationManager() {
       await enablePush();
     } catch (error) {
       console.error("Failed to subscribe:", error);
-      toast.error("Failed to subscribe to push notifications. Make sure you've added this app to your home screen and granted notification permission.");
+      toast.error(error instanceof Error ? error.message : "Could not enable notifications. Please try again.");
     }
     setIsLoading(false);
   }

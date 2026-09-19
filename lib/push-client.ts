@@ -39,13 +39,23 @@ export async function syncPushSubscription() {
 async function saveSubscription(sub: PushSubscription) {
   const json = sub.toJSON();
   if (!json.endpoint || !json.keys?.p256dh || !json.keys.auth) throw new Error("Invalid browser subscription");
-  const result = await subscribeToPushAction({ endpoint: json.endpoint, keys: { p256dh: json.keys.p256dh, auth: json.keys.auth } });
+  let result;
+  try {
+    result = await subscribeToPushAction({ endpoint: json.endpoint, keys: { p256dh: json.keys.p256dh, auth: json.keys.auth } });
+  } catch {
+    throw new Error("Could not save notification settings. Please try again.");
+  }
   if (result.error) throw new Error(result.error);
 }
 
 export async function enablePush() {
   // Request permission directly from the user gesture, before awaiting registration.
-  if (await Notification.requestPermission() !== "granted") throw new Error("Notification permission was not granted");
+  if (!pushSupported()) throw new Error("Push notifications are not supported in this browser.");
+  const permission = await Notification.requestPermission();
+  if (permission === "denied") {
+    throw new Error("Notifications are blocked. Allow notifications in your browser's site settings, then try again.");
+  }
+  if (permission !== "granted") throw new Error("Notification permission was not granted. Click Enable Notifications and choose Allow.");
   return withPushLock(async () => {
     await registration();
     const reg = await navigator.serviceWorker.ready;
@@ -55,7 +65,18 @@ export async function enablePush() {
       if (!key) throw new Error("Push notifications are not configured");
       const base64 = key.replace(/-/g, "+").replace(/_/g, "/");
       const bytes = Uint8Array.from(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "=")), c => c.charCodeAt(0));
-      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes });
+      try {
+        sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes });
+      } catch (error) {
+        const name = (error as { name?: string }).name;
+        if (name === "NotAllowedError") {
+          throw new Error("Notifications are blocked. Allow notifications in your browser's site settings, then try again.");
+        }
+        if (name === "AbortError") {
+          throw new Error("Your browser could not connect to its push service. Check your connection and browser notification settings, then try again.");
+        }
+        throw new Error("Your browser could not register for notifications. Reload the page and try again.");
+      }
     }
     await saveSubscription(sub);
     usePushNotificationStore.getState().setSubscribed(true);

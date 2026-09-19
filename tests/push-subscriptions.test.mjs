@@ -100,3 +100,16 @@ test('registering the same browser transfers ownership, refreshes keys, and canc
   assert.equal(row.userId, 'bob'); assert.equal(row.p256dh, 'new-key'); assert.equal(row.auth, 'new-auth');
   assert.equal(deliveries.length, 0);
 });
+
+test('notification settings show the actual failure instead of desktop home-screen advice', async () => {
+  const source = fs.readFileSync('app/app/notifications/page.tsx', 'utf8');
+  const handler = source.match(/async function subscribeToPush\(\) \{[\s\S]*?\n  \}/)[0];
+  const messages = [];
+  const context = {
+    enablePush: async () => { throw new Error('Could not save notification settings. Please try again.'); },
+    setIsLoading() {}, console: { error() {} }, toast: { error: text => messages.push(text) }, Error,
+  };
+  vm.createContext(context);
+  await vm.runInContext(`${handler}; subscribeToPush()`, context);
+  assert.equal(messages[0], 'Could not save notification settings. Please try again.');
+});
