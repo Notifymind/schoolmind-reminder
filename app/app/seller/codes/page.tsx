@@ -26,27 +26,14 @@ import {
   deleteCodeAction,
   getCodesAction,
   getBalanceAction,
-  type CodeType,
-  type CodeDuration,
 } from "@/lib/actions/seller";
 
-const PRICING: Record<CodeType, Record<CodeDuration, number>> = {
-  pro: { month: 2, school_year: 16 },
-};
+import { GIFT_CARD_VALUES } from "@/lib/billing";
 
 const CODE_TYPE_LABELS: Record<string, string> = {
-  pro: "Pro Code",
+  balance: "Gift card",
+  pro: "Legacy Pro code",
   assign: "Retired class code",
-};
-
-const DURATION_LABELS: Record<string, string> = {
-  month: "Month",
-  school_year: "School Year",
-  once: "One-time",
-};
-
-const DURATION_MAP: Record<CodeType, CodeDuration[]> = {
-  pro: ["month", "school_year"],
 };
 
 const ITEMS_PER_PAGE = 10;
@@ -69,14 +56,14 @@ export default function CodesPage() {
   const [codes, setCodes] = React.useState<Code[]>([]);
   const [balance, setBalance] = React.useState("0");
   const [maxDebt, setMaxDebt] = React.useState("0");
-  const codeType = "pro";
-  const [duration, setDuration] = React.useState<CodeDuration>("month");
+  const [value, setValue] = React.useState<number>(3);
+  const [isAdmin, setIsAdmin] = React.useState(false);
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isInitialLoading, setIsInitialLoading] = React.useState(true);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [viewingCode, setViewingCode] = React.useState<Code | null>(null);
 
-  const price = PRICING[codeType][duration];
+  const price = isAdmin ? 0 : value;
   const currentBalance = parseFloat(balance);
   const maxDebtValue = parseFloat(maxDebt);
   const wouldExceedDebt = currentBalance - price < -maxDebtValue;
@@ -89,25 +76,30 @@ export default function CodesPage() {
     setCodes(codesResult.codes as Code[]);
     setBalance(balanceResult.balance);
     setMaxDebt(balanceResult.maxDebt);
+    setIsAdmin(balanceResult.isAdmin ?? false);
   }
 
   React.useEffect(() => {
-    loadData().finally(() => setIsInitialLoading(false));
+    loadData().catch(() => toast.error("Could not load gift cards. Please reload the page.")).finally(() => setIsInitialLoading(false));
   }, []);
 
   async function handleGenerateCode() {
     setIsGenerating(true);
+    try {
+      const result = await generateCodeAction(value);
 
-    const result = await generateCodeAction(codeType, duration);
+      if (result.error) {
+        toast.error(result.error);
+      } else if ("code" in result && result.code) {
+        toast.success(`Code generated: ${result.code.code}`);
+        await loadData();
+      }
 
-    if (result.error) {
-      toast.error(result.error);
-    } else if (result.code) {
-      toast.success(`Code generated: ${result.code.code}`);
-      await loadData();
+    } catch {
+      toast.error("Could not generate a gift card. Please try again.");
+    } finally {
+      setIsGenerating(false);
     }
-
-    setIsGenerating(false);
   }
 
   async function handleDeleteCode(codeId: string) {
@@ -116,7 +108,7 @@ export default function CodesPage() {
     if (result.error) {
       toast.error(result.error);
     } else {
-      toast.success("Code deleted and value refunded to your balance");
+      toast.success("Code deleted and its original cost refunded");
       await loadData();
     }
   }
@@ -168,23 +160,23 @@ export default function CodesPage() {
             Generate Code
           </CardTitle>
           <CardDescription>
-            Create a new subscription code. The cost will be deducted from your
+            Create a gift card that adds its value to a user&apos;s balance. The cost will be deducted from your
             balance.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
               <div className="flex-1 space-y-2">
-                <label htmlFor="duration" className="text-sm font-medium">Duration</label>
+                <label htmlFor="value" className="text-sm font-medium">Gift card value</label>
                 <select
-                  id="duration"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value as CodeDuration)}
+                  id="value"
+                  value={value}
+                  onChange={(e) => setValue(Number(e.target.value))}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
-                  {DURATION_MAP[codeType].map((d) => (
+                  {GIFT_CARD_VALUES.map((d) => (
                     <option key={d} value={d}>
-                      {DURATION_LABELS[d]} ({PRICING[codeType][d]} KM)
+                      {d} KM
                     </option>
                   ))}
                 </select>
@@ -232,7 +224,7 @@ export default function CodesPage() {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left p-3 font-medium">Type</th>
-                    <th className="text-left p-3 font-medium">Duration</th>
+                    <th className="text-left p-3 font-medium">Value</th>
                     <th className="text-right p-3 font-medium">Actions</th>
                   </tr>
                 </thead>
@@ -240,11 +232,10 @@ export default function CodesPage() {
                   {paginatedCodes.map((code) => (
                     <tr key={code.id} className="border-b">
                       <td className="p-3">
-                        {CODE_TYPE_LABELS[code.type as CodeType] || code.type}
+                        {CODE_TYPE_LABELS[code.type] || code.type}
                       </td>
                       <td className="p-3">
-                        {DURATION_LABELS[code.duration as CodeDuration] ||
-                          code.duration}
+                        {code.value} KM
                       </td>
                       <td className="p-3 text-right">
                         <div className="flex items-center justify-end gap-1">
@@ -316,11 +307,7 @@ export default function CodesPage() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Type</p>
-                <p>{viewingCode && CODE_TYPE_LABELS[viewingCode.type as CodeType]}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Duration</p>
-                <p>{viewingCode && DURATION_LABELS[viewingCode.duration as CodeDuration]}</p>
+                <p>{viewingCode && CODE_TYPE_LABELS[viewingCode.type]}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Value</p>

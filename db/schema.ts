@@ -1,5 +1,6 @@
 import {
   pgTable,
+  check,
   serial,
   varchar,
   text,
@@ -9,7 +10,7 @@ import {
   integer,
   numeric,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -24,13 +25,16 @@ export const user = pgTable("user", {
   banExpires: timestamp("ban_expires"),
   balance: numeric("balance", { precision: 10, scale: 2 }).default("0").notNull(),
   maxDebt: numeric("max_debt", { precision: 10, scale: 2 }).default("0").notNull(),
+  walletBalance: numeric("wallet_balance", { precision: 10, scale: 2 }).default("0").notNull(),
+  subscriptionPlan: varchar("subscription_plan", { length: 20 }),
+  subscriptionAutoRenew: boolean("subscription_auto_renew").default(false).notNull(),
   subscriptionEndsAt: timestamp("subscription_ends_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-});
+}, (table) => [check("wallet_balance_nonnegative", sql`${table.walletBalance} >= 0`)]);
 
 export const session = pgTable(
   "session",
@@ -415,6 +419,7 @@ export const codes = pgTable(
     type: varchar("type", { length: 20 }).notNull(),
     duration: varchar("duration", { length: 20 }).notNull(),
     value: numeric("value", { precision: 10, scale: 2 }).notNull(),
+    sellerCost: numeric("seller_cost", { precision: 10, scale: 2 }).default("0").notNull(),
     sellerId: text("seller_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),

@@ -1,0 +1,109 @@
+import { randomInt } from "node:crypto";
+import { and, eq, isNull, sql } from "drizzle-orm";
+import { db } from "@/db";
+import { codes, user } from "@/db/schema";
+import { generateId } from "@/lib/utils";
+import { GIFT_CARD_VALUES, isProPlan, PRO_PLANS, subscriptionEnd, type ProPlan } from "@/lib/billing";
+
+export async function createGiftCard(sellerId: string, value: number) {
+  if (!GIFT_CARD_VALUES.some(amount => amount === value)) return { error: "Choose a valid gift card value" };
+  return db.transaction(async tx => {
+    const [seller] = await tx.select().from(user).where(eq(user.id, sellerId)).for("update");
+    const roles = seller?.role.split(",") ?? [];
+    if (!roles.includes("seller") && !roles.includes("admin")) return { error: "Seller access required" };
+    const cost = roles.includes("admin") ? 0 : value;
+    if (Math.round(Number(seller.balance) * 100) - cost * 100 < -Math.round(Number(seller.maxDebt) * 100)) return { error: "This gift card would exceed your maximum debt" };
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const part = () => Array.from({ length: 5 }, () => chars[randomInt(chars.length)]).join("");
+      const [code] = await tx.insert(codes).values({
+        id: generateId(), code: `${part()}-${part()}`, type: "balance", duration: "once",
+        value: value.toFixed(2), sellerCost: cost.toFixed(2), sellerId,
+      }).onConflictDoNothing().returning();
+      if (!code) continue;
+      await tx.update(user).set({ balance: sql`${user.balance} - ${cost.toFixed(2)}` }).where(eq(user.id, sellerId));
+      return { code };
+    }
+    return { error: "Could not generate a unique code. Please try again." };
+  });
+}
+
+export async function deleteGiftCard(codeId: string, sellerId: string) {
+  return db.transaction(async tx => {
+    const [code] = await tx.delete(codes).where(and(
+      eq(codes.id, codeId), eq(codes.sellerId, sellerId), isNull(codes.wasRedeemedAt), isNull(codes.redeemedAt), isNull(codes.redeemedBy),
+    )).returning();
+    if (!code) return { error: "Code not found or already redeemed" };
+    await tx.update(user).set({ balance: sql`${user.balance} + ${code.sellerCost}` }).where(eq(user.id, sellerId));
+    return { success: true };
+  });
+}
+
+export async function redeemGiftCard(codeString: string, userId: string) {
+  return db.transaction(async tx => {
+    const [code] = await tx.select().from(codes).where(eq(codes.code, codeString)).for("update");
+    if (!code) return { error: "Code not found" };
+    if (code.wasRedeemedAt || code.redeemedAt || code.redeemedBy) return { error: "Code has already been redeemed" };
+    if (code.type !== "balance") return { error: "This is not a gift card code" };
+    const [account] = await tx.update(user).set({ walletBalance: sql`${user.walletBalance} + ${code.value}` })
+      .where(eq(user.id, userId)).returning();
+    if (!account) return { error: "User not found" };
+    const now = new Date();
+    await tx.update(codes).set({ redeemedBy: userId, redeemedAt: now, wasRedeemedAt: now }).where(eq(codes.id, code.id));
+    return { success: true, message: `${code.value} KM added to your balance.`, balance: account.walletBalance };
+  });
+}
+
+export async function subscribeToPro(userId: string, plan: ProPlan) {
+  if (!isProPlan(plan)) return { error: "Invalid Pro plan" };
+  return db.transaction(async tx => {
+    const [account] = await tx.select().from(user).where(eq(user.id, userId)).for("update");
+    if (!account || !["free", "pro"].includes(account.role)) return { error: "This account cannot subscribe to Pro" };
+    const now = new Date();
+    // Existing paid time is preserved. Re-enabling renewal never bills early.
+    if (account.role === "pro" && account.subscriptionEndsAt && account.subscriptionEndsAt > now) {
+      if (account.subscriptionAutoRenew) return { error: "Cancel automatic renewal before changing plans" };
+      await tx.update(user).set({ subscriptionPlan: plan, subscriptionAutoRenew: true }).where(eq(user.id, userId));
+      return { success: true };
+    }
+    const price = PRO_PLANS[plan].price;
+    if (Number(account.walletBalance) < price) return { error: `You need ${price} KM in your balance to subscribe` };
+    await tx.update(user).set({
+      walletBalance: sql`${user.walletBalance} - ${price}`, role: "pro", subscriptionPlan: plan,
+      subscriptionAutoRenew: true, subscriptionEndsAt: subscriptionEnd(plan, now),
+    }).where(eq(user.id, userId));
+    return { success: true };
+  });
+}
+
+export async function cancelProRenewal(userId: string) {
+  await db.update(user).set({ subscriptionAutoRenew: false }).where(eq(user.id, userId));
+  return { success: true };
+}
+
+export async function settleSubscription(userId: string) {
+  return db.transaction(async tx => {
+    const [account] = await tx.select().from(user).where(eq(user.id, userId)).for("update");
+    const now = new Date();
+    if (!account || !["pro", "basic"].includes(account.role) || !account.subscriptionEndsAt || account.subscriptionEndsAt > now) return "unchanged";
+    const plan = account.subscriptionPlan;
+    if (account.subscriptionAutoRenew && isProPlan(plan) && Number(account.walletBalance) >= PRO_PLANS[plan].price) {
+      await tx.update(user).set({
+        walletBalance: sql`${user.walletBalance} - ${PRO_PLANS[plan].price}`,
+        role: "pro", subscriptionEndsAt: subscriptionEnd(plan, now),
+      }).where(eq(user.id, userId));
+      return "renewed";
+    }
+    await tx.update(user).set({ role: "free", subscriptionAutoRenew: false, subscriptionEndsAt: null }).where(eq(user.id, userId));
+    return "downgraded";
+  });
+}
+
+export async function getBillingStatus(userId: string) {
+  await settleSubscription(userId);
+  const [account] = await db.select({
+    role: user.role, balance: user.walletBalance, subscriptionEndsAt: user.subscriptionEndsAt,
+    plan: user.subscriptionPlan, autoRenew: user.subscriptionAutoRenew,
+  }).from(user).where(eq(user.id, userId));
+  return account ? { ...account, isActive: account.role === "pro" && !!account.subscriptionEndsAt && account.subscriptionEndsAt > new Date() } : null;
+}

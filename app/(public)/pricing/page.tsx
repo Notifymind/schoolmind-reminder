@@ -176,8 +176,8 @@ export default function PricingPage() {
             ))}
           </div>
           <p className="text-center text-sm text-muted-foreground mt-8">
-            Purchase subscription codes from your class seller to upgrade your
-            plan.
+            Buy gift cards from your class seller, add them to your balance, and subscribe to Pro.
+            Your plan renews automatically while your balance covers the cost.
           </p>
         </div>
       </section>

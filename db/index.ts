@@ -598,86 +598,12 @@ export async function updateSellerBalance(userId: string, newBalance: string) {
   await db.update(user).set({ balance: newBalance }).where(eq(user.id, userId));
 }
 
-export async function createCode(
-  code: string,
-  type: "pro",
-  duration: "month" | "school_year",
-  value: string,
-  sellerId: string,
-) {
-  if (type !== "pro" || (duration !== "month" && duration !== "school_year")) {
-    throw new Error("Only monthly or school-year Pro codes can be created");
-  }
-  const result = await db.insert(codes).values({ id: generateId(), code, type, duration, value, sellerId }).returning();
-  return result[0];
-}
-
 export async function getCodesBySeller(sellerId: string) {
   return db.select().from(codes).where(eq(codes.sellerId, sellerId)).orderBy(desc(codes.createdAt));
 }
 
-export async function getCodeByCode(codeString: string) {
-  const result = await db.select().from(codes).where(eq(codes.code, codeString));
-  return result[0] ?? null;
-}
-
-export async function deleteCodeById(codeId: string, sellerId: string) {
-  const result = await db
-    .delete(codes)
-    .where(and(eq(codes.id, codeId), eq(codes.sellerId, sellerId), isNull(codes.redeemedBy)))
-    .returning();
-  return result[0] ?? null;
-}
-
-export async function getUserSubscription(userId: string) {
-  const result = await db
-    .select({
-      role: user.role,
-      subscriptionEndsAt: user.subscriptionEndsAt,
-    })
-    .from(user)
-    .where(eq(user.id, userId));
-  return result[0] ?? null;
-}
-
-export async function setUserSubscription(
-  userId: string,
-  role: string,
-  subscriptionEndsAt: Date,
-  className?: string | null
-) {
-  const updateData: { role: string; subscriptionEndsAt: Date; class?: string | null } = { role, subscriptionEndsAt };
-  if (className !== undefined) {
-    updateData.class = className;
-  }
-  await db
-    .update(user)
-    .set(updateData)
-    .where(eq(user.id, userId));
-}
-
-export async function extendSubscription(userId: string, newEndsAt: Date, newRole?: string, className?: string | null) {
-  const updateData: { subscriptionEndsAt: Date; role?: string; class?: string | null } = { subscriptionEndsAt: newEndsAt };
-  if (newRole) {
-    updateData.role = newRole;
-  }
-  if (className !== undefined) {
-    updateData.class = className;
-  }
-  await db.update(user).set(updateData).where(eq(user.id, userId));
-}
-
 export async function setUserClass(userId: string, className: string) {
   await db.update(user).set({ class: className }).where(eq(user.id, userId));
-}
-
-export async function redeemCodeInDb(codeId: string, userId: string) {
-  const result = await db
-    .update(codes)
-    .set({ redeemedBy: userId, redeemedAt: new Date(), wasRedeemedAt: new Date() })
-    .where(and(eq(codes.id, codeId), isNull(codes.redeemedBy)))
-    .returning();
-  return result[0] ?? null;
 }
 
 export async function getExpiredSubscriptions() {
@@ -691,13 +617,6 @@ export async function getExpiredSubscriptions() {
         or(eq(user.role, "basic"), eq(user.role, "pro"))
       )
     );
-}
-
-export async function downgradeExpiredUser(userId: string) {
-  await db
-    .update(user)
-    .set({ role: "free", subscriptionEndsAt: null })
-    .where(eq(user.id, userId));
 }
 
 export async function getTotalDebt() {
@@ -815,35 +734,20 @@ export async function updateSellerBalanceWithLog(
   type: "add" | "remove" | "set",
   amount: string
 ) {
-  const currentBalance = await getSellerBalance(sellerId);
-  const previousBalance = parseFloat(currentBalance.balance);
-  let newBalance: number;
-
-  switch (type) {
-    case "add":
-      newBalance = previousBalance + parseFloat(amount);
-      break;
-    case "remove":
-      newBalance = previousBalance - parseFloat(amount);
-      break;
-    case "set":
-      newBalance = parseFloat(amount);
-      break;
-  }
-
-  await db.update(user).set({ balance: newBalance.toString() }).where(eq(user.id, sellerId));
-
-  await db.insert(balanceHistory).values({
-    id: generateId(),
-    sellerId,
-    adminId,
-    type,
-    amount,
-    previousBalance: previousBalance.toString(),
-    newBalance: newBalance.toString(),
+  return db.transaction(async tx => {
+    const [seller] = await tx.select().from(user).where(eq(user.id, sellerId)).for("update");
+    if (!seller) throw new Error("Seller not found");
+    const previousBalance = Number(seller.balance);
+    const value = Number(amount);
+    if (!Number.isFinite(value)) throw new Error("Invalid balance amount");
+    const newBalance = type === "add" ? previousBalance + value : type === "remove" ? previousBalance - value : value;
+    await tx.update(user).set({ balance: newBalance.toFixed(2) }).where(eq(user.id, sellerId));
+    await tx.insert(balanceHistory).values({
+      id: generateId(), sellerId, adminId, type, amount,
+      previousBalance: previousBalance.toFixed(2), newBalance: newBalance.toFixed(2),
+    });
+    return { newBalance: newBalance.toFixed(2) };
   });
-
-  return { newBalance: newBalance.toString() };
 }
 
 export async function getBalanceHistory(sellerId: string, limit = 50) {

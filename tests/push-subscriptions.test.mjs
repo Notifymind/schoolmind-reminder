@@ -85,6 +85,7 @@ test('registering the same browser transfers ownership, refreshes keys, and canc
   };
   const { createPushSubscription } = load('db/index.ts', {
     'dotenv/config': {},
+    '@/lib/notification-schedule': {},
     'drizzle-orm/node-postgres': { drizzle: () => ({ transaction: fn => fn(tx) }) },
     'drizzle-orm': {
       eq: (field, value) => item => item[field] === value,
