@@ -10,6 +10,7 @@ import {
   notificationPreferences,
   sentNotifications,
   pushSubscriptions,
+  pushDeliveries,
   codes,
   schoolclass,
   balanceHistory,
@@ -51,18 +52,17 @@ export async function createPushSubscription(
   p256dh: string,
   auth: string,
 ) {
-  const existing = await db
-    .select()
-    .from(pushSubscriptions)
-    .where(eq(pushSubscriptions.endpoint, endpoint));
-  if (existing.length > 0) {
-    return existing[0];
-  }
-  const result = await db
-    .insert(pushSubscriptions)
-    .values({ id: generateId(), userId, endpoint, p256dh, auth })
-    .returning();
-  return result[0];
+  return db.transaction(async (tx) => {
+    const [result] = await tx.insert(pushSubscriptions)
+      .values({ id: generateId(), userId, endpoint, p256dh, auth })
+      .onConflictDoUpdate({ target: pushSubscriptions.endpoint, set: { userId, p256dh, auth } })
+      .returning();
+    // A transferred browser must never receive queued reminders for its old owner.
+    await tx.delete(pushDeliveries).where(and(
+      eq(pushDeliveries.subscriptionId, result.id), sql`${pushDeliveries.userId} <> ${userId}`,
+    ));
+    return result;
+  });
 }
 
 export async function deletePushSubscription(userId: string, endpoint: string) {
@@ -960,4 +960,51 @@ export async function hasSellerDebt(userId: string) {
     .from(user)
     .where(eq(user.id, userId));
   return !!account?.role?.split(",").includes("seller") && Number(account.balance) < 0;
+}
+
+export async function queueReminder(
+  userId: string, examId: number | null, assignmentId: number | null,
+  daysBefore: number, title: string, body: string, type: string,
+) {
+  return db.transaction(async (tx) => {
+    // Serialize overlapping cron runs for the same reminder, including NULL IDs.
+    const key = JSON.stringify([userId, examId, assignmentId, daysBefore]);
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`);
+    const condition = and(
+      eq(sentNotifications.userId, userId), eq(sentNotifications.daysBefore, daysBefore),
+      examId === null ? isNull(sentNotifications.examId) : eq(sentNotifications.examId, examId),
+      assignmentId === null ? isNull(sentNotifications.assignmentId) : eq(sentNotifications.assignmentId, assignmentId),
+    );
+    if ((await tx.select().from(sentNotifications).where(condition)).length) return false;
+    await tx.insert(userNotifications).values({ id: generateId(), userId, title, message: body, type });
+    const subscriptions = await tx.select().from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
+    if (subscriptions.length) await tx.insert(pushDeliveries).values(subscriptions.map(sub => ({
+      id: generateId(), subscriptionId: sub.id, userId,
+      payload: JSON.stringify({ title, body, tag: key, icon: "/android-chrome-192x192.png" }),
+    })));
+    await tx.insert(sentNotifications).values({ id: generateId(), userId, examId, assignmentId, daysBefore });
+    return true;
+  });
+}
+
+export async function claimPushDelivery() {
+  return db.transaction(async (tx) => {
+    const [delivery] = await tx.select().from(pushDeliveries)
+      .where(lt(pushDeliveries.nextAttemptAt, new Date()))
+      .orderBy(pushDeliveries.nextAttemptAt).limit(1).for("update", { skipLocked: true });
+    if (!delivery) return null;
+    await tx.update(pushDeliveries).set({
+      attempts: delivery.attempts + 1,
+      nextAttemptAt: new Date(Date.now() + 5 * 60_000),
+    }).where(eq(pushDeliveries.id, delivery.id));
+    const [subscription] = await tx.select().from(pushSubscriptions).where(and(
+      eq(pushSubscriptions.id, delivery.subscriptionId), eq(pushSubscriptions.userId, delivery.userId),
+    ));
+    return { ...delivery, attempts: delivery.attempts + 1, subscription };
+  });
+}
+
+export async function finishPushDelivery(id: string, retryAt?: Date) {
+  if (retryAt) await db.update(pushDeliveries).set({ nextAttemptAt: retryAt }).where(eq(pushDeliveries.id, id));
+  else await db.delete(pushDeliveries).where(eq(pushDeliveries.id, id));
 }

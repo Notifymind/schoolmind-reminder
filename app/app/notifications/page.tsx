@@ -1,5 +1,6 @@
 "use client";
 
+import { enablePush, disablePush } from "@/lib/push-client";
 import * as React from "react";
 import { usePageTitle } from "@/app/app/layout";
 import { authClient } from "@/lib/auth-client";
@@ -68,21 +69,10 @@ import {
   removeNotificationTimeAction,
   updatePresetAction,
   getLimitsAction,
-  subscribeToPushAction,
-  unsubscribeFromPushAction,
 } from "@/lib/actions/notifications";
 import { usePushNotificationStore } from "@/lib/stores/push-notifications";
 
-function urlBase64ToUint8Array(base64String: string) {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
+
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = [0, 15, 30, 45];
@@ -599,7 +589,7 @@ function PushNotificationManager() {
   const [isLoading, setIsLoading] = React.useState(false);
   const isMobile = useIsMobile();
   const { canInstall, isInstalling, installApp, isIos, isAndroid } = usePwaInstall();
-  const { isSubscribed, setSubscribed } = usePushNotificationStore();
+  const { isSubscribed } = usePushNotificationStore();
 
   React.useEffect(() => {
     if ("serviceWorker" in navigator && "PushManager" in window) {
@@ -610,22 +600,7 @@ function PushNotificationManager() {
   async function subscribeToPush() {
     setIsLoading(true);
     try {
-      const registration = await navigator.serviceWorker.ready;
-      let sub = await registration.pushManager.getSubscription();
-      if (!sub) {
-        sub = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(
-            process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-          ),
-        });
-      }
-      const serializedSub = JSON.parse(JSON.stringify(sub));
-      await subscribeToPushAction({
-        endpoint: serializedSub.endpoint,
-        keys: serializedSub.keys,
-      });
-      setSubscribed(true);
+      await enablePush();
     } catch (error) {
       console.error("Failed to subscribe:", error);
       toast.error("Failed to subscribe to push notifications. Make sure you've added this app to your home screen and granted notification permission.");
@@ -636,15 +611,10 @@ function PushNotificationManager() {
   async function unsubscribeFromPush() {
     setIsLoading(true);
     try {
-      const registration = await navigator.serviceWorker.ready;
-      const sub = await registration.pushManager.getSubscription();
-      if (sub) {
-        await sub.unsubscribe();
-        await unsubscribeFromPushAction(sub.endpoint);
-      }
-      setSubscribed(false);
+      await disablePush();
     } catch (error) {
       console.error("Failed to unsubscribe:", error);
+      toast.error("Could not disable notifications. Please try again.");
     }
     setIsLoading(false);
   }

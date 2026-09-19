@@ -276,6 +276,22 @@ export async function subscribeToPushAction(subscription: {
     return { error: "Not authenticated" };
   }
 
+  if (!subscription || typeof subscription.endpoint !== "string" ||
+      typeof subscription.keys?.p256dh !== "string" || typeof subscription.keys?.auth !== "string") {
+    return { error: "Invalid push subscription" };
+  }
+  try {
+    const endpoint = new URL(subscription.endpoint);
+    if (endpoint.protocol !== "https:" || endpoint.username || endpoint.password ||
+        subscription.endpoint.length > 4096 ||
+        !/^[A-Za-z0-9_-]{87}=?$/.test(subscription.keys.p256dh) ||
+        !/^[A-Za-z0-9_-]{22}={0,2}$/.test(subscription.keys.auth)) {
+      return { error: "Invalid push subscription" };
+    }
+  } catch {
+    return { error: "Invalid push subscription" };
+  }
+
   await createPushSubscription(
     session.user.id,
     subscription.endpoint,
@@ -299,7 +315,7 @@ export async function unsubscribeFromPushAction(endpoint: string) {
   return { success: true };
 }
 
-export async function getPushSubscriptionStatusAction() {
+export async function getPushSubscriptionStatusAction(endpoint: string) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
   });
@@ -309,7 +325,7 @@ export async function getPushSubscriptionStatusAction() {
   }
 
   const subscriptions = await getPushSubscriptions(session.user.id);
-  return { isSubscribed: subscriptions.length > 0 };
+  return { isSubscribed: subscriptions.some((sub) => sub.endpoint === endpoint) };
 }
 
 export async function applyPresetToExamAction(

@@ -1,5 +1,6 @@
 "use client"
 
+import { PushSubscriptionSync } from "@/components/push-subscription-sync"
 import * as React from "react"
 import { usePathname } from "next/navigation"
 import { AppSidebar } from "@/components/app-sidebar"
@@ -61,6 +62,7 @@ export default function AppLayout({
   return (
     <RequireAuth>
       <SidebarProvider>
+        <PushSubscriptionSync />
         <AppSidebar />
         <SidebarInset>
           <header className="relative z-10 hidden md:flex h-16 shrink-0 items-center gap-2 border-b px-4">
