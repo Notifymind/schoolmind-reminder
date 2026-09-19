@@ -28,7 +28,8 @@ import {
   getBalanceAction,
 } from "@/lib/actions/seller";
 
-import { GIFT_CARD_VALUES } from "@/lib/billing";
+import type { GiftCardOption } from "@/lib/billing";
+import { getGiftCardOptionsAction } from "@/lib/actions/billing-options";
 
 const CODE_TYPE_LABELS: Record<string, string> = {
   balance: "Gift card",
@@ -56,23 +57,28 @@ export default function CodesPage() {
   const [codes, setCodes] = React.useState<Code[]>([]);
   const [balance, setBalance] = React.useState("0");
   const [maxDebt, setMaxDebt] = React.useState("0");
-  const [value, setValue] = React.useState<number>(3);
+  const [value, setValue] = React.useState<number>(0);
   const [isAdmin, setIsAdmin] = React.useState(false);
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isInitialLoading, setIsInitialLoading] = React.useState(true);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [viewingCode, setViewingCode] = React.useState<Code | null>(null);
 
-  const price = isAdmin ? 0 : value;
+  const [options, setOptions] = React.useState<GiftCardOption[]>([]);
+  const selectedOption = options.find(option => option.id === value);
+  const price = isAdmin ? 0 : Number(selectedOption?.sellerCost ?? 0);
   const currentBalance = parseFloat(balance);
   const maxDebtValue = parseFloat(maxDebt);
   const wouldExceedDebt = currentBalance - price < -maxDebtValue;
 
   async function loadData() {
-    const [codesResult, balanceResult] = await Promise.all([
+    const [codesResult, balanceResult, optionsResult] = await Promise.all([
       getCodesAction(),
       getBalanceAction(),
+      getGiftCardOptionsAction(),
     ]);
+    setOptions(optionsResult);
+    setValue(current => optionsResult.some(option => option.id === current) ? current : optionsResult[0]?.id ?? 0);
     setCodes(codesResult.codes as Code[]);
     setBalance(balanceResult.balance);
     setMaxDebt(balanceResult.maxDebt);
@@ -174,9 +180,9 @@ export default function CodesPage() {
                   onChange={(e) => setValue(Number(e.target.value))}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
-                  {GIFT_CARD_VALUES.map((d) => (
-                    <option key={d} value={d}>
-                      {d} KM
+                  {options.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.value} KM (seller cost: {isAdmin ? "0.00" : d.sellerCost} KM)
                     </option>
                   ))}
                 </select>
@@ -188,7 +194,7 @@ export default function CodesPage() {
                 </span>
               <Button
                 onClick={handleGenerateCode}
-                disabled={isGenerating || wouldExceedDebt}
+                disabled={isGenerating || wouldExceedDebt || !selectedOption}
               >
                 {isGenerating ? "Generating..." : "Generate Code"}
               </Button>

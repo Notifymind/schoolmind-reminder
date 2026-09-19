@@ -2,7 +2,6 @@
 
 import { auth } from "@/lib/auth";
 import { getSellerBalance, getCodesBySeller, db } from "@/db";
-import { GIFT_CARD_VALUES } from "@/lib/billing";
 import { createGiftCard, deleteGiftCard } from "@/db/billing";
 import { codes, balanceHistory, user } from "@/db/schema";
 import { eq, desc, or } from "drizzle-orm";
@@ -19,12 +18,12 @@ async function hasCodePermission(userId: string): Promise<boolean> {
   return result?.success ?? false;
 }
 
-export async function generateCodeAction(value: number) {
+export async function generateCodeAction(optionId: number) {
   const session = await auth.api.getSession({ headers: await import("next/headers").then(m => m.headers()) });
   if (!session?.user?.id) return { error: "Not authenticated" };
   if (!(await hasCodePermission(session.user.id))) return { error: "You don't have permission to generate codes" };
-  if (!GIFT_CARD_VALUES.some(amount => amount === value)) return { error: "Choose a valid gift card value" };
-  return createGiftCard(session.user.id, value);
+  if (!Number.isSafeInteger(optionId) || optionId <= 0) return { error: "Choose a valid gift card option" };
+  return createGiftCard(session.user.id, optionId);
 }
 
 export async function deleteCodeAction(codeId: string) {

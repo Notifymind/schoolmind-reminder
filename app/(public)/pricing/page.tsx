@@ -1,13 +1,15 @@
+import { getProPlansAction } from "@/lib/actions/billing-options";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   Check,
-  ArrowRight,
   MessageSquareDashed,
   MessageSquare,
 } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Pricing - NotifyMind",
@@ -35,10 +37,6 @@ const pricingPlans = [
   },
   {
     name: "Pro",
-    price: "3 KM",
-    period: "/month",
-    yearlyPrice: "24 KM",
-    yearlyPeriod: "/year",
     description: "Full access to all features",
     features: [
       { text: "Exam access", included: true },
@@ -53,7 +51,8 @@ const pricingPlans = [
   },
 ];
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const proOptions = await getProPlansAction();
   return (
     <>
       <section className="pt-32 pb-20 px-4">
@@ -82,20 +81,13 @@ export default function PricingPage() {
                 )}
                 <div className="text-center mb-6">
                   <h3 className="font-semibold text-lg mb-2">{plan.name}</h3>
-                  <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className="text-muted-foreground">{plan.period}</span>
-                  </div>
-                  {plan.yearlyPrice && (
-                    <div className="mt-2">
-                      <span className="text-lg font-semibold">
-                        {plan.yearlyPrice}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {plan.yearlyPeriod}
-                      </span>
+                  {plan.name === "Pro" ? proOptions.map(option => (
+                    <div key={option.id} className="mt-2">
+                      <p className="font-medium">{option.label}</p>
+                      <span className="text-2xl font-bold">{option.price} KM</span>
+                      <span className="text-muted-foreground"> / {option.duration} {option.unit}</span>
                     </div>
-                  )}
+                  )) : <div className="text-4xl font-bold">0 KM</div>}
                   <p className="text-sm text-muted-foreground mt-2">
                     {plan.description}
                   </p>

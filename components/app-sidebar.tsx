@@ -339,6 +339,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Pro pricing" isActive={pathname === "/app/admin/pricing"}>
+                    <Link href="/app/admin/pricing"><DollarSign /><span>Pro pricing</span></Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Gift card options" isActive={pathname === "/app/admin/gift-cards"}>
+                    <Link href="/app/admin/gift-cards"><Ticket /><span>Gift card options</span></Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
                   <SidebarMenuButton asChild tooltip="Classes" isActive={pathname === "/app/admin/classes"}>
                     <Link href="/app/admin/classes">
                       <GraduationCap />

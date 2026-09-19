@@ -1,14 +1,25 @@
-export const PRO_PLANS = {
-  month: { label: "Monthly", price: 3, days: 30 },
-  school_year: { label: "Yearly", price: 24, days: 365 },
-} as const;
-export type ProPlan = keyof typeof PRO_PLANS;
-export const GIFT_CARD_VALUES = [3, 6, 12, 24] as const;
+export type ProPlan = {
+  id: string;
+  label: string;
+  price: string;
+  duration: number;
+  unit: string;
+};
+export type GiftCardOption = { id: number; value: string; sellerCost: string };
 
-export function isProPlan(value: unknown): value is ProPlan {
-  return value === "month" || value === "school_year";
-}
-
-export function subscriptionEnd(plan: ProPlan, from: Date): Date {
-  return new Date(from.getTime() + PRO_PLANS[plan].days * 86_400_000);
+export function subscriptionEnd(
+  plan: Pick<ProPlan, "duration" | "unit">,
+  from: Date,
+): Date {
+  if (plan.unit === "days")
+    return new Date(from.getTime() + plan.duration * 86_400_000);
+  const end = new Date(from);
+  const day = end.getUTCDate();
+  end.setUTCDate(1);
+  end.setUTCMonth(end.getUTCMonth() + plan.duration);
+  const lastDay = new Date(
+    Date.UTC(end.getUTCFullYear(), end.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  end.setUTCDate(Math.min(day, lastDay));
+  return end;
 }

@@ -71,6 +71,13 @@
       "when": 1789836421891,
       "tag": "0009_gift_card_billing",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789836421892,
+      "tag": "0010_billing_options",
+      "breakpoints": true
     }
   ]
 }
