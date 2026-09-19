@@ -204,7 +204,7 @@ export function AdminBillingOptions({
       )}
       {options.map((option) => (
         <Card key={option.id}>
-          <CardContent className="pt-6">
+          <CardContent>
             {editing === option.id ? (
               <OptionForm
                 kind={kind}

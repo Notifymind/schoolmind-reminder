@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { PwaInstallButton } from "@/components/pwa-install-button";
 
 export const metadata: Metadata = {
   title: "NotifyMind - Smart Reminders for SchoolMind",
@@ -99,17 +100,13 @@ export default function LandingPage() {
                   <div>
                     <p className="font-medium">Add to Home Screen</p>
                     <p className="text-sm text-muted-foreground">
-                      Select "Add to Home Screen" and confirm
+                      Select &quot;Add to Home Screen&quot; and confirm
                     </p>
                   </div>
                 </div>
               </div>
 
-              <Button size="lg" asChild>
-                <Link href="/register">
-                  Get Started <ArrowRight className="size-4 ml-2" />
-                </Link>
-              </Button>
+              <PwaInstallButton />
             </div>
           </div>
         </div>

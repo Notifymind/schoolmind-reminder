@@ -54,17 +54,21 @@ export function usePwaInstall() {
   }, []);
 
   const installApp = React.useCallback(async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt || isInstalling || isInstalled) return false;
 
     setIsInstalling(true);
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-
-    if (outcome === "accepted") {
-      setDeferredPrompt(null);
+    // Each browser event can only be prompted once, even after dismissal.
+    setDeferredPrompt(null);
+    try {
+      await deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setIsInstalling(false);
     }
-    setIsInstalling(false);
-  }, [deferredPrompt]);
+  }, [deferredPrompt, isInstalling, isInstalled]);
 
   return {
     canInstall: !!deferredPrompt && !isInstalled,
