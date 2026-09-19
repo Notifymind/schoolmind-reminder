@@ -9,16 +9,21 @@ export default function MarketingLayout({
 }) {
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b bg-background/80 backdrop-blur-sm">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b bg-background/80 px-4 py-2 backdrop-blur-sm">
+        <div className="w-full h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2">
-              <img src="/android-chrome-512x512.png" alt="NotifyMind" className="size-12" />
-              <span className="font-semibold text-xl">NotifyMind</span>
+              <img src="/android-chrome-512x512.png" alt="NotifyMind" width={48} height={48} className="size-12 shrink-0" />
+              <span className="text-lg font-bold leading-tight">NotifyMind</span>
             </Link>
-            <Button variant="ghost" asChild>
-              <Link href="/pricing">Pricing</Link>
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" className="px-3" asChild>
+                <Link href="/">Home</Link>
+              </Button>
+              <Button variant="ghost" className="px-3" asChild>
+                <Link href="/pricing">Pricing</Link>
+              </Button>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <ModeToggle />
