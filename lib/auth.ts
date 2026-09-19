@@ -47,15 +47,7 @@ export const auth = betterAuth({
         type: "string",
         required: false,
       },
-      lastTrial: {
-        type: "date",
-        required: false,
-      },
       subscriptionEndsAt: {
-        type: "date",
-        required: false,
-      },
-      lastTrialCodeGenerated: {
         type: "date",
         required: false,
       },

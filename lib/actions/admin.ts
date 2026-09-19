@@ -20,7 +20,6 @@ import {
   getSellerBalance,
   updateClass,
   deleteClass,
-  resetTrialCodesGenerated,
 } from "@/db";
 
 async function hasAdminPermission(userId: string): Promise<boolean> {
@@ -106,7 +105,6 @@ export async function searchSellersAction(query: string) {
 export async function upgradeToSellerAction(
   userId: string,
   maxDebt: string,
-  maxTrialCodes: number,
   className: string | null
 ) {
   const session = await auth.api.getSession({
@@ -133,7 +131,7 @@ export async function upgradeToSellerAction(
     }
   }
 
-  const result = await upgradeUserToSeller(userId, maxDebt, maxTrialCodes, className);
+  const result = await upgradeUserToSeller(userId, maxDebt, className);
   if (!result) {
     return { error: "Failed to upgrade user" };
   }
@@ -144,7 +142,6 @@ export async function upgradeToSellerAction(
 export async function updateSellerAction(
   userId: string,
   maxDebt: string,
-  maxTrialCodes: number,
   className: string | null
 ) {
   const session = await auth.api.getSession({
@@ -171,7 +168,7 @@ export async function updateSellerAction(
     }
   }
 
-  const result = await updateSellerInfo(userId, maxDebt, maxTrialCodes, className);
+  const result = await updateSellerInfo(userId, maxDebt, className);
   if (!result) {
     return { error: "Failed to update seller" };
   }
@@ -202,32 +199,6 @@ export async function removeSellerAction(userId: string) {
     return { error: "Failed to remove seller role" };
   }
 
-  return { success: true };
-}
-
-export async function resetSellerTrialCodesAction(sellerId: string) {
-  const session = await auth.api.getSession({
-    headers: await import("next/headers").then((m) => m.headers()),
-  });
-
-  if (!session?.user?.id) {
-    return { error: "Not authenticated" };
-  }
-
-  if (!(await hasAdminPermission(session.user.id))) {
-    return { error: "You don't have permission to perform this action" };
-  }
-
-  const seller = await getUserById(sellerId);
-  if (!seller) {
-    return { error: "Seller not found" };
-  }
-
-  if (seller.role !== "seller") {
-    return { error: "User is not a seller" };
-  }
-
-  await resetTrialCodesGenerated(sellerId);
   return { success: true };
 }
 

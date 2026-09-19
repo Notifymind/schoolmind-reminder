@@ -29,9 +29,7 @@ export type Session = {
     image?: string | null;
     role: Role;
     class?: string | null;
-    lastTrial: Date | null;
     subscriptionEndsAt: Date | null;
-    lastTrialCodeGenerated: Date | null;
   };
   session: {
     id: string;

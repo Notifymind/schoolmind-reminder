@@ -50,6 +50,13 @@
       "when": 1772315921688,
       "tag": "0006_equal_logan",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789820795545,
+      "tag": "0007_remove_trial_codes",
+      "breakpoints": true
     }
   ]
 }

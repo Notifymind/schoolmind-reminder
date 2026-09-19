@@ -22,12 +22,9 @@ export const user = pgTable("user", {
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
-  lastTrial: timestamp("last_trial"),
   balance: numeric("balance", { precision: 10, scale: 2 }).default("0").notNull(),
   maxDebt: numeric("max_debt", { precision: 10, scale: 2 }).default("0").notNull(),
   subscriptionEndsAt: timestamp("subscription_ends_at"),
-  maxTrialCodes: integer("max_trial_codes").default(0).notNull(),
-  trialCodesGenerated: integer("trial_codes_generated").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

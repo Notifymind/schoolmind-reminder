@@ -175,15 +175,15 @@ export async function getBalanceAction() {
   });
 
   if (!session?.user?.id) {
-    return { balance: "0", maxDebt: "0", maxTrialCodes: 0, trialCodesGenerated: 0 };
+    return { balance: "0", maxDebt: "0" };
   }
 
   if (!(await hasCodePermission(session.user.id))) {
-    return { balance: "0", maxDebt: "0", maxTrialCodes: 0, trialCodesGenerated: 0 };
+    return { balance: "0", maxDebt: "0" };
   }
 
-  const { balance, maxDebt, maxTrialCodes, trialCodesGenerated } = await getSellerBalance(session.user.id);
-  return { balance, maxDebt, maxTrialCodes, trialCodesGenerated };
+  const { balance, maxDebt } = await getSellerBalance(session.user.id);
+  return { balance, maxDebt };
 }
 
 export type Transaction = {

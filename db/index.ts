@@ -606,14 +606,10 @@ export async function getSellerBalance(userId: string) {
   const result = await db.select({
     balance: user.balance,
     maxDebt: user.maxDebt,
-    maxTrialCodes: user.maxTrialCodes,
-    trialCodesGenerated: user.trialCodesGenerated,
   }).from(user).where(eq(user.id, userId));
   return {
     balance: result[0]?.balance ?? "0",
     maxDebt: result[0]?.maxDebt ?? "0",
-    maxTrialCodes: result[0]?.maxTrialCodes ?? 0,
-    trialCodesGenerated: result[0]?.trialCodesGenerated ?? 0,
   };
 }
 
@@ -723,28 +719,6 @@ export async function downgradeExpiredUser(userId: string) {
     .where(eq(user.id, userId));
 }
 
-export async function countTrialCodesBySeller(sellerId: string) {
-  const result = await db
-    .select({ id: codes.id })
-    .from(codes)
-    .where(and(eq(codes.sellerId, sellerId), eq(codes.type, "trial")));
-  return result.length;
-}
-
-export async function incrementTrialCodesGenerated(userId: string) {
-  await db
-    .update(user)
-    .set({ trialCodesGenerated: sql`${user.trialCodesGenerated} + 1` })
-    .where(eq(user.id, userId));
-}
-
-export async function resetTrialCodesGenerated(userId: string) {
-  await db
-    .update(user)
-    .set({ trialCodesGenerated: 0 })
-    .where(eq(user.id, userId));
-}
-
 export async function getTotalDebt() {
   const result = await db
     .select({ total: sql<string>`SUM(CASE WHEN ${user.balance}::numeric < 0 THEN ABS(${user.balance}::numeric) ELSE 0 END)` })
@@ -815,8 +789,6 @@ export async function getAllSellers() {
       balance: user.balance,
       maxDebt: user.maxDebt,
       class: user.class,
-      maxTrialCodes: user.maxTrialCodes,
-      trialCodesGenerated: user.trialCodesGenerated,
       createdAt: user.createdAt,
     })
     .from(user)
@@ -829,8 +801,8 @@ export async function getUserById(userId: string) {
   return result[0] ?? null;
 }
 
-export async function upgradeUserToSeller(userId: string, maxDebt: string, maxTrialCodes: number, className: string | null) {
-  const updateData: { role: string; maxDebt: string; maxTrialCodes: number; class?: string | null } = { role: "seller", maxDebt, maxTrialCodes };
+export async function upgradeUserToSeller(userId: string, maxDebt: string, className: string | null) {
+  const updateData: { role: string; maxDebt: string; class?: string | null } = { role: "seller", maxDebt };
   if (className !== undefined) {
     updateData.class = className;
   }
@@ -838,10 +810,10 @@ export async function upgradeUserToSeller(userId: string, maxDebt: string, maxTr
   return result[0] ?? null;
 }
 
-export async function updateSellerInfo(userId: string, maxDebt: string, maxTrialCodes: number, className: string | null) {
+export async function updateSellerInfo(userId: string, maxDebt: string, className: string | null) {
   const result = await db
     .update(user)
-    .set({ maxDebt, maxTrialCodes, class: className })
+    .set({ maxDebt, class: className })
     .where(eq(user.id, userId))
     .returning();
   return result[0] ?? null;
@@ -850,7 +822,7 @@ export async function updateSellerInfo(userId: string, maxDebt: string, maxTrial
 export async function removeSellerRole(userId: string) {
   const result = await db
     .update(user)
-    .set({ role: "free", maxDebt: "0", balance: "0", maxTrialCodes: 0, trialCodesGenerated: 0 })
+    .set({ role: "free", maxDebt: "0", balance: "0" })
     .where(eq(user.id, userId))
     .returning();
   return result[0] ?? null;
