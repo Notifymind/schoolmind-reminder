@@ -975,3 +975,7 @@ export async function createUserNotification(
 }
 
 export { db };
+
+export async function getClassNames() {
+  return db.select({ name: schoolclass.name }).from(schoolclass).orderBy(schoolclass.name);
+}

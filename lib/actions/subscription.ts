@@ -6,7 +6,6 @@ import {
   getUserSubscription,
   setUserSubscription,
   redeemCodeInDb,
-  setUserClass,
 } from "@/db";
 
 const DURATION_DAYS: Record<string, number> = {
@@ -64,7 +63,7 @@ export async function redeemCodeAction(code: string) {
     const newEndsAt = new Date(baseDate);
     newEndsAt.setDate(newEndsAt.getDate() + durationDays);
 
-    await setUserSubscription(session.user.id, "pro", newEndsAt, codeRecord.className);
+    await setUserSubscription(session.user.id, "pro", newEndsAt);
 
     const redeemed = await redeemCodeInDb(codeRecord.id, session.user.id);
     if (!redeemed) {
@@ -79,21 +78,7 @@ export async function redeemCodeAction(code: string) {
   }
 
   if (codeRecord.type === "assign") {
-    if (!codeRecord.className) {
-      return { error: "This code has no class assigned" };
-    }
-
-    await setUserClass(session.user.id, codeRecord.className);
-
-    const redeemed = await redeemCodeInDb(codeRecord.id, session.user.id);
-    if (!redeemed) {
-      return { error: "Failed to redeem code. Please try again." };
-    }
-
-    return {
-      success: true,
-      message: `Code redeemed successfully! You have been assigned to class ${codeRecord.className}.`,
-    };
+    return { error: "Class codes are no longer used. Choose your class on the dashboard." };
   }
 
   return { error: "Invalid code type" };

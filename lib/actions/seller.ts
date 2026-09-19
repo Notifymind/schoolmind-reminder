@@ -77,6 +77,10 @@ export async function generateCodeAction(
     return { error: "You don't have permission to generate codes" };
   }
 
+  if (type !== "pro" || (duration !== "month" && duration !== "school_year")) {
+    return { error: "Only monthly or school-year Pro codes can be generated" };
+  }
+
   const isAdmin = await hasAdminPermission(session.user.id);
 
   const price = getCodePrice(type, duration);
@@ -110,7 +114,6 @@ export async function generateCodeAction(
     duration,
     price.toString(),
     session.user.id,
-    session.user.class,
   );
 
   if (!isAdmin) {
