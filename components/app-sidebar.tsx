@@ -209,12 +209,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/app">
-                <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <Bell className="size-4" />
+                <div className="flex aspect-square size-12 items-center justify-center rounded-lg">
+                  <img src="/android-chrome-512x512.png" alt="NotifyMind" className="size-12" />
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">NotifyMind</span>
-                  <span className="truncate text-xs">Schoolmind Reminders</span>
+                <div className="grid flex-1 text-left leading-tight">
+                  <span className="truncate font-semibold text-base">NotifyMind</span>
                 </div>
               </Link>
             </SidebarMenuButton>

@@ -12,8 +12,9 @@ export default function MarketingLayout({
       <nav className="fixed top-0 left-0 right-0 z-50 border-b bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/" className="font-semibold text-xl">
-              NotifyMind
+            <Link href="/" className="flex items-center gap-2">
+              <img src="/android-chrome-512x512.png" alt="NotifyMind" className="size-12" />
+              <span className="font-semibold text-xl">NotifyMind</span>
             </Link>
             <Button variant="ghost" asChild>
               <Link href="/pricing">Pricing</Link>

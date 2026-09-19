@@ -181,22 +181,6 @@ export default function PricingPage() {
           </p>
         </div>
       </section>
-
-      <section className="py-20 px-4 bg-muted/30">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl font-bold mb-4">
-            Ready to Never Miss a Deadline?
-          </h2>
-          <p className="text-xl text-muted-foreground mb-8">
-            Join other students who never miss an exam or assignment.
-          </p>
-          <Button size="lg" asChild>
-            <Link href="/register">
-              Get Started <ArrowRight className="size-4 ml-2" />
-            </Link>
-          </Button>
-        </div>
-      </section>
     </>
   );
 }
