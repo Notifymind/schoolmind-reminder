@@ -31,16 +31,15 @@ import {
 } from "@/lib/actions/seller";
 
 const PRICING: Record<CodeType, Record<CodeDuration, number>> = {
-  pro: { month: 2, school_year: 16, once: 0 },
-  assign: { month: 0, school_year: 0, once: 0 },
+  pro: { month: 2, school_year: 16 },
 };
 
-const CODE_TYPE_LABELS: Record<CodeType, string> = {
+const CODE_TYPE_LABELS: Record<string, string> = {
   pro: "Pro Code",
-  assign: "Class Assignment Code",
+  assign: "Retired class code",
 };
 
-const DURATION_LABELS: Record<CodeDuration, string> = {
+const DURATION_LABELS: Record<string, string> = {
   month: "Month",
   school_year: "School Year",
   once: "One-time",
@@ -48,7 +47,6 @@ const DURATION_LABELS: Record<CodeDuration, string> = {
 
 const DURATION_MAP: Record<CodeType, CodeDuration[]> = {
   pro: ["month", "school_year"],
-  assign: ["once"],
 };
 
 const ITEMS_PER_PAGE = 10;
@@ -71,18 +69,17 @@ export default function CodesPage() {
   const [codes, setCodes] = React.useState<Code[]>([]);
   const [balance, setBalance] = React.useState("0");
   const [maxDebt, setMaxDebt] = React.useState("0");
-  const [codeType, setCodeType] = React.useState<CodeType>("pro");
+  const codeType = "pro";
   const [duration, setDuration] = React.useState<CodeDuration>("month");
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isInitialLoading, setIsInitialLoading] = React.useState(true);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [viewingCode, setViewingCode] = React.useState<Code | null>(null);
 
-  const isAssignCode = codeType === "assign";
   const price = PRICING[codeType][duration];
   const currentBalance = parseFloat(balance);
   const maxDebtValue = parseFloat(maxDebt);
-  const wouldExceedDebt = !isAssignCode && currentBalance - price < -maxDebtValue;
+  const wouldExceedDebt = currentBalance - price < -maxDebtValue;
 
   async function loadData() {
     const [codesResult, balanceResult] = await Promise.all([
@@ -97,14 +94,6 @@ export default function CodesPage() {
   React.useEffect(() => {
     loadData().finally(() => setIsInitialLoading(false));
   }, []);
-
-  React.useEffect(() => {
-    if (codeType === "assign") {
-      setDuration("once");
-    } else if (duration === "once") {
-      setDuration("month");
-    }
-  }, [codeType, duration]);
 
   async function handleGenerateCode() {
     setIsGenerating(true);
@@ -185,23 +174,6 @@ export default function CodesPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="flex-1 space-y-2">
-              <label htmlFor="codeType" className="text-sm font-medium">Code Type</label>
-              <select
-                id="codeType"
-                value={codeType}
-                onChange={(e) => setCodeType(e.target.value as CodeType)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                {Object.entries(CODE_TYPE_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {!isAssignCode && (
               <div className="flex-1 space-y-2">
                 <label htmlFor="duration" className="text-sm font-medium">Duration</label>
                 <select
@@ -217,19 +189,11 @@ export default function CodesPage() {
                   ))}
                 </select>
               </div>
-            )}
 
             <div className="flex flex-col gap-1">
-              {!isAssignCode && (
                 <span className="text-sm text-muted-foreground">
                   Cost: {price} KM
                 </span>
-              )}
-              {isAssignCode && (
-                <span className="text-sm text-muted-foreground">
-                  Free
-                </span>
-              )}
               <Button
                 onClick={handleGenerateCode}
                 disabled={isGenerating || wouldExceedDebt}

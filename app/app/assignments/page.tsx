@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth"
-import { getUserClass, getAssignmentsByClass, getPresetsWithTimes, getNotificationPreferencesForAssignments, getNotificationPresetById, getNotificationTimes } from "@/db"
+import { getClassNames, getUserClass, getAssignmentsByClass, getPresetsWithTimes, getNotificationPreferencesForAssignments, getNotificationPresetById, getNotificationTimes } from "@/db"
 import { assignments } from "@/db/schema"
 import { AssignmentsClient } from "./client"
 import { Suspense } from "react"
@@ -98,9 +98,11 @@ export default async function UpcomingAssignmentsPage() {
       }
     }
   }
+  const classes = session?.user?.id && !hasClass ? await getClassNames() : []
   return (
     <Suspense fallback={<div className="flex flex-1 items-center justify-center"><div className="text-muted-foreground">Loading...</div></div>}>
-      <AssignmentsClient 
+      <AssignmentsClient
+        classes={classes}
         assignments={assignmentsList} 
         hasClass={hasClass}
         hasPermission={hasPermission}

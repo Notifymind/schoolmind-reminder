@@ -13,12 +13,11 @@ import {
 import { codes, balanceHistory, user } from "@/db/schema";
 import { eq, desc, or } from "drizzle-orm";
 
-export type CodeType = "pro" | "assign";
-export type CodeDuration = "month" | "school_year" | "once";
+export type CodeType = "pro";
+export type CodeDuration = "month" | "school_year";
 
 const PRICING = {
-  pro: { month: 2, school_year: 16, once: 0 },
-  assign: { month: 0, school_year: 0, once: 0 },
+  pro: { month: 2, school_year: 16 },
 } as const;
 
 async function hasCodePermission(userId: string): Promise<boolean> {
@@ -77,6 +76,10 @@ export async function generateCodeAction(
     return { error: "You don't have permission to generate codes" };
   }
 
+  if (type !== "pro" || (duration !== "month" && duration !== "school_year")) {
+    return { error: "Only monthly or school-year Pro codes can be generated" };
+  }
+
   const isAdmin = await hasAdminPermission(session.user.id);
 
   const price = getCodePrice(type, duration);
@@ -110,7 +113,6 @@ export async function generateCodeAction(
     duration,
     price.toString(),
     session.user.id,
-    session.user.class,
   );
 
   if (!isAdmin) {

@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth"
-import { getUserClass, getAssignmentsByClass, getPresetsWithTimes, getNotificationPreferencesForAssignments, getNotificationPresetById, getNotificationTimes } from "@/db"
+import { getClassNames, getUserClass, getAssignmentsByClass, getPresetsWithTimes, getNotificationPreferencesForAssignments, getNotificationPresetById, getNotificationTimes } from "@/db"
 import { assignments } from "@/db/schema"
 import { AssignmentsClient } from "../client"
 
@@ -94,8 +94,10 @@ export default async function AssignmentsPage(props: { searchParams: Promise<{ p
     }
   }
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
+  const classes = session?.user?.id && !hasClass ? await getClassNames() : []
   return (
-    <AssignmentsClient 
+    <AssignmentsClient
+        classes={classes}
       assignments={assignmentsList} 
       hasClass={hasClass}
       hasPermission={hasPermission}

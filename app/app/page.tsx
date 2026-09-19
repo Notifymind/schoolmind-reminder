@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth"
-import { getUserClass, getExamsByClass, getAssignmentsByClass, getPresetsWithTimes, getNotificationPreferencesForExams, getNotificationPreferencesForAssignments, getNotificationPresetById, getNotificationTimes } from "@/db"
+import { getClassNames, getUserClass, getExamsByClass, getAssignmentsByClass, getPresetsWithTimes, getNotificationPreferencesForExams, getNotificationPreferencesForAssignments, getNotificationPresetById, getNotificationTimes } from "@/db"
 import { exams, assignments } from "@/db/schema"
 import { HomeClient } from "./client"
 
@@ -50,6 +50,8 @@ export default async function HomePage() {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then(m => m.headers()),
   })
+
+  const classes = session?.user?.id ? await getClassNames() : []
 
   let examsList: Exam[] = []
   let assignmentsList: Assignment[] = []
@@ -147,6 +149,7 @@ export default async function HomePage() {
 
   return (
     <HomeClient
+      classes={classes}
       exams={examsList}
       assignments={assignmentsList}
       hasClass={hasClass}

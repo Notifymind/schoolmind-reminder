@@ -623,13 +623,15 @@ export async function updateSellerBalance(userId: string, newBalance: string) {
 
 export async function createCode(
   code: string,
-  type: string,
-  duration: string,
+  type: "pro",
+  duration: "month" | "school_year",
   value: string,
   sellerId: string,
-  className?: string | null
 ) {
-  const result = await db.insert(codes).values({ id: generateId(), code, type, duration, value, sellerId, className }).returning();
+  if (type !== "pro" || (duration !== "month" && duration !== "school_year")) {
+    throw new Error("Only monthly or school-year Pro codes can be created");
+  }
+  const result = await db.insert(codes).values({ id: generateId(), code, type, duration, value, sellerId }).returning();
   return result[0];
 }
 
@@ -975,3 +977,7 @@ export async function createUserNotification(
 }
 
 export { db };
+
+export async function getClassNames() {
+  return db.select({ name: schoolclass.name }).from(schoolclass).orderBy(schoolclass.name);
+}

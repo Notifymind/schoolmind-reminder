@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth"
-import { getUserClass, getExamsByClass, getPresetsWithTimes, getNotificationPreferencesForExams, getNotificationPresetById, getNotificationTimes } from "@/db"
+import { getClassNames, getUserClass, getExamsByClass, getPresetsWithTimes, getNotificationPreferencesForExams, getNotificationPresetById, getNotificationTimes } from "@/db"
 import { exams } from "@/db/schema"
 import { ExamsClient } from "./client"
 import { Suspense } from "react"
@@ -88,9 +88,11 @@ export default async function UpcomingExamsPage() {
     }
   }
 
+  const classes = session?.user?.id && !hasClass ? await getClassNames() : []
   return (
     <Suspense fallback={<div className="flex flex-1 items-center justify-center"><div className="text-muted-foreground">Loading...</div></div>}>
-      <ExamsClient 
+      <ExamsClient
+        classes={classes}
         exams={examsList} 
         hasClass={hasClass}
         hasPermission={hasPermission}
