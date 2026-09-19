@@ -1,5 +1,7 @@
 "use client";
 
+import { ClassSelectionCard } from "@/components/class-selection-card";
+
 import * as React from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { usePageTitle } from "@/app/app/layout";
@@ -215,6 +217,7 @@ function ExamCard({
 }
 
 export function ExamsClient({
+  classes,
   exams,
   hasClass,
   hasPermission,
@@ -225,6 +228,7 @@ export function ExamsClient({
   currentPage = 1,
   totalPages = 1,
 }: {
+  classes: { name: string }[];
   exams: Exam[];
   hasClass: boolean;
   hasPermission: boolean;
@@ -265,6 +269,14 @@ export function ExamsClient({
     router.push(`${pathname}?${params.toString()}`);
   };
 
+  if (isLoggedIn && !hasClass) {
+    return (
+      <div className="flex flex-1 items-center justify-center -mt-16">
+        <ClassSelectionCard classes={classes} />
+      </div>
+    );
+  }
+
   if (!hasPermission) {
     return <SubscriptionPrompt />;
   }
@@ -273,16 +285,6 @@ export function ExamsClient({
     <div className="grid gap-4 w-full max-w-2xl mx-auto">
       {!isLoggedIn && (
         <p className="text-muted-foreground">Please log in to view exams.</p>
-      )}
-      {isLoggedIn && !hasClass && (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">
-            You haven&apos;t joined a class yet.
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Join a class to see your exams.
-          </p>
-        </div>
       )}
       {isLoggedIn && hasClass && exams.length === 0 && (
         <div className="text-center py-8">

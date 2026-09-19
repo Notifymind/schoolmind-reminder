@@ -13,12 +13,11 @@ import {
 import { codes, balanceHistory, user } from "@/db/schema";
 import { eq, desc, or } from "drizzle-orm";
 
-export type CodeType = "pro" | "assign";
-export type CodeDuration = "month" | "school_year" | "once";
+export type CodeType = "pro";
+export type CodeDuration = "month" | "school_year";
 
 const PRICING = {
-  pro: { month: 2, school_year: 16, once: 0 },
-  assign: { month: 0, school_year: 0, once: 0 },
+  pro: { month: 2, school_year: 16 },
 } as const;
 
 async function hasCodePermission(userId: string): Promise<boolean> {

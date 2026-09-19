@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth"
-import { getUserClass, getExamsByClass, getPresetsWithTimes, getNotificationPreferencesForExams, getNotificationPresetById, getNotificationTimes } from "@/db"
+import { getClassNames, getUserClass, getExamsByClass, getPresetsWithTimes, getNotificationPreferencesForExams, getNotificationPresetById, getNotificationTimes } from "@/db"
 import { exams } from "@/db/schema"
 import { ExamsClient } from "../client"
 
@@ -98,8 +98,10 @@ export default async function ExamsPage(props: { searchParams: Promise<{ page?: 
     }
   }
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
+  const classes = session?.user?.id && !hasClass ? await getClassNames() : []
   return (
-    <ExamsClient 
+    <ExamsClient
+        classes={classes}
       exams={examsList} 
       hasClass={hasClass}
       hasPermission={hasPermission}

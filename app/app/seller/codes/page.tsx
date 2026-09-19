@@ -31,16 +31,15 @@ import {
 } from "@/lib/actions/seller";
 
 const PRICING: Record<CodeType, Record<CodeDuration, number>> = {
-  pro: { month: 2, school_year: 16, once: 0 },
-  assign: { month: 0, school_year: 0, once: 0 },
+  pro: { month: 2, school_year: 16 },
 };
 
-const CODE_TYPE_LABELS: Record<CodeType, string> = {
+const CODE_TYPE_LABELS: Record<string, string> = {
   pro: "Pro Code",
-  assign: "Class Assignment Code",
+  assign: "Retired class code",
 };
 
-const DURATION_LABELS: Record<CodeDuration, string> = {
+const DURATION_LABELS: Record<string, string> = {
   month: "Month",
   school_year: "School Year",
   once: "One-time",
@@ -48,7 +47,6 @@ const DURATION_LABELS: Record<CodeDuration, string> = {
 
 const DURATION_MAP: Record<CodeType, CodeDuration[]> = {
   pro: ["month", "school_year"],
-  assign: ["once"],
 };
 
 const ITEMS_PER_PAGE = 10;

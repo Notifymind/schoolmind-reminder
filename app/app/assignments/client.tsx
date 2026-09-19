@@ -1,5 +1,7 @@
 "use client";
 
+import { ClassSelectionCard } from "@/components/class-selection-card";
+
 import * as React from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { usePageTitle } from "@/app/app/layout";
@@ -215,6 +217,7 @@ function AssignmentCard({
 }
 
 export function AssignmentsClient({
+  classes,
   assignments,
   hasClass,
   hasPermission,
@@ -226,6 +229,7 @@ export function AssignmentsClient({
   currentPage = 1,
   totalPages = 1,
 }: {
+  classes: { name: string }[];
   assignments: Assignment[];
   hasClass: boolean;
   hasPermission: boolean;
@@ -267,6 +271,14 @@ export function AssignmentsClient({
     router.push(`${pathname}?${params.toString()}`);
   };
 
+  if (isLoggedIn && !hasClass) {
+    return (
+      <div className="flex flex-1 items-center justify-center -mt-16">
+        <ClassSelectionCard classes={classes} />
+      </div>
+    );
+  }
+
   if (!hasPermission) {
     return (
       <div className="flex flex-1 items-center justify-center -mt-16">
@@ -279,16 +291,6 @@ export function AssignmentsClient({
     <div className="grid gap-4 w-full max-w-2xl mx-auto">
       {!isLoggedIn && (
         <p className="text-muted-foreground">Please log in to view assignments.</p>
-      )}
-      {isLoggedIn && !hasClass && (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">
-            You haven&apos;t joined a class yet.
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Join a class to see your assignments.
-          </p>
-        </div>
       )}
       {isLoggedIn && hasClass && assignments.length === 0 && (
         <div className="text-center py-8">

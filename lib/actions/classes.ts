@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
-import { getClassNames, getUserClass, setUserClass } from "@/db";
+import { getClassNames, setUserClass } from "@/db";
 
 export async function selectClassAction(className: string) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -15,13 +15,7 @@ export async function selectClassAction(className: string) {
     return { error: "Choose a valid class." };
   }
 
-  const [classes, currentClass] = await Promise.all([
-    getClassNames(),
-    getUserClass(session.user.id),
-  ]);
-  if (currentClass) {
-    return { error: "You already have a class assigned." };
-  }
+  const classes = await getClassNames();
   if (!classes.some((schoolClass) => schoolClass.name === className)) {
     return { error: "This class is no longer available. Refresh and choose another class." };
   }
