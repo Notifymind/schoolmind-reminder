@@ -16,7 +16,7 @@ export default function Page() {
           <ModeToggle />
         </div>
         <div className="w-full max-w-sm">
-          <RegisterForm />
+          <RegisterForm googleEnabled={Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)} />
         </div>
       </div>
     </AuthRedirect>

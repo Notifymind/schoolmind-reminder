@@ -61,3 +61,29 @@ Existing sessions and passkey sign-ins remain valid. Verification does not sign 
 in automatically. Resend requests are limited to one per minute per IP using Better
 Auth's in-memory limiter, which is local to each server instance. For a shared limit
 across multiple instances, configure Better Auth with shared rate-limit storage.
+
+## Password reset and Google sign-in
+
+The login page links to `/forgot-password`. Reset emails use the same Resend
+configuration as verification emails. Links expire after one hour and work once.
+A successful reset revokes existing sessions. Requests are limited to one per
+minute per IP, with the same per-instance limit described above.
+
+Google sign-in appears on login and registration when both server variables are set:
+
+```dotenv
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-client-secret
+```
+
+Create a Web application OAuth client in Google Cloud Console and configure the
+consent screen. Register these authorized redirect URIs for the environments used:
+
+- `http://localhost:3000/api/auth/callback/google`
+- `https://your-app.example.com/api/auth/callback/google`
+
+Set `BETTER_AUTH_URL` to the matching app origin. Restart the app after setting
+credentials. Google sign-in creates an account on first use and returns users to
+`/app`; cancellations and callback failures return to login with an error message.
+Better Auth handles OAuth state and account linking. No database migration is needed.
+See the [Better Auth Google setup](https://better-auth.com/docs/authentication/google).

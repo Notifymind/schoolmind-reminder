@@ -17,15 +17,18 @@ import {
   FieldDescription,
   FieldGroup,
   FieldLabel,
+  FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 
 export function RegisterForm({
+  googleEnabled = false,
   className,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div"> & { googleEnabled?: boolean }) {
   const router = useRouter();
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
@@ -74,6 +77,12 @@ export function RegisterForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {googleEnabled && (
+            <>
+              <GoogleSignInButton />
+              <FieldSeparator className="mt-0 mb-6 [&_[data-slot=field-separator-content]]:bg-card">or</FieldSeparator>
+            </>
+          )}
           <form onSubmit={handleSubmit}>
             <FieldGroup>
               <Field>
