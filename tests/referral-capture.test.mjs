@@ -17,6 +17,28 @@ function load(file, dependencies) {
   return context.exports;
 }
 
+test('referral capture stays on the public origin behind a reverse proxy', async () => {
+  const { GET } = load('app/api/referrals/capture/route.ts', {
+    'next/server': { NextRequest, NextResponse },
+    '@/lib/auth': { auth: { api: { getSession: async () => null } } },
+    '@/db/referrals': {
+      referralCookie: 'notifymind_referral', validReferralCode: () => true,
+      linkReferral: async () => {},
+    },
+  });
+  const response = await GET(new NextRequest(
+    'http://localhost:3000/api/referrals/capture?referral=xjq4v9f0wrka',
+    { headers: { 'x-forwarded-host': 'notifymind.org', 'x-forwarded-proto': 'https' } },
+  ));
+  assert.equal(response.status, 307);
+  assert.equal(
+    new URL(response.headers.get('location'), 'https://notifymind.org/api/referrals/capture').href,
+    'https://notifymind.org/',
+  );
+  assert.equal(response.cookies.get('notifymind_referral').value, 'xjq4v9f0wrka');
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+});
+
 test('referral landing captures before navigation and supports guests and existing sessions', async () => {
   const code = 'a1b2c3d4e5f6';
   const server = { NextRequest, NextResponse };
@@ -35,7 +57,7 @@ test('referral landing captures before navigation and supports guests and existi
     },
   });
   const guest = await GET(new NextRequest(location));
-  assert.equal(guest.headers.get('location'), 'https://notifymind.org/');
+  assert.equal(guest.headers.get('location'), '/');
   assert.equal(guest.cookies.get('notifymind_referral').value, code);
   assert.match(guest.headers.get('set-cookie'), /HttpOnly/);
   assert.match(guest.headers.get('set-cookie'), /Secure/);
