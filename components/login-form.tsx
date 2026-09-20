@@ -17,6 +17,7 @@ import {
   FieldDescription,
   FieldGroup,
   FieldLabel,
+  FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
@@ -82,7 +83,19 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {googleEnabled && <GoogleSignInButton />}
+          <div className="mb-6 flex flex-col gap-2">
+            {googleEnabled && <GoogleSignInButton className="w-full" />}
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isPasskeyLoading}
+              onClick={handlePasskeyLogin}
+            >
+              <Fingerprint className="size-4" />
+              {isPasskeyLoading ? "Signing in..." : "Login with Passkey"}
+            </Button>
+          </div>
+          <FieldSeparator className="mt-0 mb-6 [&_[data-slot=field-separator-content]]:bg-card">or</FieldSeparator>
           <form onSubmit={handleSubmit}>
             <FieldGroup>
               <Field>
@@ -115,25 +128,11 @@ export function LoginForm({
                 />
               </Field>
               <Field>
-                <div className="flex flex-col gap-2">
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading ? "Logging in..." : "Login"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={isPasskeyLoading}
-                    onClick={handlePasskeyLogin}
-                  >
-                    <Fingerprint className="size-4" />
-                    {isPasskeyLoading ? "Signing in..." : "Login with Passkey"}
-                  </Button>
-                </div>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? "Logging in..." : "Login"}
+                </Button>
                 <FieldDescription className="text-center">
                   Don&apos;t have an account? <Link href="/register">Sign up</Link>
-                </FieldDescription>
-                <FieldDescription className="text-center">
-                  <Link href="/verify-email">Resend verification email</Link>
                 </FieldDescription>
               </Field>
             </FieldGroup>

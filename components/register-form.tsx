@@ -17,6 +17,7 @@ import {
   FieldDescription,
   FieldGroup,
   FieldLabel,
+  FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
@@ -76,7 +77,12 @@ export function RegisterForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {googleEnabled && <GoogleSignInButton />}
+          {googleEnabled && (
+            <>
+              <GoogleSignInButton />
+              <FieldSeparator className="mt-0 mb-6 [&_[data-slot=field-separator-content]]:bg-card">or</FieldSeparator>
+            </>
+          )}
           <form onSubmit={handleSubmit}>
             <FieldGroup>
               <Field>
