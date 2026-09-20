@@ -3,7 +3,9 @@ import { auth } from "@/lib/auth";
 import { linkReferral, referralCookie, validReferralCode } from "@/db/referrals";
 
 export async function GET(request: NextRequest) {
-  const response = NextResponse.redirect(new URL("/", request.url));
+  // The hosting proxy may expose an internal localhost URL to this route.
+  // A relative Location keeps the browser on the origin it actually visited.
+  const response = new NextResponse(null, { status: 307, headers: { Location: "/" } });
   response.headers.set("Cache-Control", "no-store");
   const code = request.nextUrl.searchParams.get("referral") ?? "";
   if (!validReferralCode(code)) return response;
