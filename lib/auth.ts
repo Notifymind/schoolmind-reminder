@@ -8,10 +8,26 @@ import * as schema from "@/db/schema";
 import { ac, freeRole, proRole, sellerRole, adminRole } from "./permissions";
 import { sendVerificationEmail } from "./email";
 
+import { linkReferral, referralCookie } from "@/db/referrals";
+
 export const roleNames = ["free", "pro", "seller", "admin"] as const;
 export type Role = (typeof roleNames)[number];
 
 export const auth = betterAuth({
+  databaseHooks: {
+    session: {
+      create: {
+        after: async (session, ctx) => {
+          // Session creation covers password and passkey login, including existing accounts.
+          if (!ctx || ctx.path?.includes("impersonate")) return;
+          const code = ctx.getCookie(referralCookie);
+          if (!code) return;
+          await linkReferral(session.userId, code);
+          ctx.setCookie(referralCookie, "", { path: "/", maxAge: 0 });
+        },
+      },
+    },
+  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,

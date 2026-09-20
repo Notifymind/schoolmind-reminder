@@ -14,6 +14,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/app": "Dashboard",
   "/app/account": "Account Settings",
   "/app/subscription": "Subscription",
+  "/app/referrals": "Referrals",
   "/app/notifications": "Notification Settings",
   "/app/assignments": "Upcoming Assignments",
   "/app/assignments/all": "All Assignments",

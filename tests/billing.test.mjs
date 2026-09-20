@@ -9,11 +9,11 @@ import { drizzle } from 'drizzle-orm/pglite';
 import * as orm from 'drizzle-orm';
 import * as core from 'drizzle-orm/pg-core';
 
-function load(file, dependencies = {}) {
+function load(file, dependencies = {}, env = {}) {
   const source = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
-  const context = { exports: {}, Date, require: name => {
+  const context = { exports: {}, Date, URL, process: { env }, require: name => {
     assert.ok(name in dependencies, `Unexpected dependency ${name}`);
     return dependencies[name];
   } };
@@ -58,6 +58,8 @@ test('gift card billing against embedded PostgreSQL', async t => {
     ('legacy', 'AAAAA-BBBBB', 'pro', 'month', 2, 'seller');`);
   await pg.exec(fs.readFileSync('drizzle/0009_gift_card_billing.sql', 'utf8'));
   await pg.exec(fs.readFileSync('drizzle/0010_billing_options.sql', 'utf8'));
+  await pg.exec(fs.readFileSync('drizzle/0011_referrals.sql', 'utf8'));
+  await pg.exec(fs.readFileSync('drizzle/0012_remove_referral_total_cap.sql', 'utf8'));
   const account = async id => (await db.select().from(schema.user).where(orm.eq(schema.user.id, id)))[0];
   const expire = async (id = 'buyer') => db.update(schema.user).set({ subscriptionEndsAt: new Date(Date.now() - 1000) }).where(orm.eq(schema.user.id, id));
 
@@ -160,6 +162,61 @@ test('gift card billing against embedded PostgreSQL', async t => {
     assert.equal(await billing.settleSubscription('buyer'), 'renewed');
     assert.equal((await account('buyer')).walletBalance, '18.00');
     assert.ok((await account('buyer')).subscriptionEndsAt < new Date(Date.now() + 63 * 86400000));
+  });
+  await t.test('referrals enforce eligibility, permanent links, caps and atomic rewards', async () => {
+    const referralApi = load('db/referrals.ts', { 'drizzle-orm': orm, '@/db': { db }, '@/db/schema': schema }, { BETTER_AUTH_URL: 'https://school.example.test/api/auth' });
+    for (const id of ['referrer', 'friend1', 'friend2', 'friend3', 'friend4', 'friend5']) {
+      await db.insert(schema.user).values({ id, name: id, email: `${id}@example.test` });
+    }
+    const refCode = (await account('referrer')).referralCode;
+    assert.ok(referralApi.validReferralCode(refCode));
+    assert.equal((await referralApi.getReferralSummary('referrer')).link, `https://school.example.test/?referral=${refCode}`);
+    assert.notEqual(refCode, (await account('friend1')).referralCode);
+    await referralApi.linkReferral('referrer', refCode);
+    await referralApi.linkReferral('seller', refCode);
+    await referralApi.linkReferral('friend1', 'invalid');
+    assert.equal((await db.select().from(schema.referrals)).length, 0);
+    const oldCard = (await billing.createGiftCard('admin', 1)).code;
+    await billing.redeemGiftCard(oldCard.code, 'friend1');
+    for (const id of ['friend1', 'friend2', 'friend3', 'friend4', 'friend5']) await referralApi.linkReferral(id, refCode);
+    await referralApi.linkReferral('friend1', (await account('seller')).referralCode);
+    assert.equal((await db.select().from(schema.referrals).where(orm.eq(schema.referrals.referredId, 'friend1')))[0].referrerId, 'referrer');
+    await assert.rejects(pg.exec("UPDATE referrals SET referrer_id = 'seller' WHERE referred_id = 'friend1'"));
+    await assert.rejects(pg.exec("DELETE FROM referrals WHERE referred_id = 'friend1'"));
+    await assert.rejects(pg.exec("UPDATE \"user\" SET referral_code = 'changed' WHERE id = 'referrer'"));
+    await pg.query('SELECT reward_referral($1)', [oldCard.id]);
+    assert.equal((await account('referrer')).walletBalance, '0.00');
+    const [option] = await db.insert(schema.giftCardOptions).values({ value: '30.00', sellerCost: '0' }).returning();
+    for (const id of ['friend1', 'friend2', 'friend3', 'friend4', 'friend5']) {
+      const cards = await Promise.all([billing.createGiftCard('admin', option.id), billing.createGiftCard('admin', option.id)]);
+      await Promise.all(cards.flatMap(({code}) => [billing.redeemGiftCard(code.code, id), billing.redeemGiftCard(code.code, id)]));
+      await pg.query('SELECT reward_referral($1)', [cards[0].code.id]);
+    }
+    assert.equal((await account('referrer')).walletBalance, '25.00');
+    const cappedCard = (await billing.createGiftCard('admin', option.id)).code;
+    await billing.redeemGiftCard(cappedCard.code, 'friend5');
+    assert.equal((await account('referrer')).walletBalance, '25.00');
+    const rewards = await db.select().from(schema.referralRewards);
+    assert.equal(rewards.filter(r => r.referredId === 'friend1').reduce((s,r) => s + Number(r.amount), 0), 5);
+    assert.equal(rewards.filter(r => r.referredId === 'friend5').reduce((s,r) => s + Number(r.amount), 0), 5);
+    await db.insert(schema.user).values({ id: 'sellerFriend', name: 'Friend', email: 'sf@example.test' });
+    await referralApi.linkReferral('sellerFriend', (await account('seller')).referralCode);
+    const before = (await account('seller')).balance;
+    const card = (await billing.createGiftCard('admin', 1)).code;
+    // A failed referrer credit must roll back the load, ledger and redemption together.
+    await db.update(schema.user).set({ balance: '99999999.99' }).where(orm.eq(schema.user.id, 'seller'));
+    await assert.rejects(billing.redeemGiftCard(card.code, 'sellerFriend'));
+    assert.equal((await account('sellerFriend')).walletBalance, '0.00');
+    assert.equal((await db.select().from(schema.referralRewards).where(orm.eq(schema.referralRewards.codeId, card.id))).length, 0);
+    await db.update(schema.user).set({ balance: before }).where(orm.eq(schema.user.id, 'seller'));
+    assert.equal((await billing.redeemGiftCard(card.code, 'sellerFriend')).success, true);
+    assert.equal(Number((await account('seller')).balance), Number(before) + 0.3);
+    await db.update(schema.user).set({ role: 'seller' }).where(orm.eq(schema.user.id, 'sellerFriend'));
+    const next = (await billing.createGiftCard('admin', 1)).code;
+    await billing.redeemGiftCard(next.code, 'sellerFriend');
+    assert.equal(Number((await account('seller')).balance), Number(before) + 0.3);
+    await db.delete(schema.user).where(orm.eq(schema.user.id, 'friend1'));
+    assert.equal((await referralApi.getReferralSummary('referrer')).earned, '25.00');
   });
   await t.test('redemption stays spent after redeemer account deletion', async () => {
     await db.delete(schema.user).where(orm.eq(schema.user.id, 'buyer'));
