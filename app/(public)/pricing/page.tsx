@@ -2,9 +2,11 @@ import { getProPlansAction } from "@/lib/actions/billing-options";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
+import { ProPriceCarousel } from "@/components/pro-price-carousel";
 import { cn } from "@/lib/utils";
 import {
   Check,
+  X,
   MessageSquareDashed,
   MessageSquare,
 } from "lucide-react";
@@ -70,7 +72,7 @@ export default async function PricingPage() {
               <div
                 key={plan.name}
                 className={cn(
-                  "relative p-6 rounded-xl border bg-card",
+                  "relative grid min-w-0 grid-cols-1 gap-6 p-6 rounded-xl border bg-card md:row-span-3 md:grid-rows-subgrid",
                   plan.popular && "border-primary shadow-lg scale-105",
                 )}
               >
@@ -79,20 +81,24 @@ export default async function PricingPage() {
                     Most Popular
                   </div>
                 )}
-                <div className="text-center mb-6">
+                <div className="flex flex-col text-center">
                   <h3 className="font-semibold text-lg mb-2">{plan.name}</h3>
-                  {plan.name === "Pro" ? proOptions.map(option => (
-                    <div key={option.id} className="mt-2">
-                      <p className="font-medium">{option.label}</p>
-                      <span className="text-2xl font-bold">{option.price} KM</span>
-                      <span className="text-muted-foreground"> / {option.duration} {option.unit}</span>
+                  {plan.name === "Pro" ? (
+                    <ProPriceCarousel options={proOptions} />
+                  ) : (
+                    <div className="flex flex-col gap-2 py-3">
+                      <p className="text-sm font-medium">Always free</p>
+                      <p className="text-4xl font-bold tracking-tight">
+                        0 <span className="text-xl">KM</span>
+                      </p>
+                      <p className="text-sm text-muted-foreground">/ month</p>
                     </div>
-                  )) : <div className="text-4xl font-bold">0 KM</div>}
-                  <p className="text-sm text-muted-foreground mt-2">
+                  )}
+                  <p className="mt-auto pt-2 text-sm text-muted-foreground">
                     {plan.description}
                   </p>
                 </div>
-                <ul className="space-y-3 mb-6">
+                <ul className="space-y-3">
                   {plan.features.map((feature) => (
                     <li key={feature.text} className="flex items-center gap-2">
                       {feature.icon === "preset" ? (
@@ -135,15 +141,10 @@ export default async function PricingPage() {
                             )}
                           />
                         )
+                      ) : feature.included ? (
+                        <Check className="size-4 text-primary" />
                       ) : (
-                        <Check
-                          className={cn(
-                            "size-4",
-                            feature.included
-                              ? "text-primary"
-                              : "text-muted-foreground opacity-50",
-                          )}
-                        />
+                        <X className="size-4 text-muted-foreground opacity-50" />
                       )}
                       <span
                         className={cn(
