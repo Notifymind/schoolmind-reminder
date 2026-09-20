@@ -501,6 +501,7 @@ export const pushDeliveries = pgTable("push_deliveries", {
 }, (table) => [index("push_deliveries_due_idx").on(table.nextAttemptAt)]);
 
 export const proPlans = pgTable("pro_plans", {
+  marketingText: varchar("marketing_text", { length: 160 }).notNull().default(""),
   id: varchar("id", { length: 20 }).primaryKey(),
   label: varchar("label", { length: 100 }).notNull(),
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),

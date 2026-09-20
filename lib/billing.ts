@@ -1,6 +1,7 @@
 export type ProPlan = {
   id: string;
   label: string;
+  marketingText: string;
   price: string;
   duration: number;
   unit: string;
