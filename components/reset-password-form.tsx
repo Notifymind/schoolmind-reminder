@@ -26,7 +26,7 @@ export function ResetPasswordForm({ token, invalid }: { token: string; invalid: 
     try {
       const result = await authClient.resetPassword({ token, newPassword: password });
       if (result.error) {
-        setError("Unable to reset your password. The link may have expired or already been used. Request a new link below.");
+        setError("Unable to reset your password. The link may have expired or already been used.");
       } else {
         setComplete(true);
       }
@@ -47,7 +47,7 @@ export function ResetPasswordForm({ token, invalid }: { token: string; invalid: 
         {complete ? (
           <p role="status" className="text-sm">Your password has been reset. Sign in with your new password.</p>
         ) : invalid || !token ? (
-          <p role="alert" className="text-sm text-destructive">This reset link is invalid or has expired. Request a new link below.</p>
+          <p role="alert" className="text-sm text-destructive">This reset link is invalid or has expired.</p>
         ) : (
           <form onSubmit={submit}>
             <FieldGroup>
@@ -64,7 +64,6 @@ export function ResetPasswordForm({ token, invalid }: { token: string; invalid: 
             </FieldGroup>
           </form>
         )}
-        {!complete && <Link href="/forgot-password" className="block text-center text-sm underline">Request a new reset link</Link>}
         <Link href="/login" className="block text-center text-sm underline">Back to login</Link>
       </CardContent>
     </Card>
