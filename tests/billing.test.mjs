@@ -8,6 +8,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
 import * as orm from 'drizzle-orm';
 import * as core from 'drizzle-orm/pg-core';
+import * as cuid2 from '@paralleldrive/cuid2';
 
 function load(file, dependencies = {}, env = {}) {
   const source = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
@@ -24,7 +25,7 @@ function load(file, dependencies = {}, env = {}) {
 test('gift card billing against embedded PostgreSQL', async t => {
   const pg = new PGlite();
   t.after(() => pg.close());
-  const schema = load('db/schema.ts', { 'drizzle-orm/pg-core': core, 'drizzle-orm': orm });
+  const schema = load('db/schema.ts', { 'drizzle-orm/pg-core': core, 'drizzle-orm': orm, '@paralleldrive/cuid2': cuid2 });
   const db = drizzle(pg);
   const billing = load('db/billing.ts', {
     'node:crypto': { randomInt }, 'drizzle-orm': orm, '@/db': { db }, '@/db/schema': schema,
@@ -169,7 +170,14 @@ test('gift card billing against embedded PostgreSQL', async t => {
       await db.insert(schema.user).values({ id, name: id, email: `${id}@example.test` });
     }
     const refCode = (await account('referrer')).referralCode;
+    assert.match(refCode, /^[a-z][a-z0-9]{11}$/);
     assert.ok(referralApi.validReferralCode(refCode));
+    const legacyCode = (await account('seller')).referralCode;
+    assert.match(legacyCode, /^[0-9a-f-]{36}$/);
+    assert.ok(referralApi.validReferralCode(legacyCode));
+    for (const invalid of ['', 'abc', 'a'.repeat(11), 'a'.repeat(13), '1abcdefghijk', 'ABCDEFGHIJKL', 'abcd_efghijk']) {
+      assert.equal(referralApi.validReferralCode(invalid), false);
+    }
     assert.equal((await referralApi.getReferralSummary('referrer')).link, `https://school.example.test/?referral=${refCode}`);
     assert.notEqual(refCode, (await account('friend1')).referralCode);
     await referralApi.linkReferral('referrer', refCode);

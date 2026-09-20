@@ -18,7 +18,7 @@ function load(file, dependencies) {
 }
 
 test('referral landing captures before navigation and supports guests and existing sessions', async () => {
-  const code = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+  const code = 'a1b2c3d4e5f6';
   const server = { NextRequest, NextResponse };
   const { proxy } = load('proxy.ts', { 'next/server': server });
   const redirect = proxy(new NextRequest(`https://notifymind.org/?referral=${code}`));

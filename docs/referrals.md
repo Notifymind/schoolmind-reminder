@@ -2,6 +2,8 @@
 
 Apply all migrations through `drizzle/0012_remove_referral_total_cap.sql` with `npx drizzle-kit migrate` before deploying the application. The migration backfills a unique UUID referral code for every existing account and supplies a database default for new accounts. Use migrations, not `drizzle-kit push`: the SQL functions and immutability triggers are required.
 
+New accounts created through Drizzle receive a 12-character CUID2 referral code from the schema's runtime default. CUID2's [configurable length](https://github.com/paralleldrive/cuid2#configuration) keeps links short. The database unique constraint still enforces uniqueness. Existing UUID codes remain valid and unchanged; direct SQL inserts retain the UUID fallback. No additional migration is needed for short codes.
+
 The Referrals page at `/app/referrals`, linked below Subscription in the sidebar, displays a link to `/?referral=<code>` on the origin configured in `BETTER_AUTH_URL`. Opening a link stores an HTTP-only cookie for 30 days. Successful password or passkey authentication consumes it and establishes the relationship. Already authenticated visitors are linked immediately. A later link cannot replace an existing relationship. Impersonation does not establish referrals.
 
 Gift card redemption is the balance-load operation. The load, redemption marker, reward ledger insertion and referrer credit commit in one transaction. Linking and redemption acquire advisory transaction lock `73401911` before row locks. This serializes referral activity, including opposite-direction referrals, and protects the per-account cap. Future load paths must take the same lock before any row locks and invoke `reward_referral` in the load transaction.

@@ -3,7 +3,9 @@ import { db } from "@/db";
 import { referrals, referralRewards, user } from "@/db/schema";
 
 export const referralCookie = "notifymind_referral";
-export const validReferralCode = (code: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(code);
+// Accept legacy UUID links as well as the short codes generated for new accounts.
+export const validReferralCode = (code: string) =>
+  /^[a-z][a-z0-9]{11}$/.test(code) || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(code);
 
 export async function linkReferral(userId: string, code: string) {
   if (!validReferralCode(code)) return;

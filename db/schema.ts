@@ -11,10 +11,13 @@ import {
   numeric,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
+import { init } from "@paralleldrive/cuid2";
+
+const generateReferralCode = init({ length: 12 });
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
-  referralCode: text("referral_code").notNull().default(sql`gen_random_uuid()::text`).unique(),
+  referralCode: text("referral_code").notNull().default(sql`gen_random_uuid()::text`).$defaultFn(generateReferralCode).unique(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
