@@ -19,13 +19,15 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 
 export function RegisterForm({
+  googleEnabled = false,
   className,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div"> & { googleEnabled?: boolean }) {
   const router = useRouter();
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
@@ -74,6 +76,7 @@ export function RegisterForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {googleEnabled && <GoogleSignInButton />}
           <form onSubmit={handleSubmit}>
             <FieldGroup>
               <Field>

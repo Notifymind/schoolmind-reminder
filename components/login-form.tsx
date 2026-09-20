@@ -19,14 +19,16 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { authClient } from "@/lib/auth-client"
 import { Fingerprint } from "lucide-react"
 import { toast } from "sonner"
 
 export function LoginForm({
+  googleEnabled = false,
   className,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div"> & { googleEnabled?: boolean }) {
   const router = useRouter()
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
@@ -80,6 +82,7 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {googleEnabled && <GoogleSignInButton />}
           <form onSubmit={handleSubmit}>
             <FieldGroup>
               <Field>
@@ -96,12 +99,12 @@ export function LoginForm({
               <Field>
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <button
-                    type="button"
+                  <Link
+                    href="/forgot-password"
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                   >
                     Forgot your password?
-                  </button>
+                  </Link>
                 </div>
                 <Input
                   id="password"

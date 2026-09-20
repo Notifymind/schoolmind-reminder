@@ -6,7 +6,7 @@ import { admin } from "better-auth/plugins";
 import { db, hasSellerDebt } from "@/db";
 import * as schema from "@/db/schema";
 import { ac, freeRole, proRole, sellerRole, adminRole } from "./permissions";
-import { sendVerificationEmail } from "./email";
+import { sendVerificationEmail, sendResetPassword } from "./email";
 
 import { linkReferral, referralCookie } from "@/db/referrals";
 
@@ -18,7 +18,7 @@ export const auth = betterAuth({
     session: {
       create: {
         after: async (session, ctx) => {
-          // Session creation covers password and passkey login, including existing accounts.
+          // Session creation covers password, passkey, and Google login.
           if (!ctx || ctx.path?.includes("impersonate")) return;
           const code = ctx.getCookie(referralCookie);
           if (!code) return;
@@ -31,6 +31,19 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
+    sendResetPassword,
+    resetPasswordTokenExpiresIn: 60 * 60,
+    revokeSessionsOnPasswordReset: true,
+  },
+  socialProviders: {
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? {
+          google: {
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          },
+        }
+      : {}),
   },
   emailVerification: {
     sendVerificationEmail,
@@ -42,6 +55,7 @@ export const auth = betterAuth({
   rateLimit: {
     enabled: true,
     customRules: {
+      "/request-password-reset": { window: 60, max: 1 },
       "/send-verification-email": { window: 60, max: 1 },
     },
   },
