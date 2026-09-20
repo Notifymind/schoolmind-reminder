@@ -61,6 +61,7 @@ test('gift card billing against embedded PostgreSQL', async t => {
   await pg.exec(fs.readFileSync('drizzle/0010_billing_options.sql', 'utf8'));
   await pg.exec(fs.readFileSync('drizzle/0011_referrals.sql', 'utf8'));
   await pg.exec(fs.readFileSync('drizzle/0012_remove_referral_total_cap.sql', 'utf8'));
+  await pg.exec(fs.readFileSync('drizzle/0013_pro_plan_marketing.sql', 'utf8'));
   const account = async id => (await db.select().from(schema.user).where(orm.eq(schema.user.id, id)))[0];
   const expire = async (id = 'buyer') => db.update(schema.user).set({ subscriptionEndsAt: new Date(Date.now() - 1000) }).where(orm.eq(schema.user.id, id));
 
@@ -289,6 +290,7 @@ test('only admins can save billing options; invalid inputs never reach the datab
     assert.ok((await actions.saveGiftCardOptionAction(gift)).error);
   }
   allowed = true;
+  for (const marketingText of ['x'.repeat(161), null, 12]) assert.ok((await actions.saveProPlanAction({ ...plan, marketingText })).error);
   for (const price of ['-1', '0', 'NaN', '1.001', '100000000', null]) assert.ok((await actions.saveProPlanAction({ ...plan, price })).error);
   for (const duration of [0, -1, 1.5, 3651, NaN]) assert.ok((await actions.saveProPlanAction({ ...plan, duration })).error);
   assert.ok((await actions.saveProPlanAction({ ...plan, unit: 'years' })).error);

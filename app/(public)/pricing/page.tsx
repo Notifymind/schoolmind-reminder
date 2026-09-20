@@ -84,9 +84,11 @@ export default async function PricingPage() {
                 <div className="flex flex-col text-center">
                   <h3 className="font-semibold text-lg mb-2">{plan.name}</h3>
                   {plan.name === "Pro" ? (
-                    <ProPriceCarousel options={proOptions} />
+                    <div className="flex flex-1 flex-col justify-center">
+                      <ProPriceCarousel options={proOptions} />
+                    </div>
                   ) : (
-                    <div className="flex flex-col gap-2 py-3">
+                    <div className="flex flex-1 flex-col justify-center gap-2 py-6">
                       <p className="text-sm font-medium">Always free</p>
                       <p className="text-4xl font-bold tracking-tight">
                         0 <span className="text-xl">KM</span>
@@ -94,7 +96,7 @@ export default async function PricingPage() {
                       <p className="text-sm text-muted-foreground">/ month</p>
                     </div>
                   )}
-                  <p className="mt-auto pt-2 text-sm text-muted-foreground">
+                  <p className="pt-4 text-sm text-muted-foreground">
                     {plan.description}
                   </p>
                 </div>

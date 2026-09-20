@@ -27,3 +27,7 @@ The older migration history has pre-existing differences from the current schema
 Run `node --test tests/*.test.mjs`, `npx tsc --noEmit`, and `npm run build`.
 
 Billing tests use in-memory PostgreSQL through PGlite, with no live database connection. They exercise the migration against the current pre-billing tables, configured seller costs, editable plan terms, month boundaries, admin authorization, input validation, debt limits, duplicate requests, redemption rollback, refunds, recurring charges, cancellation, and account deletion. PGlite serializes transactions, so these tests do not simulate separate PostgreSQL connections contending on row locks.
+
+Pro options support optional marketing text, up to 160 characters, in Admin → Pro pricing. For example, use “1 month free” for 25 KM / 6 months or “4 months free” for 40 KM / 12 months when the monthly price is 5 KM. This text appears on subscription plan cards and the public pricing carousel. It does not change billing terms.
+
+Apply migration `0013_pro_plan_marketing` with `npx drizzle-kit migrate` before deploying this change. Existing plans start with blank marketing text.

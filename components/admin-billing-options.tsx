@@ -39,6 +39,7 @@ function OptionForm({
                 ? await saveProPlanAction({
                     id: plan?.id,
                     label: String(form.get("label")),
+                    marketingText: String(form.get("marketingText") ?? ""),
                     price: String(form.get("price")),
                     duration: Number(form.get("duration")),
                     unit: String(form.get("unit")),
@@ -73,6 +74,19 @@ function OptionForm({
                 defaultValue={plan?.label}
                 placeholder="Three months"
               />
+            </label>
+            <label className="grid gap-2 text-sm sm:col-span-2 sm:order-last">
+              Marketing text (optional)
+              <Input
+                name="marketingText"
+                maxLength={160}
+                defaultValue={plan?.marketingText}
+                placeholder="4 months free"
+              />
+              <span className="text-xs text-muted-foreground">
+                Up to 160 characters. Shown on subscription options and public pricing.
+                Leave blank to hide it.
+              </span>
             </label>
             <label className="grid gap-2 text-sm">
               Price (KM)
@@ -177,7 +191,7 @@ export function AdminBillingOptions({
       <h1 className="text-2xl font-bold">{title}</h1>
       <p className="text-muted-foreground">
         {kind === "pro"
-          ? "Set prices and durations for Pro subscriptions. Changes apply to new purchases and future renewals. Current paid access keeps its end date."
+          ? "Set prices, durations, and marketing text for Pro subscriptions. Changes apply to new purchases and future renewals. Current paid access keeps its end date."
           : "Set what sellers pay and how much each gift card adds to a user's balance. Changes apply to newly generated cards."}
       </p>
       <Button
@@ -221,6 +235,9 @@ export function AdminBillingOptions({
                       <p className="text-sm text-muted-foreground">
                         {option.price} KM / {option.duration} {option.unit}
                       </p>
+                      {option.marketingText && (
+                        <p className="mt-2 text-sm font-medium text-primary break-words">{option.marketingText}</p>
+                      )}
                     </>
                   ) : (
                     <>

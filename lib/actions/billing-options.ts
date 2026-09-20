@@ -53,6 +53,7 @@ function refreshPricing() {
 export async function saveProPlanAction(input: {
   id?: string;
   label: string;
+  marketingText?: string;
   price: string;
   duration: number;
   unit: string;
@@ -75,7 +76,12 @@ export async function saveProPlanAction(input: {
       error:
         "Enter a name, a positive price, and a duration from 1 to 3650 days or months",
     };
+  if (
+    input.marketingText !== undefined &&
+    (typeof input.marketingText !== "string" || input.marketingText.trim().length > 160)
+  ) return { error: "Marketing text must be 160 characters or fewer" };
   const values = {
+    marketingText: input.marketingText?.trim() ?? "",
     label: input.label.trim(),
     price: input.price,
     duration: input.duration,
