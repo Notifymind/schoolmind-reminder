@@ -43,21 +43,25 @@ export function RegisterForm({
 
     setIsLoading(true);
 
-    const result = await authClient.signUp.email({
-      email,
-      password,
-      name,
-    });
+    try {
+      const result = await authClient.signUp.email({
+        email,
+        password,
+        name,
+        callbackURL: `${window.location.origin}/verify-email?verified=1`,
+      });
 
-    setIsLoading(false);
+      if (result.error) {
+        toast.error(result.error.message || "Failed to create account. You can request another verification email from the login page.");
+        return;
+      }
 
-    if (result.error) {
-      toast.error(result.error.message || "Failed to create account");
-      return;
+      router.push(`/verify-email?email=${encodeURIComponent(email)}&sent=1`);
+    } catch {
+      toast.error("Unable to create your account. Please try again or request another verification email.");
+    } finally {
+      setIsLoading(false);
     }
-
-    toast.success("Account created successfully");
-    router.push("/app");
   }
 
   return (

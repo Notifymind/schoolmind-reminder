@@ -38,6 +38,7 @@ test('deletion hook uses the current seller balance and blocks debt', async () =
     '@/db': { db, hasSellerDebt },
     '@/db/schema': {},
     './permissions': {},
+    './email': {},
   });
   const beforeDelete = options.user.deleteUser.beforeDelete;
   for (const role of ['seller', 'admin,seller']) {

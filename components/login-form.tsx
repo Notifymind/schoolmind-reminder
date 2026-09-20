@@ -37,20 +37,23 @@ export function LoginForm({
     e.preventDefault()
     setIsLoading(true)
 
-    const result = await authClient.signIn.email({
-      email,
-      password,
-    })
-
-    setIsLoading(false)
-
-    if (result.error) {
-      toast.error(result.error.message || "Failed to login")
-      return
+    try {
+      const result = await authClient.signIn.email({ email, password })
+      if (result.error) {
+        if (result.error.code === "EMAIL_NOT_VERIFIED") {
+          router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+          return
+        }
+        toast.error(result.error.message || "Failed to login")
+        return
+      }
+      toast.success("Logged in successfully")
+      router.push("/app")
+    } catch {
+      toast.error("Unable to sign in. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
-
-    toast.success("Logged in successfully")
-    router.push("/app")
   }
 
   async function handlePasskeyLogin() {
@@ -125,6 +128,9 @@ export function LoginForm({
                 </div>
                 <FieldDescription className="text-center">
                   Don&apos;t have an account? <Link href="/register">Sign up</Link>
+                </FieldDescription>
+                <FieldDescription className="text-center">
+                  <Link href="/verify-email">Resend verification email</Link>
                 </FieldDescription>
               </Field>
             </FieldGroup>
