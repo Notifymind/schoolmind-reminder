@@ -44,6 +44,9 @@ export async function deleteGiftCard(codeId: string, sellerId: string) {
 
 export async function redeemGiftCard(codeString: string, userId: string) {
   return db.transaction(async tx => {
+    // Shared with referral linking and rewards. Take this before any row locks,
+    // including when two accounts refer each other, to avoid lock inversion.
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(73401911)`);
     const [code] = await tx.select().from(codes).where(eq(codes.code, codeString)).for("update");
     if (!code) return { error: "Code not found" };
     if (code.wasRedeemedAt || code.redeemedAt || code.redeemedBy) return { error: "Code has already been redeemed" };
@@ -52,7 +55,8 @@ export async function redeemGiftCard(codeString: string, userId: string) {
       .where(eq(user.id, userId)).returning();
     if (!account) return { error: "User not found" };
     const now = new Date();
-    await tx.update(codes).set({ redeemedBy: userId, redeemedAt: now, wasRedeemedAt: now }).where(eq(codes.id, code.id));
+    await tx.update(codes).set({ redeemedBy: userId, redeemedAt: sql`clock_timestamp()`, wasRedeemedAt: now }).where(eq(codes.id, code.id));
+    await tx.execute(sql`SELECT reward_referral(${code.id})`);
     return { success: true, message: `${code.value} KM added to your balance.`, balance: account.walletBalance };
   });
 }

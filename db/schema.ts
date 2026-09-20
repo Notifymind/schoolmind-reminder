@@ -14,6 +14,7 @@ import { relations, sql } from "drizzle-orm";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
+  referralCode: text("referral_code").notNull().default(sql`gen_random_uuid()::text`).unique(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
@@ -516,3 +517,20 @@ export const giftCardOptions = pgTable("gift_card_options", {
   check("gift_value_positive", sql`${table.value} > 0`),
   check("gift_cost_nonnegative", sql`${table.sellerCost} >= 0`),
 ]);
+
+// Audit IDs intentionally survive account and gift card deletion.
+export const referrals = pgTable("referrals", {
+  referredId: text("referred_id").primaryKey(),
+  referrerId: text("referrer_id").notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`clock_timestamp()`),
+}, table => [
+  index("referrals_referrer_idx").on(table.referrerId),
+  check("referral_not_self", sql`${table.referredId} <> ${table.referrerId}`),
+]);
+
+export const referralRewards = pgTable("referral_rewards", {
+  codeId: text("code_id").primaryKey(),
+  referredId: text("referred_id").notNull().references(() => referrals.referredId),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`clock_timestamp()`),
+}, table => [check("referral_rewards_amount_check", sql`${table.amount} > 0 AND ${table.amount} <= 5`)]);

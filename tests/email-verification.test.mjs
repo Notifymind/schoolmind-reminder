@@ -20,6 +20,7 @@ function load(file, dependencies, env = {}) {
 
 function setup() {
   const deliveries = [];
+  const referralLinks = [];
   const database = { user: [], session: [], account: [], verification: [] };
   const { auth: options } = load('lib/auth.ts', {
     'better-auth': { betterAuth: options => options },
@@ -27,6 +28,7 @@ function setup() {
     'better-auth/adapters/drizzle': { drizzleAdapter: () => ({}) },
     '@better-auth/passkey': { passkey: () => ({}) },
     'better-auth/plugins': { admin: () => ({}) },
+    '@/db/referrals': { referralCookie: 'notifymind_referral', linkReferral: async (...args) => referralLinks.push(args) },
     '@/db': {}, '@/db/schema': {}, './permissions': {},
     './email': { sendVerificationEmail: async message => deliveries.push(message) },
   });
@@ -38,7 +40,7 @@ function setup() {
     secret: 'test-only-secret-with-at-least-32-characters',
     logger: { disabled: true },
   });
-  return { auth, deliveries, database };
+  return { auth, deliveries, database, referralLinks };
 }
 
 const credentials = { email: 'student@example.com', password: 'test-password-123', name: 'Student' };
@@ -105,4 +107,21 @@ test('Resend receives the verification link and delivery failures are reported',
   await assert.rejects(sendVerificationEmail(message), /Unable to send/);
   delete env.RESEND_API_KEY;
   await assert.rejects(sendVerificationEmail(message), /Set RESEND_API_KEY/);
+});
+
+
+test('referral cookie links only after successful authentication and is consumed', async () => {
+  const { auth, deliveries, database, referralLinks } = setup();
+  const cookie = 'notifymind_referral=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+  await auth.api.signUpEmail({ body: { ...credentials, callbackURL }, headers: new Headers({ cookie }) });
+  assert.equal(referralLinks.length, 0);
+  await assert.rejects(auth.api.signInEmail({ body: credentials, headers: new Headers({ cookie }) }));
+  assert.equal(referralLinks.length, 0);
+  await auth.handler(new Request(deliveries[0].url));
+  const response = await auth.handler(new Request('http://localhost:3000/api/auth/sign-in/email', {
+    method: 'POST', headers: { 'content-type': 'application/json', origin: 'http://localhost:3000', cookie }, body: JSON.stringify(credentials),
+  }));
+  assert.equal(response.status, 200);
+  assert.deepEqual(referralLinks, [[database.user[0].id, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa']]);
+  assert.match(response.headers.get('set-cookie'), /notifymind_referral=; Max-Age=0/i);
 });

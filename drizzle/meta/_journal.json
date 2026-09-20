@@ -78,6 +78,20 @@
       "when": 1789836421892,
       "tag": "0010_billing_options",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789836421893,
+      "tag": "0011_referrals",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1789836421894,
+      "tag": "0012_remove_referral_total_cap",
+      "breakpoints": true
     }
   ]
 }

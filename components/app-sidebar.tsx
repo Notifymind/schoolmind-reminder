@@ -175,6 +175,11 @@ const navItems = [
     url: "/app/subscription",
     icon: DollarSign,
   },
+  {
+    title: "Referrals",
+    url: "/app/referrals",
+    icon: Users,
+  },
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
