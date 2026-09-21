@@ -153,10 +153,6 @@ function SubscriptionContent() {
         <Card className="w-full max-w-2xl">
           <CardHeader className="has-data-[slot=card-action]:pr-6">
             <CardTitle>Balance: {subscriptionStatus ? `${subscriptionStatus.balance} KM` : "Loading..."}</CardTitle>
-            <CardDescription>
-              Add money with a gift card, then subscribe to Pro. Renewals use your balance.
-              If you do not have enough money, Pro stops until you subscribe again.
-            </CardDescription>
             {!subscriptionStatus?.autoRenew && (
               <CardAction>
                 <DialogTrigger asChild>
