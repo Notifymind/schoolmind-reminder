@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { TimePicker } from "@/components/ui/time-picker";
+import { DaysBeforePicker } from "@/components/ui/days-before-picker";
 import { Spinner } from "@/components/ui/spinner";
 import {
    Bell,
@@ -131,6 +132,8 @@ function PresetCard({
   const [daysBefore, setDaysBefore] = React.useState("1");
   const [time, setTime] = React.useState("09:00");
   const [isAddTimeOpen, setIsAddTimeOpen] = React.useState(false);
+  const [addTimeStep, setAddTimeStep] = React.useState<"time" | "day">("day");
+  const addTimeTitleRef = React.useRef<HTMLHeadingElement>(null);
   const [deletingTimeId, setDeletingTimeId] = React.useState<string | null>(null);
   const [isAddingTime, setIsAddingTime] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -158,8 +161,15 @@ function PresetCard({
 
   const handleAddTime = async (e: React.FormEvent) => {
     e.preventDefault();
-    const days = parseInt(daysBefore, 10);
-    if (!isNaN(days) && days >= 0 && time) {
+    if (isAddingTime) return;
+    const days = Number(daysBefore);
+    if (daysBefore === "" || !Number.isInteger(days) || days < 0 || days > 30) return;
+    if (addTimeStep === "day") {
+      setAddTimeStep("time");
+      addTimeTitleRef.current?.focus();
+      return;
+    }
+    if (time) {
       setIsAddingTime(true);
       await onAddTime(days, time);
       setIsAddingTime(false);
@@ -345,50 +355,44 @@ function PresetCard({
         )}
 
         {preset.times.length < limits.timesPerPreset && (
-          <Dialog open={isAddTimeOpen} onOpenChange={setIsAddTimeOpen}>
+          <Dialog open={isAddTimeOpen} onOpenChange={(open) => {
+            if (isAddingTime) return;
+            if (open) setAddTimeStep("day");
+            setIsAddTimeOpen(open);
+          }}>
              <DialogTrigger asChild>
                <Button variant="outline" size="sm" className="w-full" disabled={isActivating || isDeleting || deletingTimeId !== null}>
                  <Plus className="size-4 mr-2" />
                  Add notification time
                </Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-sm">
+            <DialogContent aria-describedby={undefined} className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-sm">
               <DialogHeader>
-                <DialogTitle>Add notification time</DialogTitle>
-                <DialogDescription>
-                  {limits.timesPerPreset - preset.times.length} remaining for this preset
-                </DialogDescription>
+                <DialogTitle ref={addTimeTitleRef} tabIndex={-1} className="outline-none">
+                  {addTimeStep === "day" ? "How far ahead should the reminder arrive?" : "And at what time?"}
+                </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleAddTime}>
                 <FieldGroup>
-                  <Field>
-                    <FieldLabel htmlFor={`days-before-${preset.id}`}>When to notify</FieldLabel>
-                    <div className="flex flex-wrap gap-2">
-                      <div className="flex items-center gap-2">
-                        <Input
-                          id={`days-before-${preset.id}`}
-                          type="number"
-                          required
-                          disabled={isAddingTime}
-                          min="0"
-                          max="30"
-                          value={daysBefore}
-                          onChange={(e) => setDaysBefore(e.target.value)}
-                          className="w-20"
-                        />
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">
-                          days before
-                        </span>
-                      </div>
-                    </div>
-                  </Field>
-                  <TimePicker value={time} onChange={setTime} disabled={isAddingTime} />
+                  {addTimeStep === "time" ? (
+                    <TimePicker value={time} onChange={setTime} disabled={isAddingTime} />
+                  ) : (
+                    <DaysBeforePicker value={daysBefore} onChange={setDaysBefore} disabled={isAddingTime} />
+                  )}
                   <div className="flex justify-end gap-2">
+                    {addTimeStep === "time" && (
+                      <Button type="button" variant="ghost" className="mr-auto" disabled={isAddingTime} onClick={() => {
+                        setAddTimeStep("day");
+                        addTimeTitleRef.current?.focus();
+                      }}>
+                        Back
+                      </Button>
+                    )}
                      <Button type="button" variant="outline" onClick={() => setIsAddTimeOpen(false)} disabled={isAddingTime}>
                        Cancel
                     </Button>
                     <Button type="submit" disabled={isAddingTime}>
-                       {isAddingTime ? <Spinner className="size-4" /> : "Add"}
+                       {isAddingTime ? <Spinner className="size-4" /> : addTimeStep === "day" ? "Next: choose time" : "Add reminder"}
                     </Button>
                   </div>
                 </FieldGroup>
