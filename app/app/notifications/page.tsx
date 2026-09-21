@@ -366,16 +366,11 @@ function PresetCard({
                  Add notification time
                </Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-sm">
+            <DialogContent aria-describedby={undefined} className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-sm">
               <DialogHeader>
                 <DialogTitle ref={addTimeTitleRef} tabIndex={-1} className="outline-none">
-                  {addTimeStep === "day" ? "How early should we remind you?" : "What time should we remind you?"}
+                  {addTimeStep === "day" ? "How far ahead should the reminder arrive?" : "And at what time?"}
                 </DialogTitle>
-                <DialogDescription>
-                  {addTimeStep === "day"
-                    ? "Step 1 of 2 · Choose how far ahead of your exam or assignment due date to get a reminder."
-                    : `Step 2 of 2 · ${Number(daysBefore) === 0 ? "On the day of your exam or assignment due date" : `${daysBefore} ${Number(daysBefore) === 1 ? "day" : "days"} before your exam or assignment due date`}.`}
-                </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleAddTime}>
                 <FieldGroup>

@@ -3,14 +3,6 @@
 import * as React from "react";
 import { Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-
-const shortcuts = [
-  { value: 0, label: "Same day" },
-  { value: 1, label: "1 day" },
-  { value: 2, label: "2 days" },
-  { value: 7, label: "1 week" },
-];
 
 export function DaysBeforePicker({
   value,
@@ -29,41 +21,20 @@ export function DaysBeforePicker({
   }
 
   return (
-    <fieldset disabled={disabled} className="min-w-0 space-y-3 disabled:opacity-50">
-      <legend className="mb-3 text-sm font-medium">Days before the exam or due date</legend>
-      <div className="grid grid-cols-4 gap-2" role="group" aria-label="Quick choices for days before">
-        {shortcuts.map((shortcut) => (
-          <button
-            key={shortcut.value}
-            type="button"
-            aria-label={shortcut.value === 0 ? "Same day" : `${shortcut.value} ${shortcut.value === 1 ? "day" : "days"} before`}
-            aria-pressed={days === shortcut.value}
-            onClick={() => onChange(String(shortcut.value))}
-            className={cn(
-              "min-h-14 rounded-xl px-1 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              days === shortcut.value
-                ? "bg-primary/15 text-foreground ring-1 ring-primary/30"
-                : "bg-muted text-muted-foreground hover:bg-accent",
-            )}
-          >
-            {shortcut.label}
-            {shortcut.value !== 0 && <span className="block font-normal text-muted-foreground">before</span>}
-          </button>
-        ))}
-      </div>
-      <div className="flex items-center justify-center gap-4">
+    <fieldset disabled={disabled} aria-label="Reminder days before" className="min-w-0 space-y-4 disabled:opacity-50">
+      <div className="flex items-center justify-center gap-3">
         <Button
           type="button"
           variant="secondary"
           size="icon"
-          className="size-11 rounded-full"
+          className="size-10 rounded-full"
           aria-label="Decrease days before"
           disabled={disabled || days === null || days <= 0}
           onClick={() => step(-1)}
         >
           <Minus className="size-4" />
         </Button>
-        <div className="space-y-1 text-center">
+        <div className="flex flex-col items-center gap-1.5">
           <input
             type="number"
             inputMode="numeric"
@@ -72,21 +43,18 @@ export function DaysBeforePicker({
             max={30}
             step={1}
             value={value}
-            aria-label="Days before"
+            aria-label="Number of days before"
             aria-describedby={hintId}
             onChange={(event) => onChange(event.target.value)}
             onFocus={(event) => event.target.select()}
-            className="h-16 w-20 appearance-none rounded-xl border-0 bg-primary/15 text-center text-4xl text-foreground tabular-nums ring-1 ring-primary/30 outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [appearance:textfield]"
+            className="h-14 w-16 appearance-none rounded-lg border-0 bg-primary/10 text-center text-3xl font-semibold text-foreground tabular-nums ring-1 ring-primary/20 outline-none focus-visible:ring-2 focus-visible:ring-primary [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [appearance:textfield]"
           />
-          <p className="text-xs text-muted-foreground">
-            {days === 0 ? "Same day" : days === 1 ? "day before" : "days before"}
-          </p>
         </div>
         <Button
           type="button"
           variant="secondary"
           size="icon"
-          className="size-11 rounded-full"
+          className="size-10 rounded-full"
           aria-label="Increase days before"
           disabled={disabled || (days !== null && days >= 30)}
           onClick={() => step(1)}
@@ -94,12 +62,13 @@ export function DaysBeforePicker({
           <Plus className="size-4" />
         </Button>
       </div>
-      <p id={hintId} aria-live="polite" className="text-center text-sm text-muted-foreground">
+
+      <p id={hintId} aria-live="polite" className="rounded-lg bg-muted/50 px-3 py-2.5 text-center text-sm text-foreground/90">
         {days === null || !Number.isInteger(days) || days < 0 || days > 30
-          ? "Choose between 0 and 30 days before."
+          ? "Please choose between 0 and 30 days"
           : days === 0
-            ? "Remind me on the day of my exam or assignment due date."
-            : `Remind me ${days} ${days === 1 ? "day" : "days"} before my exam or assignment due date.`}
+            ? "You'll get a reminder on the day of your exam or due date"
+            : `You'll get a reminder ${days} ${days === 1 ? "day" : "days"} before your exam or due date`}
       </p>
     </fieldset>
   );

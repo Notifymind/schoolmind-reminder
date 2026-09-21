@@ -64,8 +64,7 @@ export function TimePicker({
   }
 
   return (
-    <fieldset disabled={disabled} className="min-w-0 space-y-4 disabled:opacity-50">
-      <legend className="mb-3 text-sm font-medium">Notification time</legend>
+    <fieldset disabled={disabled} aria-label="Notification time" className="min-w-0 space-y-4 disabled:opacity-50">
       <div className="flex items-start justify-center gap-3">
         <div className="flex items-start gap-1">
           {(["hours", "minutes"] as const).map((item, index) => (
