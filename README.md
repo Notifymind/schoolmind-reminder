@@ -87,3 +87,27 @@ credentials. Google sign-in creates an account on first use and returns users to
 `/app`; cancellations and callback failures return to login with an error message.
 Better Auth handles OAuth state and account linking. No database migration is needed.
 See the [Better Auth Google setup](https://better-auth.com/docs/authentication/google).
+
+## Required email login codes
+
+Every email/password login now requires a six-digit code after the password is
+accepted, using [Better Auth two-factor authentication](https://better-auth.com/docs/plugins/2fa).
+Codes use the existing Resend settings above, expire after five minutes, and allow
+five incorrect attempts. Resending replaces the previous code and is limited to
+once per minute per IP on each server instance. Login challenges expire after ten
+minutes. Users cannot disable the requirement or trust a device to skip it.
+Google and passkey login continue to use their existing flows.
+
+For the existing test database, which has application tables but no recorded
+Drizzle migrations, use `bun x --bun drizzle-kit push --strict --verbose` and review
+the SQL before accepting. Do not run `migrate` against that database: it would
+replay the initial table creation. `generate` compares local schema snapshots; it
+does not inspect or update the database.
+
+For a database with migration history already applied through `0013`, apply
+`drizzle/0014_required_login_code.sql` with `bun x --bun drizzle-kit migrate`.
+The migration enables the requirement for existing accounts. New accounts get it
+automatically. Existing sessions stay valid. Registration email verification is
+still required before the first password login.
+
+Run authentication regression tests with `node --test tests/email-verification.test.mjs`.

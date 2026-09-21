@@ -62,6 +62,8 @@ test('gift card billing against embedded PostgreSQL', async t => {
   await pg.exec(fs.readFileSync('drizzle/0011_referrals.sql', 'utf8'));
   await pg.exec(fs.readFileSync('drizzle/0012_remove_referral_total_cap.sql', 'utf8'));
   await pg.exec(fs.readFileSync('drizzle/0013_pro_plan_marketing.sql', 'utf8'));
+  await pg.exec(fs.readFileSync('drizzle/0014_required_login_code.sql', 'utf8'));
+  assert.ok((await db.select().from(schema.user)).every(user => user.twoFactorEnabled));
   const account = async id => (await db.select().from(schema.user).where(orm.eq(schema.user.id, id)))[0];
   const expire = async (id = 'buyer') => db.update(schema.user).set({ subscriptionEndsAt: new Date(Date.now() - 1000) }).where(orm.eq(schema.user.id, id));
 
