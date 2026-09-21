@@ -30,7 +30,7 @@ export function DaysBeforePicker({
 
   return (
     <fieldset disabled={disabled} className="min-w-0 space-y-3 disabled:opacity-50">
-      <legend className="mb-3 text-sm font-medium">When to notify</legend>
+      <legend className="mb-3 text-sm font-medium">Days before the exam or due date</legend>
       <div className="grid grid-cols-4 gap-2" role="group" aria-label="Quick choices for days before">
         {shortcuts.map((shortcut) => (
           <button
@@ -40,13 +40,14 @@ export function DaysBeforePicker({
             aria-pressed={days === shortcut.value}
             onClick={() => onChange(String(shortcut.value))}
             className={cn(
-              "min-h-11 rounded-xl px-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "min-h-14 rounded-xl px-1 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               days === shortcut.value
                 ? "bg-primary/15 text-foreground ring-1 ring-primary/30"
                 : "bg-muted text-muted-foreground hover:bg-accent",
             )}
           >
             {shortcut.label}
+            {shortcut.value !== 0 && <span className="block font-normal text-muted-foreground">before</span>}
           </button>
         ))}
       </div>
@@ -77,7 +78,7 @@ export function DaysBeforePicker({
             onFocus={(event) => event.target.select()}
             className="h-16 w-20 appearance-none rounded-xl border-0 bg-primary/15 text-center text-4xl text-foreground tabular-nums ring-1 ring-primary/30 outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [appearance:textfield]"
           />
-          <p id={hintId} className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {days === 0 ? "Same day" : days === 1 ? "day before" : "days before"}
           </p>
         </div>
@@ -93,6 +94,13 @@ export function DaysBeforePicker({
           <Plus className="size-4" />
         </Button>
       </div>
+      <p id={hintId} aria-live="polite" className="text-center text-sm text-muted-foreground">
+        {days === null || !Number.isInteger(days) || days < 0 || days > 30
+          ? "Choose between 0 and 30 days before."
+          : days === 0
+            ? "Remind me on the day of my exam or assignment due date."
+            : `Remind me ${days} ${days === 1 ? "day" : "days"} before my exam or assignment due date.`}
+      </p>
     </fieldset>
   );
 }

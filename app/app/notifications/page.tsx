@@ -132,7 +132,7 @@ function PresetCard({
   const [daysBefore, setDaysBefore] = React.useState("1");
   const [time, setTime] = React.useState("09:00");
   const [isAddTimeOpen, setIsAddTimeOpen] = React.useState(false);
-  const [addTimeStep, setAddTimeStep] = React.useState<"time" | "day">("time");
+  const [addTimeStep, setAddTimeStep] = React.useState<"time" | "day">("day");
   const addTimeTitleRef = React.useRef<HTMLHeadingElement>(null);
   const [deletingTimeId, setDeletingTimeId] = React.useState<string | null>(null);
   const [isAddingTime, setIsAddingTime] = React.useState(false);
@@ -162,13 +162,14 @@ function PresetCard({
   const handleAddTime = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isAddingTime) return;
-    if (addTimeStep === "time") {
-      setAddTimeStep("day");
+    const days = Number(daysBefore);
+    if (daysBefore === "" || !Number.isInteger(days) || days < 0 || days > 30) return;
+    if (addTimeStep === "day") {
+      setAddTimeStep("time");
       addTimeTitleRef.current?.focus();
       return;
     }
-    const days = parseInt(daysBefore, 10);
-    if (!isNaN(days) && days >= 0 && time) {
+    if (time) {
       setIsAddingTime(true);
       await onAddTime(days, time);
       setIsAddingTime(false);
@@ -356,7 +357,7 @@ function PresetCard({
         {preset.times.length < limits.timesPerPreset && (
           <Dialog open={isAddTimeOpen} onOpenChange={(open) => {
             if (isAddingTime) return;
-            if (open) setAddTimeStep("time");
+            if (open) setAddTimeStep("day");
             setIsAddTimeOpen(open);
           }}>
              <DialogTrigger asChild>
@@ -368,23 +369,25 @@ function PresetCard({
             <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-sm">
               <DialogHeader>
                 <DialogTitle ref={addTimeTitleRef} tabIndex={-1} className="outline-none">
-                  {addTimeStep === "time" ? "Select notification time" : "Select notification day"}
+                  {addTimeStep === "day" ? "How early should we remind you?" : "What time should we remind you?"}
                 </DialogTitle>
                 <DialogDescription>
-                  {addTimeStep === "time" ? "Step 1 of 2" : `Step 2 of 2 · Notification at ${time}`}
+                  {addTimeStep === "day"
+                    ? "Step 1 of 2 · Choose how far ahead of your exam or assignment due date to get a reminder."
+                    : `Step 2 of 2 · ${Number(daysBefore) === 0 ? "On the day of your exam or assignment due date" : `${daysBefore} ${Number(daysBefore) === 1 ? "day" : "days"} before your exam or assignment due date`}.`}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleAddTime}>
                 <FieldGroup>
                   {addTimeStep === "time" ? (
-                    <TimePicker value={time} onChange={setTime} />
+                    <TimePicker value={time} onChange={setTime} disabled={isAddingTime} />
                   ) : (
                     <DaysBeforePicker value={daysBefore} onChange={setDaysBefore} disabled={isAddingTime} />
                   )}
                   <div className="flex justify-end gap-2">
-                    {addTimeStep === "day" && (
+                    {addTimeStep === "time" && (
                       <Button type="button" variant="ghost" className="mr-auto" disabled={isAddingTime} onClick={() => {
-                        setAddTimeStep("time");
+                        setAddTimeStep("day");
                         addTimeTitleRef.current?.focus();
                       }}>
                         Back
@@ -394,7 +397,7 @@ function PresetCard({
                        Cancel
                     </Button>
                     <Button type="submit" disabled={isAddingTime}>
-                       {isAddingTime ? <Spinner className="size-4" /> : addTimeStep === "time" ? "Next" : "Add"}
+                       {isAddingTime ? <Spinner className="size-4" /> : addTimeStep === "day" ? "Next: choose time" : "Add reminder"}
                     </Button>
                   </div>
                 </FieldGroup>
