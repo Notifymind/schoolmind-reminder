@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { ProPriceCarousel } from "@/components/pro-price-carousel";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -145,61 +144,58 @@ function SubscriptionContent() {
             </div>
           </CardContent>
         </form>
-      </Card>
-
-      <Dialog open={subscribeOpen} onOpenChange={(open) => {
-        if (!isUpdating) setSubscribeOpen(open);
-      }}>
-        <Card className="w-full max-w-2xl">
-          <CardHeader className="has-data-[slot=card-action]:pr-6">
-            <CardTitle>Balance: {subscriptionStatus ? `${subscriptionStatus.balance} KM` : "Loading..."}</CardTitle>
-            {!subscriptionStatus?.autoRenew && (
-              <CardAction>
+        <Dialog open={subscribeOpen} onOpenChange={(open) => {
+          if (!isUpdating) setSubscribeOpen(open);
+        }}>
+          <CardContent className="space-y-4 border-t pt-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <CardTitle>Balance: {subscriptionStatus ? `${subscriptionStatus.balance} KM` : "Loading..."}</CardTitle>
+              {!subscriptionStatus?.autoRenew && (
                 <DialogTrigger asChild>
-                  <Button disabled={!subscriptionStatus || !plans.length || isUpdating || isRedeeming}>
+                  <Button className="shrink-0" disabled={!subscriptionStatus || !plans.length || isUpdating || isRedeeming}>
                     Subscribe
                   </Button>
                 </DialogTrigger>
-              </CardAction>
+              )}
+            </div>
+            {subscriptionStatus?.autoRenew && (
+              <div className="space-y-4">
+                <p>Automatic renewal is on{renewalPlan ? `: ${renewalPlan.price} KM every ${renewalPlan.duration} ${renewalPlan.unit}` : ""}.</p>
+                <Button variant="outline" disabled={isUpdating} onClick={() => updateSubscription()}>Cancel automatic renewal</Button>
+              </div>
             )}
-          </CardHeader>
-          {subscriptionStatus?.autoRenew && (
-            <CardContent className="space-y-4">
-              <p>Automatic renewal is on{renewalPlan ? `: ${renewalPlan.price} KM every ${renewalPlan.duration} ${renewalPlan.unit}` : ""}.</p>
-              <Button variant="outline" disabled={isUpdating} onClick={() => updateSubscription()}>Cancel automatic renewal</Button>
-            </CardContent>
-          )}
-        </Card>
-        <DialogContent className="sm:max-w-sm" showCloseButton={!isUpdating}>
-          <DialogHeader>
-            <DialogTitle>Subscribe to Pro</DialogTitle>
-            <DialogDescription>
-              {subscriptionStatus?.isActive
-                ? "Renewal starts when your current access ends. No charge today."
-                : "Pay from your balance. Your plan renews automatically."}
-            </DialogDescription>
-          </DialogHeader>
-          <ProPriceCarousel
-            options={plans}
-            disabled={isUpdating || isRedeeming}
-            renderAction={(plan, moving) => (
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline" disabled={isUpdating}>Cancel</Button>
-                </DialogClose>
-                <Button
-                  disabled={!subscriptionStatus || isUpdating || isRedeeming || moving}
-                  onClick={() => updateSubscription(plan.id)}
-                  aria-label={`Subscribe: ${plan.label}, ${plan.price} KM for ${plan.duration} ${plan.unit}`}
-                >
-                  {isUpdating ? "Subscribing..." : "Subscribe"}
-                  <ArrowRight aria-hidden="true" />
-                </Button>
-              </DialogFooter>
-            )}
-          />
-        </DialogContent>
-      </Dialog>
+          </CardContent>
+          <DialogContent className="sm:max-w-sm" showCloseButton={!isUpdating}>
+            <DialogHeader>
+              <DialogTitle>Subscribe to Pro</DialogTitle>
+              <DialogDescription>
+                {subscriptionStatus?.isActive
+                  ? "Renewal starts when your current access ends. No charge today."
+                  : "Pay from your balance. Your plan renews automatically."}
+              </DialogDescription>
+            </DialogHeader>
+            <ProPriceCarousel
+              options={plans}
+              disabled={isUpdating || isRedeeming}
+              renderAction={(plan, moving) => (
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button variant="outline" disabled={isUpdating}>Cancel</Button>
+                  </DialogClose>
+                  <Button
+                    disabled={!subscriptionStatus || isUpdating || isRedeeming || moving}
+                    onClick={() => updateSubscription(plan.id)}
+                    aria-label={`Subscribe: ${plan.label}, ${plan.price} KM for ${plan.duration} ${plan.unit}`}
+                  >
+                    {isUpdating ? "Subscribing..." : "Subscribe"}
+                    <ArrowRight aria-hidden="true" />
+                  </Button>
+                </DialogFooter>
+              )}
+            />
+          </DialogContent>
+        </Dialog>
+      </Card>
       {subscriptionStatus?.isActive && (
         <Card className="w-full max-w-2xl border-green-500/50 bg-green-500/5">
           <CardHeader>
