@@ -35,6 +35,64 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
+## Deploy with Dokploy
+
+The Dockerfile installs dependencies with the Bun lockfile and runs the Next.js
+standalone server as a non-root user with Node.js 22.
+
+Select the Dockerfile build type, set the Dockerfile path to `Dockerfile` and the
+Docker context path to `.`. Leave the build stage blank to use the final stage.
+Set the domain's container port to `3000` and enable HTTPS.
+See [Dokploy's Dockerfile settings](https://docs.dokploy.com/docs/core/applications/build-type).
+
+Under Environment, add this **Build Time Argument** before the first build:
+
+```dotenv
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=your-existing-public-vapid-key
+```
+
+Next.js embeds this value in the browser bundle. Changing it requires a rebuild.
+Use the public key matching your existing private key to preserve push subscriptions.
+
+Set these runtime environment variables in Dokploy:
+
+```dotenv
+DATABASE_URL=postgresql://user:password@database-host:5432/notifymind
+BETTER_AUTH_URL=https://your-app.example.com
+BETTER_AUTH_SECRET=your-existing-auth-secret
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=the-same-public-key-used-for-the-build
+VAPID_PRIVATE_KEY=your-existing-private-vapid-key
+CRON_SECRET=your-cron-secret
+RESEND_API_KEY=re_your_api_key
+RESEND_FROM_EMAIL=NotifyMind <noreply@your-verified-domain.com>
+```
+
+Add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` at runtime if using Google sign-in.
+The database host must be reachable from the container; `localhost` refers to the
+app container itself. Local `.env` files are excluded from the image. Private keys
+and database credentials are only needed at runtime.
+
+Provision PostgreSQL and apply the appropriate schema changes before using the app.
+The image does not run migrations or include the Drizzle CLI. Run schema changes
+from a checkout with development dependencies installed, following the database
+history guidance below.
+
+Configure an external scheduler to call `GET /api/cron` every minute with
+`Authorization: Bearer <CRON_SECRET>`. The container does not start a scheduler.
+For example, a scheduler with `APP_URL` and `CRON_SECRET` configured can run:
+
+```bash
+curl --fail --silent --show-error --max-time 55 \
+  -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron"
+```
+
+To build and run locally with the same public key exported in your shell:
+
+```bash
+docker build --build-arg NEXT_PUBLIC_VAPID_PUBLIC_KEY -t notifymind .
+docker run --rm --env-file .env -p 3000:3000 notifymind
+```
+
 ## Email verification
 
 Email/password accounts must verify their email before signing in. Sign-up sends a
