@@ -4,13 +4,7 @@ import * as React from "react";
 import { ClassSelectionCard } from "@/components/class-selection-card";
 import { usePageTitle } from "@/app/app/layout";
 import { authClient } from "@/lib/auth-client";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardAction,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,14 +14,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SchoolEventCard } from "@/components/school-event-card";
 import { Button } from "@/components/ui/button";
-import {
-  Calendar,
-  Clock,
-  CalendarClock,
-  BookOpen,
-  Bell,
-} from "lucide-react";
+import { Calendar, BookOpen, Bell, BellOff } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { ProAdCard } from "@/components/pro-ad-card";
 import {
@@ -99,7 +88,9 @@ type AssignmentPreset = {
   disabled: boolean;
 };
 
-function getDaysText(dueDate: Date | null): { text: string; isPast: boolean; isUrgent: boolean } | null {
+function getDaysText(
+  dueDate: Date | null,
+): { text: string; isPast: boolean; isUrgent: boolean } | null {
   if (!dueDate) return null;
   const now = new Date();
   now.setHours(0, 0, 0, 0);
@@ -109,10 +100,17 @@ function getDaysText(dueDate: Date | null): { text: string; isPast: boolean; isU
     (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
   );
 
-  if (diffDays < 0) return { text: `${Math.abs(diffDays)} days ago`, isPast: true, isUrgent: false };
+  if (diffDays < 0)
+    return {
+      text: `${Math.abs(diffDays)} days ago`,
+      isPast: true,
+      isUrgent: false,
+    };
   if (diffDays === 0) return { text: "Today", isPast: false, isUrgent: true };
-  if (diffDays === 1) return { text: "Tomorrow", isPast: false, isUrgent: true };
-  if (diffDays <= 7) return { text: `In ${diffDays} days`, isPast: false, isUrgent: true };
+  if (diffDays === 1)
+    return { text: "Tomorrow", isPast: false, isUrgent: true };
+  if (diffDays <= 7)
+    return { text: `In ${diffDays} days`, isPast: false, isUrgent: true };
   return { text: `In ${diffDays} days`, isPast: false, isUrgent: false };
 }
 
@@ -146,95 +144,66 @@ function ExamCard({
   const activePreset = presets.find((p) => p.isActiveForExams);
 
   return (
-    <Card className="gap-1">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="text-base">
-              {exam.title || "Untitled Exam"}
-            </CardTitle>
-            <div className="flex flex-wrap items-center gap-2 mt-1 text-muted-foreground text-xs">
-              <span className="flex items-center gap-1">
-                <BookOpen className="size-3" />
-                {exam.subject || "No subject"}
-              </span>
-              {exam.date && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="size-3" />
-                  {exam.date}
-                </span>
-              )}
-              {exam.time && (
-                <span className="flex items-center gap-1">
-                  <Clock className="size-3" />
-                  {exam.time}
-                </span>
-              )}
-              {daysInfo && (
-                <span className={`flex items-center gap-1 ${daysInfo.isUrgent ? "text-orange-500" : ""}`}>
-                  <CalendarClock className="size-3" />
-                  {daysInfo.text}
-                </span>
-              )}
-              {exam.type && (
-                <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
-                  {exam.type}
-                </span>
-              )}
-            </div>
-          </div>
-          {!daysInfo?.isPast && (
-            <CardAction>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" disabled={isLoading} className={disabled ? "text-muted-foreground" : ""}>
-                    {isLoading ? <Spinner /> : <Bell className="size-4" />}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Notification Preset</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuRadioGroup
-                    value={
-                      disabled
-                        ? "disabled"
-                        : preset
-                          ? String(preset.id)
-                          : activePreset
-                            ? String(activePreset.id)
-                            : ""
-                    }
-                    onValueChange={handleSelectPreset}
-                  >
-                    {presets.map((p) => (
-                      <DropdownMenuRadioItem key={p.id} value={String(p.id)}>
-                        {p.name}
-                        {p.isActiveForExams && (
-                          <span className="text-xs text-muted-foreground ml-1">
-                            (default)
-                          </span>
-                        )}
-                      </DropdownMenuRadioItem>
-                    ))}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuRadioItem value="disabled">
-                      Disable Notifications
-                    </DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </CardAction>
-          )}
-        </div>
-      </CardHeader>
-      {exam.description && (
-        <CardContent className="pt-0">
-          <p className="text-xs text-muted-foreground line-clamp-2">
-            {exam.description}
-          </p>
-        </CardContent>
-      )}
-    </Card>
+    <SchoolEventCard
+      event={exam}
+      fallbackTitle="Untitled Exam"
+      daysInfo={daysInfo}
+      compactDescription
+      action={
+        !daysInfo?.isPast ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={isLoading}
+                aria-label={`Notification settings for ${exam.title || "untitled exam"}`}
+                className={`size-11 shrink-0 rounded-xl border border-border/70 ${disabled ? "text-muted-foreground" : ""}`}
+              >
+                {isLoading ? (
+                  <Spinner />
+                ) : disabled ? (
+                  <BellOff className="size-4" />
+                ) : (
+                  <Bell className="size-4" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Notification Preset</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup
+                value={
+                  disabled
+                    ? "disabled"
+                    : preset
+                      ? String(preset.id)
+                      : activePreset
+                        ? String(activePreset.id)
+                        : ""
+                }
+                onValueChange={handleSelectPreset}
+              >
+                {presets.map((p) => (
+                  <DropdownMenuRadioItem key={p.id} value={String(p.id)}>
+                    {p.name}
+                    {p.isActiveForExams && (
+                      <span className="text-xs text-muted-foreground ml-1">
+                        (default)
+                      </span>
+                    )}
+                  </DropdownMenuRadioItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioItem value="disabled">
+                  Disable Notifications
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null
+      }
+    />
   );
 }
 
@@ -268,95 +237,66 @@ function AssignmentCard({
   const activePreset = presets.find((p) => p.isActiveForAssignments);
 
   return (
-    <Card className="gap-1">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="text-base">
-              {assignment.title || "Untitled Assignment"}
-            </CardTitle>
-            <div className="flex flex-wrap items-center gap-2 mt-1 text-muted-foreground text-xs">
-              <span className="flex items-center gap-1">
-                <BookOpen className="size-3" />
-                {assignment.subject || "No subject"}
-              </span>
-              {assignment.date && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="size-3" />
-                  {assignment.date}
-                </span>
-              )}
-              {assignment.time && (
-                <span className="flex items-center gap-1">
-                  <Clock className="size-3" />
-                  {assignment.time}
-                </span>
-              )}
-              {daysInfo && (
-                <span className={`flex items-center gap-1 ${daysInfo.isUrgent ? "text-orange-500" : ""}`}>
-                  <CalendarClock className="size-3" />
-                  {daysInfo.text}
-                </span>
-              )}
-              {assignment.type && (
-                <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
-                  {assignment.type}
-                </span>
-              )}
-            </div>
-          </div>
-          {!daysInfo?.isPast && (
-            <CardAction>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" disabled={isLoading} className={disabled ? "text-muted-foreground" : ""}>
-                    {isLoading ? <Spinner /> : <Bell className="size-4" />}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Notification Preset</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuRadioGroup
-                    value={
-                      disabled
-                        ? "disabled"
-                        : preset
-                          ? String(preset.id)
-                          : activePreset
-                            ? String(activePreset.id)
-                            : ""
-                    }
-                    onValueChange={handleSelectPreset}
-                  >
-                    {presets.map((p) => (
-                      <DropdownMenuRadioItem key={p.id} value={String(p.id)}>
-                        {p.name}
-                        {p.isActiveForAssignments && (
-                          <span className="text-xs text-muted-foreground ml-1">
-                            (default)
-                          </span>
-                        )}
-                      </DropdownMenuRadioItem>
-                    ))}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuRadioItem value="disabled">
-                      Disable Notifications
-                    </DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </CardAction>
-          )}
-        </div>
-      </CardHeader>
-      {assignment.description && (
-        <CardContent className="pt-0">
-          <p className="text-xs text-muted-foreground line-clamp-2">
-            {assignment.description}
-          </p>
-        </CardContent>
-      )}
-    </Card>
+    <SchoolEventCard
+      event={assignment}
+      fallbackTitle="Untitled Assignment"
+      daysInfo={daysInfo}
+      compactDescription
+      action={
+        !daysInfo?.isPast ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={isLoading}
+                aria-label={`Notification settings for ${assignment.title || "untitled assignment"}`}
+                className={`size-11 shrink-0 rounded-xl border border-border/70 ${disabled ? "text-muted-foreground" : ""}`}
+              >
+                {isLoading ? (
+                  <Spinner />
+                ) : disabled ? (
+                  <BellOff className="size-4" />
+                ) : (
+                  <Bell className="size-4" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Notification Preset</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup
+                value={
+                  disabled
+                    ? "disabled"
+                    : preset
+                      ? String(preset.id)
+                      : activePreset
+                        ? String(activePreset.id)
+                        : ""
+                }
+                onValueChange={handleSelectPreset}
+              >
+                {presets.map((p) => (
+                  <DropdownMenuRadioItem key={p.id} value={String(p.id)}>
+                    {p.name}
+                    {p.isActiveForAssignments && (
+                      <span className="text-xs text-muted-foreground ml-1">
+                        (default)
+                      </span>
+                    )}
+                  </DropdownMenuRadioItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioItem value="disabled">
+                  Disable Notifications
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null
+      }
+    />
   );
 }
 
@@ -419,12 +359,16 @@ export function HomeClient({
     );
   };
 
-  const getPresetForExam = (examId: number): { preset: Preset | null; disabled: boolean } => {
+  const getPresetForExam = (
+    examId: number,
+  ): { preset: Preset | null; disabled: boolean } => {
     const meta = examPresets.find((ep) => ep.examId === examId);
     return { preset: meta?.preset ?? null, disabled: meta?.disabled ?? false };
   };
 
-  const getPresetForAssignment = (assignmentId: number): { preset: Preset | null; disabled: boolean } => {
+  const getPresetForAssignment = (
+    assignmentId: number,
+  ): { preset: Preset | null; disabled: boolean } => {
     const meta = assignmentPresets.find(
       (ap) => ap.assignmentId === assignmentId,
     );
@@ -507,7 +451,9 @@ export function HomeClient({
         ) : (
           <div className="space-y-3">
             {assignments.map((assignment) => {
-              const { preset, disabled } = getPresetForAssignment(assignment.id);
+              const { preset, disabled } = getPresetForAssignment(
+                assignment.id,
+              );
               return (
                 <AssignmentCard
                   key={assignment.id}
