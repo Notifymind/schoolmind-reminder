@@ -291,12 +291,14 @@ export const sentNotifications = pgTable(
     examId: integer("exam_id").references(() => exams.id, { onDelete: "cascade" }),
     assignmentId: integer("assignment_id").references(() => assignments.id, { onDelete: "cascade" }),
     daysBefore: integer("days_before").notNull(),
+    time: varchar("time", { length: 5 }).notNull(),
     sentAt: timestamp("sent_at").defaultNow().notNull(),
   },
   (table) => [
     index("sent_notifications_userId_idx").on(table.userId),
     index("sent_notifications_examId_idx").on(table.examId),
     index("sent_notifications_assignmentId_idx").on(table.assignmentId),
+    index("sent_notifications_time_idx").on(table.time),
   ],
 );
 
