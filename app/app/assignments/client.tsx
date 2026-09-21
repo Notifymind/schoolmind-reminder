@@ -152,36 +152,40 @@ function AssignmentCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Notification Preset</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup
-                value={
-                  disabled
-                    ? "disabled"
-                    : preset
-                      ? String(preset.id)
-                      : activePreset
-                        ? String(activePreset.id)
-                        : ""
-                }
-                onValueChange={handleSelectPreset}
-              >
-                {presets.map((p) => (
-                  <DropdownMenuRadioItem key={p.id} value={String(p.id)}>
-                    {p.name}
-                    {p.isActiveForAssignments && (
-                      <span className="text-xs text-muted-foreground ml-1">
-                        (default)
-                      </span>
-                    )}
-                  </DropdownMenuRadioItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioItem value="disabled">
-                  Disable Notifications
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-              <DropdownMenuSeparator />
+              {presets.length > 0 ? (
+                <>
+                  <DropdownMenuLabel>Notification Preset</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup
+                    value={
+                      disabled
+                        ? "disabled"
+                        : preset
+                          ? String(preset.id)
+                          : activePreset
+                            ? String(activePreset.id)
+                            : ""
+                    }
+                    onValueChange={handleSelectPreset}
+                  >
+                    {presets.map((p) => (
+                      <DropdownMenuRadioItem key={p.id} value={String(p.id)}>
+                        {p.name}
+                        {p.isActiveForAssignments && (
+                          <span className="text-xs text-muted-foreground ml-1">
+                            (default)
+                          </span>
+                        )}
+                      </DropdownMenuRadioItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioItem value="disabled">
+                      Disable Notifications
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                  <DropdownMenuSeparator />
+                </>
+              ) : null}
               <DropdownMenuItem
                 onClick={() => router.push("/app/notifications")}
               >
