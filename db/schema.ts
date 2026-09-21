@@ -20,6 +20,7 @@ export const user = pgTable("user", {
   referralCode: text("referral_code").notNull().default(sql`gen_random_uuid()::text`).$defaultFn(generateReferralCode).unique(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
+  twoFactorEnabled: boolean("two_factor_enabled").default(true).notNull(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
   class: varchar("class", { length: 50 }).references(() => schoolclass.name),
@@ -538,3 +539,10 @@ export const referralRewards = pgTable("referral_rewards", {
   amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
   createdAt: timestamp("created_at").notNull().default(sql`clock_timestamp()`),
 }, table => [check("referral_rewards_amount_check", sql`${table.amount} > 0 AND ${table.amount} <= 5`)]);
+
+export const twoFactor = pgTable("two_factor", {
+  id: text("id").primaryKey(),
+  secret: text("secret").notNull(),
+  backupCodes: text("backup_codes").notNull(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+}, (table) => [index("two_factor_user_id_idx").on(table.userId)]);

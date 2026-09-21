@@ -33,8 +33,52 @@ export function LoginForm({
   const router = useRouter()
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
+  const [needsCode, setNeedsCode] = React.useState(false)
+  const [code, setCode] = React.useState("")
+  const [resendAvailable, setResendAvailable] = React.useState(true)
   const [isLoading, setIsLoading] = React.useState(false)
   const [isPasskeyLoading, setIsPasskeyLoading] = React.useState(false)
+
+  React.useEffect(() => {
+    if (resendAvailable) return
+    const timer = setTimeout(() => setResendAvailable(true), 60_000)
+    return () => clearTimeout(timer)
+  }, [resendAvailable])
+
+  async function sendCode() {
+    setResendAvailable(false)
+    const result = await authClient.twoFactor.sendOtp()
+    if (result.error) toast.error(result.error.message || "Unable to send a code. Please try again.")
+  }
+
+  async function handleResend() {
+    setIsLoading(true)
+    try {
+      await sendCode()
+    } catch {
+      toast.error("Unable to send a code. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  async function handleVerify(e: React.FormEvent) {
+    e.preventDefault()
+    setIsLoading(true)
+    try {
+      const result = await authClient.twoFactor.verifyOtp({ code })
+      if (result.error) {
+        toast.error(result.error.message || "Unable to verify the code")
+        return
+      }
+      toast.success("Logged in successfully")
+      router.push("/app")
+    } catch {
+      toast.error("Unable to verify the code. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -48,6 +92,12 @@ export function LoginForm({
           return
         }
         toast.error(result.error.message || "Failed to login")
+        return
+      }
+      if (result.data && "twoFactorRedirect" in result.data && result.data.twoFactorRedirect) {
+        setPassword("")
+        setNeedsCode(true)
+        await sendCode()
         return
       }
       toast.success("Logged in successfully")
@@ -71,6 +121,46 @@ export function LoginForm({
 
     toast.success("Logged in successfully")
     router.push("/app")
+  }
+
+  if (needsCode) {
+    return (
+      <div className={cn("flex flex-col gap-6", className)} {...props}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Check your email</CardTitle>
+            <CardDescription>
+              Enter the six-digit login code sent to {email}. Codes expire after 5 minutes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleVerify}>
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="login-code">Email code</FieldLabel>
+                  <Input id="login-code" inputMode="numeric" autoComplete="one-time-code"
+                    pattern="[0-9]{6}" maxLength={6} required value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ""))} />
+                </Field>
+                <Field>
+                  <Button type="submit" disabled={isLoading || code.length !== 6}>
+                    {isLoading ? "Please wait..." : "Verify and log in"}
+                  </Button>
+                  <Button type="button" variant="outline" disabled={isLoading || !resendAvailable}
+                    onClick={handleResend}>
+                    {resendAvailable ? "Resend code" : "You can resend in one minute"}
+                  </Button>
+                  <Button type="button" variant="ghost" disabled={isLoading}
+                    onClick={() => { setNeedsCode(false); setCode("") }}>
+                    Back to login
+                  </Button>
+                </Field>
+              </FieldGroup>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (

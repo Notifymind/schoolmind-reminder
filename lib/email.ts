@@ -31,3 +31,8 @@ export async function sendResetPassword({ user, url }: AuthEmail) {
   await sendAuthEmail(user.email, "Reset your NotifyMind password",
     `Reset your NotifyMind password:\n\n${url}\n\nThis link expires in 1 hour and can only be used once. If you didn't request a password reset, you can ignore this email.`);
 }
+
+export async function sendLoginCode({ user, otp }: { user: { email: string }; otp: string }) {
+  await sendAuthEmail(user.email, "Your NotifyMind login code",
+    `Your login code is: ${otp}\n\nEnter this code to finish signing in to NotifyMind. It expires in 5 minutes. If you didn't try to sign in, reset your password.`);
+}
