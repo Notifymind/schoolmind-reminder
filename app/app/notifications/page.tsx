@@ -20,6 +20,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { TimePicker } from "@/components/ui/time-picker";
 import { Spinner } from "@/components/ui/spinner";
 import {
    Bell,
@@ -73,55 +74,6 @@ import {
 import { usePushNotificationStore } from "@/lib/stores/push-notifications";
 
 
-
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
-const MINUTES = [0, 15, 30, 45];
-
-function TimePicker({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  const [hours, minutes] = value.split(":").map(Number);
-
-  return (
-    <div className="flex items-center gap-1">
-      <select
-        value={hours}
-        onChange={(e) =>
-          onChange(
-            `${e.target.value.padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`,
-          )
-        }
-        className="flex h-9 w-16 rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-      >
-        {HOURS.map((h) => (
-          <option key={h} value={h}>
-            {h.toString().padStart(2, "0")}
-          </option>
-        ))}
-      </select>
-      <span className="text-muted-foreground">:</span>
-      <select
-        value={minutes}
-        onChange={(e) =>
-          onChange(
-            `${hours.toString().padStart(2, "0")}:${e.target.value.padStart(2, "0")}`,
-          )
-        }
-        className="flex h-9 w-16 rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-      >
-        {MINUTES.map((m) => (
-          <option key={m} value={m}>
-            {m.toString().padStart(2, "0")}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
 
 type NotificationTime = {
   id: string;
@@ -400,7 +352,7 @@ function PresetCard({
                  Add notification time
                </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-sm">
               <DialogHeader>
                 <DialogTitle>Add notification time</DialogTitle>
                 <DialogDescription>
@@ -410,11 +362,14 @@ function PresetCard({
               <form onSubmit={handleAddTime}>
                 <FieldGroup>
                   <Field>
-                    <FieldLabel>When to notify</FieldLabel>
+                    <FieldLabel htmlFor={`days-before-${preset.id}`}>When to notify</FieldLabel>
                     <div className="flex flex-wrap gap-2">
                       <div className="flex items-center gap-2">
                         <Input
+                          id={`days-before-${preset.id}`}
                           type="number"
+                          required
+                          disabled={isAddingTime}
                           min="0"
                           max="30"
                           value={daysBefore}
@@ -422,12 +377,12 @@ function PresetCard({
                           className="w-20"
                         />
                         <span className="text-sm text-muted-foreground whitespace-nowrap">
-                          days before at:
+                          days before
                         </span>
                       </div>
-                      <TimePicker value={time} onChange={setTime} />
                     </div>
                   </Field>
+                  <TimePicker value={time} onChange={setTime} disabled={isAddingTime} />
                   <div className="flex justify-end gap-2">
                      <Button type="button" variant="outline" onClick={() => setIsAddTimeOpen(false)} disabled={isAddingTime}>
                        Cancel
