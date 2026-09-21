@@ -31,7 +31,8 @@ test('deletion hook uses the current seller balance and blocks debt', async () =
   });
   const { auth: options } = load('lib/auth.ts', {
     'better-auth': { betterAuth: options => options },
-    'better-auth/api': { APIError },
+    'better-auth/api': { APIError, createAuthMiddleware: fn => fn },
+    'better-auth/plugins/two-factor': { twoFactor: () => ({}) },
     'better-auth/adapters/drizzle': { drizzleAdapter: () => ({}) },
     '@better-auth/passkey': { passkey: () => ({}) },
     'better-auth/plugins': { admin: () => ({}) },
