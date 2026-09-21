@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { TimePicker } from "@/components/ui/time-picker";
+import { DaysBeforePicker } from "@/components/ui/days-before-picker";
 import { Spinner } from "@/components/ui/spinner";
 import {
    Bell,
@@ -361,27 +362,7 @@ function PresetCard({
               </DialogHeader>
               <form onSubmit={handleAddTime}>
                 <FieldGroup>
-                  <Field>
-                    <FieldLabel htmlFor={`days-before-${preset.id}`}>When to notify</FieldLabel>
-                    <div className="flex flex-wrap gap-2">
-                      <div className="flex items-center gap-2">
-                        <Input
-                          id={`days-before-${preset.id}`}
-                          type="number"
-                          required
-                          disabled={isAddingTime}
-                          min="0"
-                          max="30"
-                          value={daysBefore}
-                          onChange={(e) => setDaysBefore(e.target.value)}
-                          className="w-20"
-                        />
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">
-                          days before
-                        </span>
-                      </div>
-                    </div>
-                  </Field>
+                  <DaysBeforePicker value={daysBefore} onChange={setDaysBefore} disabled={isAddingTime} />
                   <TimePicker value={time} onChange={setTime} disabled={isAddingTime} />
                   <div className="flex justify-end gap-2">
                      <Button type="button" variant="outline" onClick={() => setIsAddTimeOpen(false)} disabled={isAddingTime}>
