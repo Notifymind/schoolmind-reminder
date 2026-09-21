@@ -51,6 +51,15 @@ for (const path of ['active-exam', 'active-assignment', 'explicit-exam', 'explic
   test(`${path}: 18:00 Sarajevo reminder is due at 16:00 UTC in summer`, async () => {
     assert.equal(await pending(path, '2026-09-19T16:00:00Z', '2026-09-20T08:00:00Z'), 1);
   });
+  test(`${path}: arbitrary-minute reminders wait until their scheduled time and catch up after it`, async () => {
+    const dueDate = '2026-09-20T08:00:00Z';
+    for (const now of ['2026-09-19T16:32:00Z', '2026-09-19T16:36:59Z']) {
+      assert.equal(await pending(path, now, dueDate, '18:37'), 0);
+    }
+    for (const now of ['2026-09-19T16:37:00Z', '2026-09-19T16:39:00Z']) {
+      assert.equal(await pending(path, now, dueDate, '18:37'), 1);
+    }
+  });
   test(`${path}: winter and daylight-saving calendar boundaries`, async () => {
     assert.equal(await pending(path, '2026-01-19T17:00:00Z', '2026-01-20T08:00:00Z'), 1);
     assert.equal(await pending(path, '2026-03-28T17:00:00Z', '2026-03-29T08:00:00Z'), 1);

@@ -20,7 +20,9 @@ cleanup fails, logout reports an error and can be retried while online.
 Scheduled reminders create their in-app notification, delivery queue entries, and
 sent marker in one database transaction. Overlapping cron runs serialize creation
 of the same reminder. Each device is delivered independently. The scheduled job
-runs every 15 minutes and also drains previously queued deliveries.
+must run every minute and also drains previously queued deliveries. Reminders
+become due at their selected time in Europe/Sarajevo, with no early lookahead.
+A delayed run picks up overdue reminders.
 
 - Successful deliveries are removed from the queue.
 - HTTP 404 and 410 remove the expired subscription and its queued deliveries.

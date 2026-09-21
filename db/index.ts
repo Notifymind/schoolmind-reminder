@@ -340,8 +340,6 @@ export async function applyPresetToAllAssignments(userId: string, presetId: stri
 
 export async function getPendingNotificationsForCron() {
   const now = new Date();
-  const bufferMs = 5 * 60 * 1000;
-  const nowWithBuffer = new Date(now.getTime() + bufferMs);
   const results: {
     userId: string;
     examId: number | null;
@@ -395,7 +393,7 @@ export async function getPendingNotificationsForCron() {
       if (examPrefsForUser.has(exam.id)) continue;
 
       for (const time of times) {
-        if (isNotificationDue(exam.dueDate, time.daysBefore, time.time, nowWithBuffer)) {
+        if (isNotificationDue(exam.dueDate, time.daysBefore, time.time, now)) {
           const alreadySent = await db
             .select()
             .from(sentNotifications)
@@ -449,7 +447,7 @@ export async function getPendingNotificationsForCron() {
       if (assignmentPrefsForUser.has(assignment.id)) continue;
 
       for (const time of times) {
-        if (isNotificationDue(assignment.dueDate, time.daysBefore, time.time, nowWithBuffer)) {
+        if (isNotificationDue(assignment.dueDate, time.daysBefore, time.time, now)) {
           const alreadySent = await db
             .select()
             .from(sentNotifications)
@@ -495,7 +493,7 @@ export async function getPendingNotificationsForCron() {
       if (exam.length === 0 || !exam[0].dueDate) continue;
 
       for (const time of times) {
-        if (isNotificationDue(exam[0].dueDate, time.daysBefore, time.time, nowWithBuffer)) {
+        if (isNotificationDue(exam[0].dueDate, time.daysBefore, time.time, now)) {
           const alreadySent = await db
             .select()
             .from(sentNotifications)
@@ -528,7 +526,7 @@ export async function getPendingNotificationsForCron() {
       if (assignment.length === 0 || !assignment[0].dueDate) continue;
 
       for (const time of times) {
-        if (isNotificationDue(assignment[0].dueDate, time.daysBefore, time.time, nowWithBuffer)) {
+        if (isNotificationDue(assignment[0].dueDate, time.daysBefore, time.time, now)) {
           const alreadySent = await db
             .select()
             .from(sentNotifications)
