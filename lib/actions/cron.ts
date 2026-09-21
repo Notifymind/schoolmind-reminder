@@ -16,13 +16,17 @@ import { exams, assignments } from "@/db/schema";
 type Exam = typeof exams.$inferSelect;
 type Assignment = typeof assignments.$inferSelect;
 
-webpush.setVapidDetails(
-  "mailto:notifymind@example.com",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+// Configure at runtime so production builds do not need the private key.
+function configureWebPush() {
+  webpush.setVapidDetails(
+    "mailto:notifymind@example.com",
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
+  );
+}
 
 export async function processNotificationsAction() {
+  configureWebPush();
   const pendingNotifications = await getPendingNotificationsForCron();
 
   const results = {
@@ -115,6 +119,7 @@ export async function runCronJobAction() {
 }
 
 export async function testNotificationToAdminsAction() {
+  configureWebPush();
   const admins = await getUsersByRole("admin");
 
   const results = {
@@ -190,6 +195,7 @@ export async function sendPushNotificationAction(
   title: string,
   body: string
 ) {
+  configureWebPush();
   const userSubs = await getPushSubscriptions(userId);
 
   if (userSubs.length === 0) {
