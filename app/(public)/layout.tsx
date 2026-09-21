@@ -43,7 +43,7 @@ export default function MarketingLayout({
         {children}
       </main>
 
-      <footer className="border-t py-8 px-4">
+      <footer className="border-t py-8 px-4 standalone:hidden">
         <div className="container mx-auto max-w-6xl">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
