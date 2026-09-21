@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { ClassSelectionCard } from "@/components/class-selection-card";
 import { usePageTitle } from "@/app/app/layout";
 import { authClient } from "@/lib/auth-client";
@@ -8,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -170,35 +172,43 @@ function ExamCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Notification Preset</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup
-                value={
-                  disabled
-                    ? "disabled"
-                    : preset
-                      ? String(preset.id)
-                      : activePreset
-                        ? String(activePreset.id)
-                        : ""
-                }
-                onValueChange={handleSelectPreset}
-              >
-                {presets.map((p) => (
-                  <DropdownMenuRadioItem key={p.id} value={String(p.id)}>
-                    {p.name}
-                    {p.isActiveForExams && (
-                      <span className="text-xs text-muted-foreground ml-1">
-                        (default)
-                      </span>
-                    )}
-                  </DropdownMenuRadioItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioItem value="disabled">
-                  Disable Notifications
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
+              {presets.length > 0 ? (
+                <>
+                  <DropdownMenuLabel>Notification Preset</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup
+                    value={
+                      disabled
+                        ? "disabled"
+                        : preset
+                          ? String(preset.id)
+                          : activePreset
+                            ? String(activePreset.id)
+                            : ""
+                    }
+                    onValueChange={handleSelectPreset}
+                  >
+                    {presets.map((p) => (
+                      <DropdownMenuRadioItem key={p.id} value={String(p.id)}>
+                        {p.name}
+                        {p.isActiveForExams && (
+                          <span className="text-xs text-muted-foreground ml-1">
+                            (default)
+                          </span>
+                        )}
+                      </DropdownMenuRadioItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioItem value="disabled">
+                      Disable Notifications
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </>
+              ) : (
+                <DropdownMenuItem asChild>
+                  <Link href="/app/notifications">Create Preset</Link>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null
@@ -263,35 +273,43 @@ function AssignmentCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Notification Preset</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup
-                value={
-                  disabled
-                    ? "disabled"
-                    : preset
-                      ? String(preset.id)
-                      : activePreset
-                        ? String(activePreset.id)
-                        : ""
-                }
-                onValueChange={handleSelectPreset}
-              >
-                {presets.map((p) => (
-                  <DropdownMenuRadioItem key={p.id} value={String(p.id)}>
-                    {p.name}
-                    {p.isActiveForAssignments && (
-                      <span className="text-xs text-muted-foreground ml-1">
-                        (default)
-                      </span>
-                    )}
-                  </DropdownMenuRadioItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioItem value="disabled">
-                  Disable Notifications
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
+              {presets.length > 0 ? (
+                <>
+                  <DropdownMenuLabel>Notification Preset</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup
+                    value={
+                      disabled
+                        ? "disabled"
+                        : preset
+                          ? String(preset.id)
+                          : activePreset
+                            ? String(activePreset.id)
+                            : ""
+                    }
+                    onValueChange={handleSelectPreset}
+                  >
+                    {presets.map((p) => (
+                      <DropdownMenuRadioItem key={p.id} value={String(p.id)}>
+                        {p.name}
+                        {p.isActiveForAssignments && (
+                          <span className="text-xs text-muted-foreground ml-1">
+                            (default)
+                          </span>
+                        )}
+                      </DropdownMenuRadioItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioItem value="disabled">
+                      Disable Notifications
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </>
+              ) : (
+                <DropdownMenuItem asChild>
+                  <Link href="/app/notifications">Create Preset</Link>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null
