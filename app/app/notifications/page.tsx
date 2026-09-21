@@ -132,6 +132,8 @@ function PresetCard({
   const [daysBefore, setDaysBefore] = React.useState("1");
   const [time, setTime] = React.useState("09:00");
   const [isAddTimeOpen, setIsAddTimeOpen] = React.useState(false);
+  const [addTimeStep, setAddTimeStep] = React.useState<"time" | "day">("time");
+  const addTimeTitleRef = React.useRef<HTMLHeadingElement>(null);
   const [deletingTimeId, setDeletingTimeId] = React.useState<string | null>(null);
   const [isAddingTime, setIsAddingTime] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -159,6 +161,12 @@ function PresetCard({
 
   const handleAddTime = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isAddingTime) return;
+    if (addTimeStep === "time") {
+      setAddTimeStep("day");
+      addTimeTitleRef.current?.focus();
+      return;
+    }
     const days = parseInt(daysBefore, 10);
     if (!isNaN(days) && days >= 0 && time) {
       setIsAddingTime(true);
@@ -346,7 +354,11 @@ function PresetCard({
         )}
 
         {preset.times.length < limits.timesPerPreset && (
-          <Dialog open={isAddTimeOpen} onOpenChange={setIsAddTimeOpen}>
+          <Dialog open={isAddTimeOpen} onOpenChange={(open) => {
+            if (isAddingTime) return;
+            if (open) setAddTimeStep("time");
+            setIsAddTimeOpen(open);
+          }}>
              <DialogTrigger asChild>
                <Button variant="outline" size="sm" className="w-full" disabled={isActivating || isDeleting || deletingTimeId !== null}>
                  <Plus className="size-4 mr-2" />
@@ -355,21 +367,34 @@ function PresetCard({
             </DialogTrigger>
             <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-sm">
               <DialogHeader>
-                <DialogTitle>Add notification time</DialogTitle>
+                <DialogTitle ref={addTimeTitleRef} tabIndex={-1} className="outline-none">
+                  {addTimeStep === "time" ? "Select notification time" : "Select notification day"}
+                </DialogTitle>
                 <DialogDescription>
-                  {limits.timesPerPreset - preset.times.length} remaining for this preset
+                  {addTimeStep === "time" ? "Step 1 of 2" : `Step 2 of 2 · Notification at ${time}`}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleAddTime}>
                 <FieldGroup>
-                  <DaysBeforePicker value={daysBefore} onChange={setDaysBefore} disabled={isAddingTime} />
-                  <TimePicker value={time} onChange={setTime} disabled={isAddingTime} />
+                  {addTimeStep === "time" ? (
+                    <TimePicker value={time} onChange={setTime} />
+                  ) : (
+                    <DaysBeforePicker value={daysBefore} onChange={setDaysBefore} disabled={isAddingTime} />
+                  )}
                   <div className="flex justify-end gap-2">
+                    {addTimeStep === "day" && (
+                      <Button type="button" variant="ghost" className="mr-auto" disabled={isAddingTime} onClick={() => {
+                        setAddTimeStep("time");
+                        addTimeTitleRef.current?.focus();
+                      }}>
+                        Back
+                      </Button>
+                    )}
                      <Button type="button" variant="outline" onClick={() => setIsAddTimeOpen(false)} disabled={isAddingTime}>
                        Cancel
                     </Button>
                     <Button type="submit" disabled={isAddingTime}>
-                       {isAddingTime ? <Spinner className="size-4" /> : "Add"}
+                       {isAddingTime ? <Spinner className="size-4" /> : addTimeStep === "time" ? "Next" : "Add"}
                     </Button>
                   </div>
                 </FieldGroup>
