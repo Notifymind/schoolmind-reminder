@@ -39,7 +39,7 @@ export async function processNotificationsAction() {
     results.processed++;
 
     try {
-      const { userId, examId, assignmentId, daysBefore, item: examOrAssignment } = item;
+      const { userId, examId, assignmentId, daysBefore, time, item: examOrAssignment } = item;
 
       const isAssignment = assignmentId !== null;
       const assignment = isAssignment ? examOrAssignment as Assignment : null;
@@ -64,7 +64,7 @@ export async function processNotificationsAction() {
       }
 
       const notificationType = isAssignment ? "assignment_reminder" : "exam_reminder";
-      await queueReminder(userId, examId, assignmentId, daysBefore, title, body, notificationType);
+      await queueReminder(userId, examId, assignmentId, daysBefore, time.time, title, body, notificationType);
     } catch (error) {
       console.error(`[Notification] Error processing notification:`, error);
       results.errors++;

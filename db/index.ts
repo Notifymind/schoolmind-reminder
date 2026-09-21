@@ -403,7 +403,8 @@ export async function getPendingNotificationsForCron() {
               and(
                 eq(sentNotifications.userId, preset.userId),
                 eq(sentNotifications.examId, exam.id),
-                eq(sentNotifications.daysBefore, time.daysBefore)
+                eq(sentNotifications.daysBefore, time.daysBefore),
+                eq(sentNotifications.time, time.time)
               )
             );
 
@@ -456,7 +457,8 @@ export async function getPendingNotificationsForCron() {
               and(
                 eq(sentNotifications.userId, preset.userId),
                 eq(sentNotifications.assignmentId, assignment.id),
-                eq(sentNotifications.daysBefore, time.daysBefore)
+                eq(sentNotifications.daysBefore, time.daysBefore),
+                eq(sentNotifications.time, time.time)
               )
             );
 
@@ -501,7 +503,8 @@ export async function getPendingNotificationsForCron() {
               and(
                 eq(sentNotifications.userId, pref.userId),
                 eq(sentNotifications.examId, pref.examId),
-                eq(sentNotifications.daysBefore, time.daysBefore)
+                eq(sentNotifications.daysBefore, time.daysBefore),
+                eq(sentNotifications.time, time.time)
               )
             );
 
@@ -533,7 +536,8 @@ export async function getPendingNotificationsForCron() {
               and(
                 eq(sentNotifications.userId, pref.userId),
                 eq(sentNotifications.assignmentId, pref.assignmentId),
-                eq(sentNotifications.daysBefore, time.daysBefore)
+                eq(sentNotifications.daysBefore, time.daysBefore),
+                eq(sentNotifications.time, time.time)
               )
             );
 
@@ -560,7 +564,8 @@ export async function markNotificationSent(
   userId: string,
   examId: number | null,
   assignmentId: number | null,
-  daysBefore: number
+  daysBefore: number,
+  time: string
 ) {
   await db.insert(sentNotifications).values({
     id: generateId(),
@@ -568,6 +573,7 @@ export async function markNotificationSent(
     examId,
     assignmentId,
     daysBefore,
+    time,
     sentAt: new Date(),
   });
 }
@@ -849,14 +855,15 @@ export async function hasSellerDebt(userId: string) {
 
 export async function queueReminder(
   userId: string, examId: number | null, assignmentId: number | null,
-  daysBefore: number, title: string, body: string, type: string,
+  daysBefore: number, time: string, title: string, body: string, type: string,
 ) {
   return db.transaction(async (tx) => {
     // Serialize overlapping cron runs for the same reminder, including NULL IDs.
-    const key = JSON.stringify([userId, examId, assignmentId, daysBefore]);
+    const key = JSON.stringify([userId, examId, assignmentId, daysBefore, time]);
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`);
     const condition = and(
       eq(sentNotifications.userId, userId), eq(sentNotifications.daysBefore, daysBefore),
+      eq(sentNotifications.time, time),
       examId === null ? isNull(sentNotifications.examId) : eq(sentNotifications.examId, examId),
       assignmentId === null ? isNull(sentNotifications.assignmentId) : eq(sentNotifications.assignmentId, assignmentId),
     );
@@ -867,7 +874,7 @@ export async function queueReminder(
       id: generateId(), subscriptionId: sub.id, userId,
       payload: JSON.stringify({ title, body, tag: key, icon: "/android-chrome-192x192.png" }),
     })));
-    await tx.insert(sentNotifications).values({ id: generateId(), userId, examId, assignmentId, daysBefore });
+    await tx.insert(sentNotifications).values({ id: generateId(), userId, examId, assignmentId, daysBefore, time });
     return true;
   });
 }
