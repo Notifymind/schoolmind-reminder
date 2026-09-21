@@ -36,7 +36,7 @@ export function MarketingMobileMenu() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" className="h-11 px-3 md:hidden standalone:hidden">
+        <Button variant="ghost" className="h-11 px-3 md:hidden">
           <Menu className="size-5" aria-hidden="true" />
           Menu
         </Button>

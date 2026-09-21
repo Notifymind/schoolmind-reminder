@@ -5,6 +5,13 @@
 @custom-variant dark (&:is(.dark *));
 @custom-variant standalone (@media (display-mode: standalone));
 
+@media (display-mode: standalone) {
+  html,
+  body {
+    overscroll-behavior-x: none;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
