@@ -12,7 +12,6 @@ export default async function ReferralsPage() {
   return (
     <div className="mx-auto w-full max-w-xl py-4 sm:py-10">
       <header className="space-y-3">
-        <p className="text-sm font-medium text-muted-foreground">Referrals</p>
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Invite a friend.</h1>
         <p className="max-w-md text-base leading-relaxed text-muted-foreground">
           Get 10% back when they add to their balance, up to 5 KM per friend.
@@ -45,7 +44,7 @@ export default async function ReferralsPage() {
             )}
           </section>
 
-          <details className="group border-b pb-4">
+          <details>
             <summary className="min-h-11 cursor-pointer content-center rounded-sm text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring">
               How referrals work
             </summary>
