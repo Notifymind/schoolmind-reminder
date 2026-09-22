@@ -9,7 +9,6 @@ import { ProPriceCarousel } from "@/components/pro-price-carousel";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -121,13 +120,8 @@ function SubscriptionContent() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Gift className="size-5" />
-            Redeem Code
+            Balance: {subscriptionStatus ? `${subscriptionStatus.balance} KM` : "Loading..."}
           </CardTitle>
-          <CardDescription>
-            Enter a gift card code to add money to your balance.
-            <br />
-            Buy gift cards from your class seller. Redeeming a card does not start a subscription.
-          </CardDescription>
         </CardHeader>
         <form onSubmit={handleRedeemCode}>
           <CardContent>
@@ -148,16 +142,13 @@ function SubscriptionContent() {
           if (!isUpdating) setSubscribeOpen(open);
         }}>
           <CardContent className="space-y-4 border-t pt-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <CardTitle>Balance: {subscriptionStatus ? `${subscriptionStatus.balance} KM` : "Loading..."}</CardTitle>
-              {!subscriptionStatus?.autoRenew && (
-                <DialogTrigger asChild>
-                  <Button className="shrink-0" disabled={!subscriptionStatus || !plans.length || isUpdating || isRedeeming}>
-                    Subscribe
-                  </Button>
-                </DialogTrigger>
-              )}
-            </div>
+            {!subscriptionStatus?.autoRenew && (
+              <DialogTrigger asChild>
+                <Button className="w-full" disabled={!subscriptionStatus || !plans.length || isUpdating || isRedeeming}>
+                  Subscribe
+                </Button>
+              </DialogTrigger>
+            )}
             {subscriptionStatus?.autoRenew && (
               <div className="space-y-4">
                 <p>Automatic renewal is on{renewalPlan ? `: ${renewalPlan.price} KM every ${renewalPlan.duration} ${renewalPlan.unit}` : ""}.</p>
