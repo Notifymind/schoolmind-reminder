@@ -37,11 +37,6 @@ export default async function ReferralsPage() {
                 </dd>
               </div>
             </dl>
-            {referral.referred === 0 && (
-              <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
-                Your first referral will appear here when a friend signs up or signs in through your link.
-              </p>
-            )}
           </section>
 
           <details>
