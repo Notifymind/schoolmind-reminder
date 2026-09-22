@@ -163,7 +163,7 @@ function PresetCard({
     e.preventDefault();
     if (isAddingTime) return;
     const days = Number(daysBefore);
-    if (daysBefore === "" || !Number.isInteger(days) || days < 0 || days > 30) return;
+    if (daysBefore === "" || !Number.isInteger(days) || days < 0 || days > 14) return;
     if (addTimeStep === "day") {
       setAddTimeStep("time");
       addTimeTitleRef.current?.focus();

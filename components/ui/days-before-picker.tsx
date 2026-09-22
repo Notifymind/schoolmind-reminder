@@ -15,7 +15,7 @@ export function DaysBeforePicker({
   const days = value === "" ? null : Number(value);
 
   function step(amount: number) {
-    onChange(String(Math.max(0, Math.min(30, (days ?? 0) + amount))));
+    onChange(String(Math.max(0, Math.min(14, (days ?? 0) + amount))));
   }
 
   return (
@@ -38,7 +38,7 @@ export function DaysBeforePicker({
             inputMode="numeric"
             required
             min={0}
-            max={30}
+            max={14}
             step={1}
             value={value}
             aria-label="Number of days before"
@@ -53,7 +53,7 @@ export function DaysBeforePicker({
           size="icon"
           className="size-10 rounded-full"
           aria-label="Increase days before"
-          disabled={disabled || (days !== null && days >= 30)}
+          disabled={disabled || (days !== null && days >= 14)}
           onClick={() => step(1)}
         >
           <Plus className="size-4" />

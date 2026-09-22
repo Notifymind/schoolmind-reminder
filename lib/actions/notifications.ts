@@ -203,6 +203,10 @@ export async function addNotificationTimeAction(
   daysBefore: number,
   time: string,
 ) {
+  if (!Number.isInteger(daysBefore) || daysBefore < 0 || daysBefore > 14) {
+    return { error: "Notification times must be between 0 and 14 days in advance" };
+  }
+
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
   });
