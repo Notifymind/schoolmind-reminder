@@ -484,6 +484,8 @@ export async function getPendingNotificationsForCron() {
 
   for (const pref of allPrefs) {
     if (pref.disabled || !pref.presetId) continue;
+    const userClass = await getUserClass(pref.userId);
+    if (!userClass) continue;
 
     const preset = await db
       .select()
@@ -496,7 +498,7 @@ export async function getPendingNotificationsForCron() {
 
     if (pref.examId) {
       const exam = await db.select().from(exams).where(eq(exams.id, pref.examId));
-      if (exam.length === 0 || !exam[0].dueDate) continue;
+      if (exam.length === 0 || !exam[0].dueDate || exam[0].className !== userClass) continue;
 
       for (const time of times) {
         if (isNotificationDue(exam[0].dueDate, time.daysBefore, time.time, now)) {
@@ -529,7 +531,7 @@ export async function getPendingNotificationsForCron() {
 
     if (pref.assignmentId) {
       const assignment = await db.select().from(assignments).where(eq(assignments.id, pref.assignmentId));
-      if (assignment.length === 0 || !assignment[0].dueDate) continue;
+      if (assignment.length === 0 || !assignment[0].dueDate || assignment[0].className !== userClass) continue;
 
       for (const time of times) {
         if (isNotificationDue(assignment[0].dueDate, time.daysBefore, time.time, now)) {
@@ -613,7 +615,25 @@ export async function getCodesBySeller(sellerId: string) {
 }
 
 export async function setUserClass(userId: string, className: string) {
-  await db.update(user).set({ class: className }).where(eq(user.id, userId));
+  await db.transaction(async (tx) => {
+    // Share this lock with queueReminder so an old cron snapshot cannot undo cleanup.
+    const [account] = await tx.select({ class: user.class }).from(user)
+      .where(eq(user.id, userId)).for("update");
+    if (!account || account.class === className) return;
+
+    await tx.update(user).set({ class: className }).where(eq(user.id, userId));
+    await tx.delete(notificationPreferences).where(and(
+      eq(notificationPreferences.userId, userId),
+      or(
+        and(isNotNull(notificationPreferences.examId), notInArray(notificationPreferences.examId,
+          tx.select({ id: exams.id }).from(exams).where(eq(exams.className, className)))),
+        and(isNotNull(notificationPreferences.assignmentId), notInArray(notificationPreferences.assignmentId,
+          tx.select({ id: assignments.id }).from(assignments).where(eq(assignments.className, className)))),
+      ),
+    ));
+    // Pending deliveries belong to reminders queued before the class change.
+    await tx.delete(pushDeliveries).where(eq(pushDeliveries.userId, userId));
+  });
 }
 
 export async function getExpiredSubscriptions() {
@@ -862,6 +882,18 @@ export async function queueReminder(
   daysBefore: number, time: string, title: string, body: string, type: string,
 ) {
   return db.transaction(async (tx) => {
+    const [account] = await tx.select({ class: user.class }).from(user)
+      .where(eq(user.id, userId)).for("update");
+    if (!account?.class) return false;
+    if (examId !== null) {
+      const [exam] = await tx.select({ className: exams.className }).from(exams).where(eq(exams.id, examId));
+      if (exam?.className !== account.class) return false;
+    }
+    if (assignmentId !== null) {
+      const [assignment] = await tx.select({ className: assignments.className }).from(assignments)
+        .where(eq(assignments.id, assignmentId));
+      if (assignment?.className !== account.class) return false;
+    }
     // Serialize overlapping cron runs for the same reminder, including NULL IDs.
     const key = JSON.stringify([userId, examId, assignmentId, daysBefore, time]);
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`);

@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SchoolEventCard } from "@/components/school-event-card";
 import { Button } from "@/components/ui/button";
-import { Calendar, BookOpen, Bell, BellOff } from "lucide-react";
+import { Calendar, BookOpen, Bell, BellOff, ChevronRight } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { ProAdCard } from "@/components/pro-ad-card";
 import {
@@ -410,9 +410,15 @@ export function HomeClient({
   return (
     <div className="grid gap-6 md:grid-cols-2 w-full max-w-4xl mx-auto">
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <Calendar className="size-5" />
-          Upcoming Exams
+        <h2 className="text-lg font-semibold">
+          <Link
+            href="/app/exams"
+            className="inline-flex items-center gap-2 rounded-sm hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+          >
+            <Calendar className="size-5" aria-hidden="true" />
+            Upcoming Exams
+            <ChevronRight className="size-5" aria-hidden="true" />
+          </Link>
         </h2>
         {exams.length === 0 ? (
           <Card>
@@ -442,9 +448,15 @@ export function HomeClient({
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <BookOpen className="size-5" />
-          Upcoming Assignments
+        <h2 className="text-lg font-semibold">
+          <Link
+            href="/app/assignments"
+            className="inline-flex items-center gap-2 rounded-sm hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+          >
+            <BookOpen className="size-5" aria-hidden="true" />
+            Upcoming Assignments
+            <ChevronRight className="size-5" aria-hidden="true" />
+          </Link>
         </h2>
         {hasAssignmentsPermission === null ? (
           <Card>

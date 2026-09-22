@@ -17,7 +17,7 @@ function load(file, dependencies, DateClass = Date) {
 }
 
 async function pending(path, now, dueDate, time = '18:00', daysBefore = 1) {
-  const item = { id: 1, dueDate: new Date(dueDate) };
+  const item = { id: 1, className: '1A', dueDate: new Date(dueDate) };
   const preset = { id: 'preset', userId: 'student' };
   const explicit = path.startsWith('explicit');
   const exam = path.endsWith('exam');
@@ -25,7 +25,7 @@ async function pending(path, now, dueDate, time = '18:00', daysBefore = 1) {
   const times = [{ daysBefore, time }];
   const activeRows = [[preset], [{ class: '1A' }], times, [item], []];
   const rows = explicit
-    ? [[pref], [], [], [preset], times, [item], []]
+    ? [[pref], [], [], [{ class: '1A' }], [preset], times, [item], []]
     : exam ? [[], ...activeRows, []] : [[], [], ...activeRows];
   const db = { select: () => ({ from: () => {
     const result = rows.shift();
