@@ -92,8 +92,14 @@ export async function getNotificationPresetById(presetId: string, userId: string
   return result[0] ?? null;
 }
 
-export async function createNotificationPreset(userId: string, name: string) {
-  const result = await db.insert(notificationPresets).values({ id: generateId(), userId, name }).returning();
+export async function createNotificationPreset(userId: string, name: string, id = generateId(), makeDefault = false) {
+  const now = new Date();
+  const result = await db.insert(notificationPresets).values({
+    id, userId, name,
+    isActiveForExams: makeDefault, isActiveForAssignments: makeDefault,
+    activatedForExamsAt: makeDefault ? now : null,
+    activatedForAssignmentsAt: makeDefault ? now : null,
+  }).onConflictDoNothing().returning();
   return result[0];
 }
 
@@ -136,8 +142,8 @@ export async function getNotificationTimes(presetId: string) {
   return db.select().from(notificationTimes).where(eq(notificationTimes.presetId, presetId));
 }
 
-export async function createNotificationTime(presetId: string, daysBefore: number, time: string) {
-  const result = await db.insert(notificationTimes).values({ id: generateId(), presetId, daysBefore, time }).returning();
+export async function createNotificationTime(presetId: string, daysBefore: number, time: string, id = generateId()) {
+  const result = await db.insert(notificationTimes).values({ id, presetId, daysBefore, time }).onConflictDoNothing().returning();
   return result[0];
 }
 

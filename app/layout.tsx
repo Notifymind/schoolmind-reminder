@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { StandaloneNavigationGuard } from "@/components/standalone-navigation-guard";
+import { OfflineManager } from "@/components/offline-manager";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -38,6 +39,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ServiceWorkerRegistration />
+          <OfflineManager />
           <StandaloneNavigationGuard />
           {children}
           <Toaster />

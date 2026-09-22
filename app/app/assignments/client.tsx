@@ -3,6 +3,8 @@
 import { ClassSelectionCard } from "@/components/class-selection-card";
 
 import * as React from "react";
+import { toast } from "sonner";
+import { useOfflineState, getOfflineState } from "@/lib/offline/store";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { usePageTitle } from "@/app/app/layout";
 import { ProAdCard } from "@/components/pro-ad-card";
@@ -26,7 +28,7 @@ import {
   getPresetsAction,
   getAssignmentPresetsAction,
   disableNotificationsForAssignmentAction,
-} from "@/lib/actions/notifications";
+} from "@/lib/offline/notifications";
 
 type Assignment = {
   id: number;
@@ -116,13 +118,15 @@ function AssignmentCard({
 
   const handleSelectPreset = async (value: string) => {
     setIsLoading(true);
-    if (value === "disabled") {
-      await disableNotificationsForAssignmentAction(assignment.id);
-    } else {
-      await applyPresetToAssignmentAction(assignment.id, value);
+    try {
+      const result = value === "disabled"
+        ? await disableNotificationsForAssignmentAction(assignment.id)
+        : await applyPresetToAssignmentAction(assignment.id, value);
+      if ("error" in result) toast.error(result.error);
+      else onPresetChange();
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-    onPresetChange();
   };
 
   const activePreset = presets.find((p) => p.isActiveForAssignments);
@@ -187,7 +191,7 @@ function AssignmentCard({
                 </>
               ) : null}
               <DropdownMenuItem
-                onClick={() => router.push("/app/notifications")}
+                onClick={() => getOfflineState().offline ? window.location.assign("/app/notifications") : router.push("/app/notifications")}
               >
                 Create Preset
               </DropdownMenuItem>
@@ -230,10 +234,14 @@ export function AssignmentsClient({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [presets, setPresets] = React.useState<Preset[]>(initialPresets);
-  const [assignmentPresets, setAssignmentPresets] = React.useState<
+  const [loadedPresets, setPresets] = React.useState<Preset[]>(initialPresets);
+  const [loadedAssignmentPresets, setAssignmentPresets] = React.useState<
     AssignmentPreset[]
   >(initialAssignmentPresets);
+
+  const offline = useOfflineState();
+  const presets = offline.snapshot?.presets ?? loadedPresets;
+  const assignmentPresets = offline.snapshot ? offline.snapshot.assignmentPreferences.map(p => ({ assignmentId: p.itemId, disabled: p.disabled, preset: presets.find(preset => preset.id === p.presetId) ?? null })) : loadedAssignmentPresets;
 
   const refreshData = async () => {
     const [presetsResult, assignmentPresetsResult] = await Promise.all([
@@ -258,7 +266,9 @@ export function AssignmentsClient({
   const handlePageChange = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", String(page));
-    router.push(`${pathname}?${params.toString()}`);
+    if (getOfflineState().offline || pathname === "/offline") {
+      window.location.assign(`${window.location.pathname}?${params.toString()}`);
+    } else router.push(`${pathname}?${params.toString()}`);
   };
 
   if (isLoggedIn && !hasClass) {

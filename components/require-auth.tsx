@@ -1,12 +1,14 @@
 "use client"
 
+import { useOfflineState } from "@/lib/offline/store";
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { authClient } from "@/lib/auth-client"
+import { useAppSession } from "@/lib/offline/session";
 
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { data: session, isPending } = authClient.useSession()
+  const offline = useOfflineState()
+  const { data: session, isPending } = useAppSession()
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -14,7 +16,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     }
   }, [isPending, session, router])
 
-  if (isPending || !session) {
+  if (isPending || !session || (offline.snapshot && offline.snapshot.user.id !== session.user.id)) {
     return null
   }
 

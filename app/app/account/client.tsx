@@ -1,5 +1,6 @@
 "use client";
 
+import { clearOfflineData } from "@/lib/offline/store";
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { usePageTitle } from "@/app/app/layout";
@@ -320,6 +321,7 @@ export function AccountClient({ children, deletionBlockedByDebt }: {
                     onClick={async () => {
                       if (deletionBlockedByDebt) return;
                       const result = await authClient.deleteUser();
+                      if (!result.error) await clearOfflineData();
                       if (result.error) {
                         toast.error(result.error.message || "Failed to delete account");
                         return;

@@ -2,8 +2,9 @@
 
 import { enablePush, disablePush } from "@/lib/push-client";
 import * as React from "react";
+import { useOfflineState } from "@/lib/offline/store";
 import { usePageTitle } from "@/app/app/layout";
-import { authClient } from "@/lib/auth-client";
+import { useAppSession } from "@/lib/offline/session";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,7 +72,7 @@ import {
   removeNotificationTimeAction,
   updatePresetAction,
   getLimitsAction,
-} from "@/lib/actions/notifications";
+} from "@/lib/offline/notifications";
 import { usePushNotificationStore } from "@/lib/stores/push-notifications";
 
 
@@ -192,7 +193,7 @@ function PresetCard({
   const confirmDelete = async () => {
     setIsDeleting(true);
     setShowDeleteConfirm(false);
-    await onDelete();
+    try { await onDelete(); } finally { setIsDeleting(false); }
   };
 
   const handleOpenDefaultDialog = () => {
@@ -547,6 +548,7 @@ function PushNotificationManager() {
   const [isSupported, setIsSupported] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const isMobile = useIsMobile();
+  const { offline } = useOfflineState();
   const { canInstall, isInstalling, installApp, isIos, isAndroid } = usePwaInstall();
   const { isSubscribed } = usePushNotificationStore();
 
@@ -628,13 +630,13 @@ function PushNotificationManager() {
                   variant="outline"
                   size="sm"
                   onClick={unsubscribeFromPush}
-                  disabled={isLoading}
+                  disabled={isLoading || offline}
                 >
                   Disable
                 </Button>
               </div>
             ) : (
-              <Button onClick={subscribeToPush} disabled={isLoading}>
+              <Button onClick={subscribeToPush} disabled={isLoading || offline}>
                 {isLoading ? "Enabling..." : "Enable Notifications"}
               </Button>
             )}
@@ -647,19 +649,23 @@ function PushNotificationManager() {
 
 export default function NotificationsPage() {
   usePageTitle("Notification Settings");
-  const { data: session } = authClient.useSession();
-  const [presets, setPresets] = React.useState<Preset[]>([]);
-  const [limits, setLimits] = React.useState<Limits>({
+  const { data: session } = useAppSession();
+  const [loadedPresets, setPresets] = React.useState<Preset[]>([]);
+  const [loadedLimits, setLimits] = React.useState<Limits>({
     presets: 1,
     timesPerPreset: 2,
   });
   const [newPresetName, setNewPresetName] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [isInitialLoading, setIsInitialLoading] = React.useState(true);
-  const [hasAssignmentsPermission, setHasAssignmentsPermission] = React.useState<boolean | null>(null);
   const [activatingButton, setActivatingButton] = React.useState<ActivatingButton>(null);
 
   const role = session?.user?.role as "free" | "basic" | "pro" | "admin" | undefined;
+
+  const offline = useOfflineState();
+  const hasAssignmentsPermission = offline.snapshot?.hasAssignmentsPermission ?? null;
+  const presets = offline.snapshot?.presets ?? loadedPresets;
+  const limits = offline.snapshot?.limits ?? loadedLimits;
 
   async function loadPresets() {
     const [presetsResult, limitsResult] = await Promise.all([
@@ -674,19 +680,7 @@ export default function NotificationsPage() {
     loadPresets().finally(() => setIsInitialLoading(false));
   }, []);
 
-  React.useEffect(() => {
-    async function checkPermission() {
-      if (session) {
-        const result = await authClient.admin.hasPermission({
-          permission: { assignments: ["access"] },
-        });
-        setHasAssignmentsPermission(result.data?.success ?? false);
-      } else {
-        setHasAssignmentsPermission(false);
-      }
-    }
-    checkPermission();
-  }, [session]);
+
 
   async function handleCreatePreset(e: React.FormEvent) {
     e.preventDefault();
@@ -704,18 +698,21 @@ export default function NotificationsPage() {
   }
 
   async function handleDeletePreset(presetId: string): Promise<void> {
-     await deletePresetAction(presetId);
-     await loadPresets();
+     const result = await deletePresetAction(presetId);
+     if ("error" in result) toast.error(result.error);
+     else await loadPresets();
   }
 
   async function handleSetDefault(presetId: string, exams: boolean, assignments: boolean): Promise<void> {
     setActivatingButton({ presetId, type: exams ? "exams" : "assignments" });
     try {
       if (exams) {
-        await activatePresetForExamsAction(presetId);
+        const result = await activatePresetForExamsAction(presetId);
+        if ("error" in result) { toast.error(result.error); return; }
       }
       if (assignments) {
-        await activatePresetForAssignmentsAction(presetId);
+        const result = await activatePresetForAssignmentsAction(presetId);
+        if ("error" in result) { toast.error(result.error); return; }
       }
       await loadPresets();
     } finally {
@@ -755,8 +752,9 @@ export default function NotificationsPage() {
   }
 
   async function handleEditPreset(presetId: string, name: string): Promise<void> {
-     await updatePresetAction(presetId, name);
-     await loadPresets();
+     const result = await updatePresetAction(presetId, name);
+     if ("error" in result) toast.error(result.error);
+     else await loadPresets();
   }
  
   async function handleAddTime(
@@ -773,8 +771,9 @@ export default function NotificationsPage() {
   }
  
   async function handleRemoveTime(timeId: string): Promise<void> {
-     await removeNotificationTimeAction(timeId);
-     await loadPresets();
+     const result = await removeNotificationTimeAction(timeId);
+     if ("error" in result) toast.error(result.error);
+     else await loadPresets();
   }
 
   const canAddPreset = presets.length < limits.presets;
