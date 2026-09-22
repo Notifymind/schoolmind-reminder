@@ -15,7 +15,7 @@ export function PushSubscriptionSync() {
       return;
     }
     const sync = () => {
-      if (document.visibilityState === "visible") {
+      if (navigator.onLine && document.visibilityState === "visible") {
         void syncPushSubscription().catch(() => {
           usePushNotificationStore.getState().setSubscribed(false);
         });

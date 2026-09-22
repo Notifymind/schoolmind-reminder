@@ -1,31 +1,58 @@
-const CACHE_NAME = "notifymind-v1";
+const CACHE_NAME = "notifymind-shell-v2";
 
-self.addEventListener("install", () => {
-  self.skipWaiting();
+async function cacheShell() {
+  const cache = await caches.open(CACHE_NAME);
+  const response = await fetch("/offline", { cache: "reload" });
+  if (!response.ok) throw new Error("Could not download offline app");
+  const html = await response.clone().text();
+  const assets = [...new Set(html.match(/\/_next\/static\/[^\s"'<>\\]+\.(?:js|css|woff2?)/g) || [])];
+  await Promise.all(assets.map(async (asset) => {
+    const result = await fetch(asset, { cache: "reload" });
+    if (!result.ok) throw new Error("Could not download " + asset);
+    await cache.put(asset, result.clone());
+    if (asset.endsWith(".css")) {
+      const css = await result.text();
+      const fonts = [...css.matchAll(/url\(["']?([^\)"']+)["']?\)/g)];
+      await Promise.all(fonts.map(async ([, path]) => {
+        const url = new URL(path, new URL(asset, self.location.origin));
+        if (url.origin === self.location.origin) await cache.add(url.href);
+      }));
+    }
+  }));
+  // Publish the shell only once its scripts, styles, and fonts are available.
+  await cache.put("/offline", response);
+}
+self.addEventListener("install", (event) => {
+  event.waitUntil(cacheShell().then(() => self.skipWaiting()));
 });
-
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "CACHE_SHELL") event.waitUntil(cacheShell());
+});
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith("notifymind-") && key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim()));
 });
-
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
-    })
-  );
+  const url = new URL(event.request.url);
+  if (event.request.method !== "GET" || url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/_next/static/")) {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const cached = await cache.match(event.request);
+      if (cached) return cached;
+      const response = await fetch(event.request);
+      if (response.ok) await cache.put(event.request, response.clone());
+      return response;
+    })());
+  } else if (event.request.mode === "navigate" && (url.pathname === "/app" || url.pathname.startsWith("/app/") || url.pathname === "/offline")) {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(event.request);
+        if (response.status < 500) return response;
+      } catch { /* Render the local app when the network is unavailable. */ }
+      return (await caches.match("/offline")) || new Response("Connect once to download the offline app.", { status: 503, headers: { "Content-Type": "text/plain" } });
+    })());
+  }
+  // Auth responses, private HTML, RSC payloads, and server actions are never cached.
 });
 
 self.addEventListener("push", function (event) {

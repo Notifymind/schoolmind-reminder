@@ -45,13 +45,20 @@ function getLimits(role: UserRole) {
   return PRESET_LIMITS[role] ?? PRESET_LIMITS.free;
 }
 
-export async function createPresetAction(name: string) {
+export async function createPresetAction(name: string, clientId?: string) {
   const session = await auth.api.getSession({
     headers: await import("next/headers").then((m) => m.headers()),
   });
 
   if (!session?.user?.id) {
     return { error: "Not authenticated" };
+  }
+
+  if (typeof name !== "string" || !name.trim() || name.length > 200) return { error: "Enter a preset name of at most 200 characters" };
+  if (clientId && !/^[0-9a-f-]{36}$/i.test(clientId)) return { error: "Invalid preset ID" };
+  if (clientId) {
+    const existing = await getNotificationPresetById(clientId, session.user.id);
+    if (existing) return { preset: existing };
   }
 
   const role = session.user.role as UserRole;
@@ -64,13 +71,8 @@ export async function createPresetAction(name: string) {
     };
   }
 
-  const preset = await createNotificationPreset(session.user.id, name);
-
-  const isFirstPreset = currentCount === 0;
-  if (isFirstPreset) {
-    await setActivePresetForExams(session.user.id, preset.id);
-    await setActivePresetForAssignments(session.user.id, preset.id);
-  }
+  const preset = await createNotificationPreset(session.user.id, name, clientId, currentCount === 0);
+  if (!preset) return { error: "Preset ID already exists" };
 
   return { preset };
 }
@@ -202,6 +204,7 @@ export async function addNotificationTimeAction(
   presetId: string,
   daysBefore: number,
   time: string,
+  clientId?: string,
 ) {
   if (!Number.isInteger(daysBefore) || daysBefore < 0 || daysBefore > 14) {
     return { error: "Notification times must be between 0 and 14 days in advance" };
@@ -220,6 +223,13 @@ export async function addNotificationTimeAction(
     return { error: "Preset not found" };
   }
 
+  if (typeof time !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return { error: "Invalid notification time" };
+  if (clientId && !/^[0-9a-f-]{36}$/i.test(clientId)) return { error: "Invalid time ID" };
+  if (clientId) {
+    const existing = (await getNotificationTimes(presetId)).find(t => t.id === clientId);
+    if (existing) return { notificationTime: existing };
+  }
+
   const role = session.user.role as UserRole;
   const limits = getLimits(role);
   const currentCount = await countPresetNotificationTimes(presetId);
@@ -234,7 +244,9 @@ export async function addNotificationTimeAction(
     presetId,
     daysBefore,
     time,
+    clientId,
   );
+  if (!notificationTime) return { error: "Notification time ID already exists" };
   return { notificationTime };
 }
 
@@ -247,10 +259,7 @@ export async function removeNotificationTimeAction(timeId: string) {
     return { error: "Not authenticated" };
   }
 
-  const deleted = await deleteNotificationTime(timeId, session.user.id);
-  if (!deleted) {
-    return { error: "Notification time not found" };
-  }
+  await deleteNotificationTime(timeId, session.user.id);
 
   return { success: true };
 }

@@ -35,8 +35,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { clearOfflineData } from "@/lib/offline/store";
+import { useAppSession } from "@/lib/offline/session";
 import { authClient } from "@/lib/auth-client"
-import { getUserNotificationsAction, getUnreadNotificationCountAction, markAllNotificationsReadAction } from "@/lib/actions/notifications"
+import { getUserNotificationsAction, getUnreadNotificationCountAction, markAllNotificationsReadAction } from "@/lib/offline/notifications"
 import { Separator } from "@/components/ui/separator"
 
 type UserNotification = {
@@ -63,9 +65,10 @@ function NotificationDropdown() {
     if (open) {
       getUserNotificationsAction().then((result) => {
         setNotifications(result.notifications as UserNotification[])
-        markAllNotificationsReadAction().then(() => {
+        markAllNotificationsReadAction().then((result) => {
+          if ("error" in result) return;
           setUnreadCount(0)
-        })
+        }).catch(() => {})
       })
     }
   }, [open])
@@ -186,7 +189,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
-  const { data: session } = authClient.useSession()
+  const { data: session } = useAppSession()
 
   const userRole = session?.user?.role as "admin" | "seller" | undefined
   const canAccessSellerPlatform = userRole
@@ -410,6 +413,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     await disablePush(async () => {
                       const result = await authClient.signOut();
                       if (result.error) throw new Error(result.error.message);
+                      await clearOfflineData();
                     });
                   } catch {
                     toast.error("Could not safely log out. Please retry while online.");

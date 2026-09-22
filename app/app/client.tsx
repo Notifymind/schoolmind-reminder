@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
+import { toast } from "sonner";
+import { useOfflineState } from "@/lib/offline/store";
 import Link from "next/link";
 import { ClassSelectionCard } from "@/components/class-selection-card";
 import { usePageTitle } from "@/app/app/layout";
-import { authClient } from "@/lib/auth-client";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -29,7 +30,7 @@ import {
   getAssignmentPresetsAction,
   disableNotificationsForExamAction,
   disableNotificationsForAssignmentAction,
-} from "@/lib/actions/notifications";
+} from "@/lib/offline/notifications";
 
 type Exam = {
   id: number;
@@ -134,13 +135,15 @@ function ExamCard({
 
   const handleSelectPreset = async (value: string) => {
     setIsLoading(true);
-    if (value === "disabled") {
-      await disableNotificationsForExamAction(exam.id);
-    } else {
-      await applyPresetToExamAction(exam.id, value);
+    try {
+      const result = value === "disabled"
+        ? await disableNotificationsForExamAction(exam.id)
+        : await applyPresetToExamAction(exam.id, value);
+      if ("error" in result) toast.error(result.error);
+      else onPresetChange();
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-    onPresetChange();
   };
 
   const activePreset = presets.find((p) => p.isActiveForExams);
@@ -235,13 +238,15 @@ function AssignmentCard({
 
   const handleSelectPreset = async (value: string) => {
     setIsLoading(true);
-    if (value === "disabled") {
-      await disableNotificationsForAssignmentAction(assignment.id);
-    } else {
-      await applyPresetToAssignmentAction(assignment.id, value);
+    try {
+      const result = value === "disabled"
+        ? await disableNotificationsForAssignmentAction(assignment.id)
+        : await applyPresetToAssignmentAction(assignment.id, value);
+      if ("error" in result) toast.error(result.error);
+      else onPresetChange();
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-    onPresetChange();
   };
 
   const activePreset = presets.find((p) => p.isActiveForAssignments);
@@ -339,29 +344,20 @@ export function HomeClient({
 }) {
   usePageTitle("Home");
 
-  const { data: session } = authClient.useSession();
-  const [hasAssignmentsPermission, setHasAssignmentsPermission] =
-    React.useState<boolean | null>(null);
-  const [presets, setPresets] = React.useState<Preset[]>(initialPresets);
-  const [examPresets, setExamPresets] =
+  const [loadedPresets, setPresets] = React.useState<Preset[]>(initialPresets);
+  const [loadedExamPresets, setExamPresets] =
     React.useState<ExamPreset[]>(initialExamPresets);
-  const [assignmentPresets, setAssignmentPresets] = React.useState<
+  const [loadedAssignmentPresets, setAssignmentPresets] = React.useState<
     AssignmentPreset[]
   >(initialAssignmentPresets);
 
-  React.useEffect(() => {
-    async function checkPermission() {
-      if (session) {
-        const result = await authClient.admin.hasPermission({
-          permission: { assignments: ["access"] },
-        });
-        setHasAssignmentsPermission(result.data?.success ?? false);
-      } else {
-        setHasAssignmentsPermission(false);
-      }
-    }
-    checkPermission();
-  }, [session]);
+
+
+  const offline = useOfflineState();
+  const hasAssignmentsPermission = offline.snapshot?.hasAssignmentsPermission ?? null;
+  const presets = offline.snapshot?.presets ?? loadedPresets;
+  const examPresets = offline.snapshot ? offline.snapshot.examPreferences.map(p => ({ examId: p.itemId, disabled: p.disabled, preset: presets.find(preset => preset.id === p.presetId) ?? null })) : loadedExamPresets;
+  const assignmentPresets = offline.snapshot ? offline.snapshot.assignmentPreferences.map(p => ({ assignmentId: p.itemId, disabled: p.disabled, preset: presets.find(preset => preset.id === p.presetId) ?? null })) : loadedAssignmentPresets;
 
   const refreshData = async () => {
     const [presetsResult, examPresetsResult, assignmentPresetsResult] =

@@ -169,3 +169,49 @@ automatically. Existing sessions stay valid. Registration email verification is
 still required before the first password login.
 
 Run authentication regression tests with `node --test tests/email-verification.test.mjs`.
+
+## Offline use
+
+After an online visit while signed in, NotifyMind saves the dashboard, all exam
+and assignment data, notification history, presets, and plan limits on the device.
+The service worker downloads a public `/offline` shell with its scripts, styles,
+and fonts. It does not cache authenticated HTML, auth responses, or server-action
+responses. No schema migration is needed for offline support.
+
+The dashboard, upcoming/all exam and assignment screens, pagination, and
+notification settings work offline. Users can create and rename presets, add or
+remove reminder times, choose defaults, and change or disable an item's preset.
+The top banner explains that notifications are unavailable offline and changes
+apply after reconnecting. Push registration, account changes, billing, and admin
+operations still need a connection.
+
+IndexedDB stores the last server snapshot and an ordered edit queue. An edit is
+shown as saved only after its local transaction commits. Sync runs when the app
+opens, reconnects, gains focus, and periodically while visible. It also resumes
+when the app is reopened; background delivery with the app closed is not required.
+The server authenticates each change and checks ownership and applicable limits.
+Pending edits apply in order over the latest server data, so a queued edit to a
+setting takes precedence when it is accepted. Rejected changes remain queued,
+with retry and explicit discard controls. Client-generated preset/time IDs make
+create retries safe after a lost response. Web Locks serialize editing and sync
+across tabs, and BroadcastChannel updates their local views.
+
+Offline identity only allows viewing the local copy; it cannot authorize server
+requests. Signing out or deleting the account clears that copy and its pending
+changes. Switching accounts replaces the local copy without replaying the former
+account's queue. Clearing browser site data also removes offline data. An initial
+online download is required on each device.
+
+Validation:
+
+```sh
+bun run test:offline
+# Build first, then exercise the cached production app with a stopped test server:
+bun run build
+bunx playwright install chromium
+bun run test:offline:browser
+```
+
+The browser test uses synthetic data and port 3179. It covers unvisited pages,
+reminder creation, assignment/exam preset changes, offline reloads, pagination,
+and mobile navigation. It never connects to the application's real database.

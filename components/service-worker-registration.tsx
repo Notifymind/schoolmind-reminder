@@ -11,7 +11,7 @@ export function ServiceWorkerRegistration() {
           updateViaCache: "none",
         })
         .then((registration) => {
-          console.log("SW registered:", registration.scope);
+          if (navigator.onLine) registration.active?.postMessage({ type: "CACHE_SHELL" });
         })
         .catch((error) => {
           console.error("SW registration failed:", error);

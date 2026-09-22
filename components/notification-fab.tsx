@@ -11,7 +11,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
-import { getUserNotificationsAction, getUnreadNotificationCountAction, markAllNotificationsReadAction } from "@/lib/actions/notifications"
+import { getUserNotificationsAction, getUnreadNotificationCountAction, markAllNotificationsReadAction } from "@/lib/offline/notifications"
 
 type UserNotification = {
   id: string
@@ -37,9 +37,10 @@ export function NotificationFab() {
     if (open) {
       getUserNotificationsAction().then((result) => {
         setNotifications(result.notifications as UserNotification[])
-        markAllNotificationsReadAction().then(() => {
+        markAllNotificationsReadAction().then((result) => {
+          if ("error" in result) return;
           setUnreadCount(0)
-        })
+        }).catch(() => {})
       })
     }
   }, [open])
