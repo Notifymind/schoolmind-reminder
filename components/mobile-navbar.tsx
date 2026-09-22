@@ -29,7 +29,7 @@ export function MobileNavbar() {
   const { toggleSidebar } = useSidebar()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-[calc(0.75rem+env(safe-area-inset-left))] right-[calc(0.75rem+env(safe-area-inset-right))] z-50 rounded-2xl border bg-background/95 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
@@ -39,7 +39,7 @@ export function MobileNavbar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[60px]",
+                "flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-2 rounded-lg transition-colors",
                 isActive
                   ? "text-primary bg-primary/10"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent"
@@ -52,7 +52,7 @@ export function MobileNavbar() {
         })}
         <button
           onClick={toggleSidebar}
-          className="flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors text-muted-foreground hover:text-foreground hover:bg-accent min-w-[60px]"
+          className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-2 rounded-lg transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
         >
           <Menu className="h-5 w-5" />
           <span className="text-xs font-medium">Menu</span>

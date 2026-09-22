@@ -51,7 +51,7 @@ export function NotificationFab() {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <button
-          className="md:hidden fixed bottom-20 right-4 z-40 flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border bg-background/60 backdrop-blur shadow-lg transition-transform active:scale-95 text-muted-foreground hover:text-foreground hover:bg-accent"
+          className="md:hidden fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-4 z-40 flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border bg-background/60 backdrop-blur shadow-lg transition-transform active:scale-95 text-muted-foreground hover:text-foreground hover:bg-accent"
           aria-label="Open notifications"
         >
           <div className="relative">
