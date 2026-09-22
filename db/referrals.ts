@@ -21,7 +21,10 @@ export async function linkReferral(userId: string, code: string) {
 
 export async function getReferralSummary(userId: string) {
   const [account] = await db.select({ code: user.referralCode }).from(user).where(eq(user.id, userId));
-  const [rewards] = await db.select({ total: sql<string>`coalesce(sum(${referralRewards.amount}), 0)` })
+  const [rewards] = await db.select({
+    total: sql<string>`coalesce(sum(${referralRewards.amount}), 0)`,
+    referred: sql<number>`count(distinct ${referrals.referredId})::integer`,
+  })
     .from(referrals).leftJoin(referralRewards, eq(referrals.referredId, referralRewards.referredId))
     .where(eq(referrals.referrerId, userId));
   if (!account) return null;
@@ -29,5 +32,5 @@ export async function getReferralSummary(userId: string) {
   if (!baseURL) throw new Error("BETTER_AUTH_URL is required to generate referral links");
   const link = new URL("/", baseURL);
   link.searchParams.set("referral", account.code);
-  return { link: link.toString(), earned: Number(rewards.total).toFixed(2) };
+  return { link: link.toString(), earned: Number(rewards.total).toFixed(2), referred: rewards.referred };
 }

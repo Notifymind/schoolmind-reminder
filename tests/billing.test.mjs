@@ -182,6 +182,7 @@ test('gift card billing against embedded PostgreSQL', async t => {
       assert.equal(referralApi.validReferralCode(invalid), false);
     }
     assert.equal((await referralApi.getReferralSummary('referrer')).link, `https://school.example.test/?referral=${refCode}`);
+    assert.equal((await referralApi.getReferralSummary('referrer')).referred, 0);
     assert.notEqual(refCode, (await account('friend1')).referralCode);
     await referralApi.linkReferral('referrer', refCode);
     await referralApi.linkReferral('seller', refCode);
@@ -190,6 +191,7 @@ test('gift card billing against embedded PostgreSQL', async t => {
     const oldCard = (await billing.createGiftCard('admin', 1)).code;
     await billing.redeemGiftCard(oldCard.code, 'friend1');
     for (const id of ['friend1', 'friend2', 'friend3', 'friend4', 'friend5']) await referralApi.linkReferral(id, refCode);
+    assert.equal((await referralApi.getReferralSummary('referrer')).referred, 5);
     await referralApi.linkReferral('friend1', (await account('seller')).referralCode);
     assert.equal((await db.select().from(schema.referrals).where(orm.eq(schema.referrals.referredId, 'friend1')))[0].referrerId, 'referrer');
     await assert.rejects(pg.exec("UPDATE referrals SET referrer_id = 'seller' WHERE referred_id = 'friend1'"));
@@ -228,6 +230,7 @@ test('gift card billing against embedded PostgreSQL', async t => {
     assert.equal(Number((await account('seller')).balance), Number(before) + 0.3);
     await db.delete(schema.user).where(orm.eq(schema.user.id, 'friend1'));
     assert.equal((await referralApi.getReferralSummary('referrer')).earned, '25.00');
+    assert.equal((await referralApi.getReferralSummary('referrer')).referred, 5);
   });
   await t.test('redemption stays spent after redeemer account deletion', async () => {
     await db.delete(schema.user).where(orm.eq(schema.user.id, 'buyer'));
