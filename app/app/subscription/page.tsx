@@ -151,8 +151,8 @@ function SubscriptionContent() {
             )}
             {subscriptionStatus?.autoRenew && (
               <div className="space-y-4">
+                <Button className="w-full" variant="destructive" disabled={isUpdating} onClick={() => updateSubscription()}>Cancel automatic renewal</Button>
                 <p>Automatic renewal is on{renewalPlan ? `: ${renewalPlan.price} KM every ${renewalPlan.duration} ${renewalPlan.unit}` : ""}.</p>
-                <Button variant="outline" disabled={isUpdating} onClick={() => updateSubscription()}>Cancel automatic renewal</Button>
               </div>
             )}
           </CardContent>
