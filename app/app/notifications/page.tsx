@@ -369,7 +369,7 @@ function PresetCard({
             <DialogContent aria-describedby={undefined} className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-sm">
               <DialogHeader>
                 <DialogTitle ref={addTimeTitleRef} tabIndex={-1} className="outline-none">
-                  {addTimeStep === "day" ? "How far ahead should the reminder arrive?" : "And at what time?"}
+                  {addTimeStep === "day" ? "How many days ahead should the reminder arrive?" : "And at what time?"}
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleAddTime}>
