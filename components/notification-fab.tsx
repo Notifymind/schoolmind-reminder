@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Bell } from "lucide-react"
+import { Inbox } from "lucide-react"
 
 import {
   Sheet,
@@ -51,11 +51,11 @@ export function NotificationFab() {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <button
-          className="md:hidden fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-4 z-40 flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border bg-background/60 backdrop-blur shadow-lg transition-transform active:scale-95 text-muted-foreground hover:text-foreground hover:bg-accent"
-          aria-label="Open notifications"
+          className="md:hidden fixed bottom-[calc(5.375rem+env(safe-area-inset-bottom))] right-[calc(0.75rem+env(safe-area-inset-right))] z-40 flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border bg-background/60 backdrop-blur shadow-lg transition-transform active:scale-95 text-muted-foreground hover:text-foreground hover:bg-accent"
+          aria-label="Open inbox"
         >
           <div className="relative">
-            <Bell className="h-5 w-5" />
+            <Inbox className="h-5 w-5" />
             {unreadCount > 0 && (
               <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
                 {unreadCount > 9 ? "9+" : unreadCount}
