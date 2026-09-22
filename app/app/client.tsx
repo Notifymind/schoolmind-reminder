@@ -419,9 +419,9 @@ export function HomeClient({
             href="/app/exams"
             className="inline-flex items-center gap-2 rounded-sm hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
           >
-            <ChevronRight className="size-5" aria-hidden="true" />
             <Calendar className="size-5" aria-hidden="true" />
             Upcoming Exams
+            <ChevronRight className="size-5" aria-hidden="true" />
           </Link>
         </h2>
         {exams.length === 0 ? (
@@ -457,9 +457,9 @@ export function HomeClient({
             href="/app/assignments"
             className="inline-flex items-center gap-2 rounded-sm hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
           >
-            <ChevronRight className="size-5" aria-hidden="true" />
             <BookOpen className="size-5" aria-hidden="true" />
             Upcoming Assignments
+            <ChevronRight className="size-5" aria-hidden="true" />
           </Link>
         </h2>
         {hasAssignmentsPermission === null ? (
