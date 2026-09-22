@@ -72,7 +72,7 @@ export default function AppLayout({
             {title && <h1 className="text-lg font-semibold">{title}</h1>}
           </header>
           <PageTitleContext.Provider value={{ title, setTitle: setOverrideTitle }}>
-            <div className="flex flex-1 flex-col gap-4 p-4 pb-20 md:pb-4">
+            <div className="flex flex-1 flex-col gap-4 p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-4">
               {children}
             </div>
           </PageTitleContext.Provider>
