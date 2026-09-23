@@ -776,15 +776,6 @@ export default function NotificationsPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl py-4 md:px-4 md:py-8">
-      <header className="mb-8 border-b pb-8">
-        <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-          <Bell className="size-6" />
-        </div>
-        <h1 className="text-3xl font-semibold tracking-tight">Notifications</h1>
-        <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-          Choose when to get a heads-up about exams and assignments.
-        </p>
-      </header>
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
         <section aria-labelledby="presets-heading" className="min-w-0 space-y-5">
           <div className="flex items-start justify-between gap-4">
