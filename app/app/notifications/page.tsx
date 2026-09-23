@@ -6,6 +6,7 @@ import { useOfflineState } from "@/lib/offline/store";
 import { usePageTitle } from "@/app/app/layout";
 import { useAppSession } from "@/lib/offline/session";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -237,182 +238,152 @@ function PresetCard({
     }
   };
 
+  const isActive = preset.isActiveForExams || preset.isActiveForAssignments;
+
   return (
-    <Card className={(preset.isActiveForExams || preset.isActiveForAssignments ? "border-primary " : "") + "gap-0"}>
-      <CardHeader>
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            {isEditing ? (
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Input
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="text-lg font-semibold"
-                />
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={handleSaveEdit} disabled={isSavingEdit} className="flex-1 sm:flex-none">
-                    {isSavingEdit ? <Spinner className="size-4" /> : "Save"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setIsEditing(false)}
-                    className="flex-1 sm:flex-none"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <CardTitle className="truncate">{preset.name}</CardTitle>
-            )}
-            <CardDescription className="mt-1">
-              {preset.times.length} notification time{preset.times.length !== 1 ? "s" : ""}
-            </CardDescription>
-          </div>
+    <Card className={cn("min-w-0 gap-0 overflow-hidden py-0", isActive && "border-primary")}>
+      {/* Header row — subject line + actions */}
+      <div className="flex items-start gap-3 p-4 sm:p-5">
+        <div className="min-w-0 flex-1">
+          {/* Status badges above the name */}
+          {isActive && (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
+              {preset.isActiveForExams && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                  <FileText className="size-3" aria-hidden="true" />
+                  Exams
+                </span>
+              )}
+              {preset.isActiveForAssignments && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                  <ClipboardList className="size-3" aria-hidden="true" />
+                  Assignments
+                </span>
+              )}
+            </div>
+          )}
 
-          {!isEditing && (
-            <div className="flex items-center gap-1 shrink-0">
-              {/* Secondary actions in a dropdown on mobile, inline on larger screens */}
-              <div className="hidden sm:flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleOpenDefaultDialog}
-                  title="Make Default"
-                  disabled={isActivating || isDeleting || isSettingDefault}
-                >
-                  {isSettingDefault ? <Spinner className="size-4" /> : <Star className="size-4" />}
+          {isEditing ? (
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="font-semibold"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleSaveEdit} disabled={isSavingEdit} className="flex-1 sm:flex-none">
+                  {isSavingEdit ? <Spinner className="size-4" /> : "Save"}
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleOpenApplyDialog}
-                  title="Apply to All"
-                  disabled={isActivating || isDeleting || isApplying}
-                >
-                  {isApplying ? <Spinner className="size-4" /> : <Save className="size-4" />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsEditing(true)}
-                  title="Edit name"
-                  disabled={isActivating || isDeleting}
-                >
-                  <Edit2 className="size-4" />
+                <Button size="sm" variant="outline" onClick={() => setIsEditing(false)} className="flex-1 sm:flex-none">
+                  Cancel
                 </Button>
               </div>
+            </div>
+          ) : (
+            <h3 className="text-base font-semibold leading-6 [overflow-wrap:anywhere]">
+              {preset.name}
+            </h3>
+          )}
+        </div>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="sm:hidden"
-                    disabled={isActivating || isDeleting}
-                    aria-label="More actions"
-                  >
-                    <MoreHorizontal className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={handleOpenDefaultDialog}
-                    disabled={isSettingDefault}
-                  >
-                    <Star className="size-4 mr-2" />
-                    {isSettingDefault ? "Saving…" : "Make Default"}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={handleOpenApplyDialog}
-                    disabled={isApplying}
-                  >
-                    <Save className="size-4 mr-2" />
-                    {isApplying ? "Applying…" : "Apply to All"}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                    <Edit2 className="size-4 mr-2" />
-                    Rename
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleDelete}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2 className="size-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Delete always visible on desktop */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleDelete}
-                title="Delete"
-                disabled={isActivating || isDeleting}
-                className="hidden sm:flex"
-              >
+        {/* Action button(s) */}
+        {!isEditing && (
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Inline on sm+ */}
+            <div className="hidden sm:flex gap-1">
+              <Button variant="ghost" size="icon" onClick={handleOpenDefaultDialog} title="Make Default"
+                disabled={isActivating || isDeleting || isSettingDefault}>
+                {isSettingDefault ? <Spinner className="size-4" /> : <Star className="size-4" />}
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleOpenApplyDialog} title="Apply to All"
+                disabled={isActivating || isDeleting || isApplying}>
+                {isApplying ? <Spinner className="size-4" /> : <Save className="size-4" />}
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)} title="Rename"
+                disabled={isActivating || isDeleting}>
+                <Edit2 className="size-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleDelete} title="Delete"
+                disabled={isActivating || isDeleting}>
                 {isDeleting ? <Spinner className="size-4" /> : <Trash2 className="size-4 text-destructive" />}
               </Button>
             </div>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {(preset.isActiveForExams || preset.isActiveForAssignments) && (
-          <div className="flex flex-wrap gap-2">
-            {preset.isActiveForExams && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                <FileText className="size-3" />
-                <span>Default for Exams</span>
-              </div>
-            )}
-            {preset.isActiveForAssignments && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                <ClipboardList className="size-3" />
-                <span>Default for Assignments</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {preset.times.length > 0 ? (
-          <div className="space-y-2">
-            {preset.times.map((t) => (
-              <div
-                key={t.id}
-                className="flex items-center justify-between rounded-md border p-2 gap-2"
-              >
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm min-w-0">
-                  <span className="flex items-center gap-1 whitespace-nowrap">
-                    <Calendar className="size-4 shrink-0" />
-                    {t.daysBefore} day{t.daysBefore !== 1 ? "s" : ""} before
-                  </span>
-                  <span className="flex items-center gap-1 whitespace-nowrap">
-                    <Clock className="size-4 shrink-0" />
-                    {t.time}
-                  </span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveTime(t.id)}
-                  disabled={isActivating || deletingTimeId !== null}
-                  className="shrink-0"
-                >
-                  {deletingTimeId === t.id ? <Spinner className="size-4" /> : <Trash2 className="size-4" />}
+            {/* Collapsed on mobile */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="sm:hidden"
+                  disabled={isActivating || isDeleting} aria-label="More actions">
+                  <MoreHorizontal className="size-4" />
                 </Button>
-              </div>
-            ))}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleOpenDefaultDialog} disabled={isSettingDefault}>
+                  <Star className="size-4 mr-2" />
+                  {isSettingDefault ? "Saving…" : "Make Default"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleOpenApplyDialog} disabled={isApplying}>
+                  <Save className="size-4 mr-2" />
+                  {isApplying ? "Applying…" : "Apply to All"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                  <Edit2 className="size-4 mr-2" />
+                  Rename
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                  <Trash2 className="size-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-        ) : (
-          <FieldDescription>No notification times configured.</FieldDescription>
         )}
+      </div>
 
-        {preset.times.length < limits.timesPerPreset && (
+      {/* Date/time row — matches SchoolEventCard's bottom strip */}
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 pb-3 sm:px-5">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <Bell aria-hidden="true" className="size-3.5 shrink-0" />
+            {preset.times.length} notification time{preset.times.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      </div>
+
+      {/* Notification times list in a muted bg strip */}
+      {preset.times.length > 0 && (
+        <div className="border-t border-border/60 bg-muted/20 px-4 py-3 sm:px-5 space-y-2">
+          {preset.times.map((t) => (
+            <div key={t.id} className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5">
+                  <Calendar aria-hidden="true" className="size-3.5 shrink-0" />
+                  {t.daysBefore} day{t.daysBefore !== 1 ? "s" : ""} before
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Clock aria-hidden="true" className="size-3.5 shrink-0" />
+                  {t.time}
+                </span>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => handleRemoveTime(t.id)}
+                disabled={isActivating || deletingTimeId !== null} className="shrink-0 -mr-1">
+                {deletingTimeId === t.id ? <Spinner className="size-4" /> : <Trash2 className="size-4" />}
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {preset.times.length === 0 && (
+        <div className="border-t border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
+          <p className="text-sm text-muted-foreground">No notification times configured.</p>
+        </div>
+      )}
+
+      {/* Add time button */}
+      {preset.times.length < limits.timesPerPreset && (
+        <div className="border-t border-border/60 px-4 py-3 sm:px-5">
           <Dialog open={isAddTimeOpen} onOpenChange={(open) => {
             if (isAddingTime) return;
             if (open) setAddTimeStep("day");
@@ -457,8 +428,8 @@ function PresetCard({
               </form>
             </DialogContent>
           </Dialog>
-        )}
-      </CardContent>
+        </div>
+      )}
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
