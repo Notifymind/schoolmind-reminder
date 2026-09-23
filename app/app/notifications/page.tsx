@@ -786,9 +786,6 @@ export default function NotificationsPage() {
         <div className="grid w-full min-w-0 max-w-2xl gap-6">
           <div>
             <h1 className="text-2xl font-semibold">Notification Settings</h1>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Choose when to get reminders for exams and assignments.
-            </p>
           </div>
 
           <PushNotificationManager />
