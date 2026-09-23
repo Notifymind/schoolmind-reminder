@@ -16,10 +16,16 @@ import {
 } from "@/components/ui/card";
 import {
   Field,
-  FieldDescription,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { TimePicker } from "@/components/ui/time-picker";
 import { DaysBeforePicker } from "@/components/ui/days-before-picker";
@@ -39,6 +45,7 @@ import {
    Share,
    Save,
    Star,
+   MoreHorizontal,
  } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
@@ -230,92 +237,60 @@ function PresetCard({
   };
 
   return (
-    <Card className={(preset.isActiveForExams || preset.isActiveForAssignments ? "border-primary " : "") + "gap-0"}>
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            {isEditing ? (
-              <div className="flex gap-2">
-                <Input
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="text-lg font-semibold"
-                />
-                <Button size="sm" onClick={handleSaveEdit} disabled={isSavingEdit}>
-                   {isSavingEdit ? <Spinner className="size-4" /> : "Save"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setIsEditing(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            ) : (
-              <CardTitle className="flex items-center gap-2">
-                {preset.name}
-              </CardTitle>
-            )}
-            <CardDescription className="mt-1">
-              {preset.times.length} notification time(s)
-            </CardDescription>
-          </div>
-          <div className="flex gap-1">
-            {!isEditing && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleOpenDefaultDialog}
-                  title="Make Default"
-                  disabled={isActivating || isDeleting || isSettingDefault}
-                >
-                  {isSettingDefault ? <Spinner className="size-4" /> : <Star className="size-4" />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleOpenApplyDialog}
-                  title="Apply to All"
-                  disabled={isActivating || isDeleting || isApplying}
-                >
-                  {isApplying ? <Spinner className="size-4" /> : <Save className="size-4" />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsEditing(true)}
-                  title="Edit"
-                  disabled={isActivating || isDeleting}
-                >
-                  <Edit2 className="size-4" />
-                </Button>
-              </>
-            )}
+    <Card className="min-w-0 gap-0 overflow-hidden py-0">
+      <div className="flex items-start gap-3 p-4 sm:p-5">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm text-muted-foreground">Reminder preset</p>
+          <h3 className="mt-1 text-base font-semibold leading-6 [overflow-wrap:anywhere]">
+            {preset.name}
+          </h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {preset.times.length} of {limits.timesPerPreset} reminder times
+          </p>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              onClick={handleDelete}
-              title="Delete"
-              disabled={isActivating || isDeleting}
+              className="size-11 shrink-0"
+              aria-label={`Actions for ${preset.name}`}
+              disabled={isActivating || isDeleting || isSettingDefault || isApplying}
             >
-              {isDeleting ? <Spinner className="size-4" /> : <Trash2 className="size-4 text-destructive" />}
+              {isDeleting ? <Spinner className="size-4" /> : <MoreHorizontal className="size-5" />}
             </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuItem className="min-h-11" onSelect={handleOpenDefaultDialog}>
+              <Star /> Make default
+            </DropdownMenuItem>
+            <DropdownMenuItem className="min-h-11" onSelect={handleOpenApplyDialog}>
+              <Save /> Apply to current items
+            </DropdownMenuItem>
+            <DropdownMenuItem className="min-h-11" onSelect={() => {
+              setEditName(preset.name);
+              setIsEditing(true);
+            }}>
+              <Edit2 /> Rename preset
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="min-h-11" variant="destructive" onSelect={handleDelete}>
+              <Trash2 /> Delete preset
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      <CardContent className="space-y-3 px-4 pb-4 sm:px-5 sm:pb-5">
         {(preset.isActiveForExams || preset.isActiveForAssignments) && (
           <div className="flex flex-wrap gap-2">
             {preset.isActiveForExams && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+              <div className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium">
                 <FileText className="size-3" />
                 <span>Default for Exams</span>
               </div>
             )}
             {preset.isActiveForAssignments && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+              <div className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium">
                 <ClipboardList className="size-3" />
                 <span>Default for Assignments</span>
               </div>
@@ -328,14 +303,14 @@ function PresetCard({
             {preset.times.map((t) => (
               <div
                 key={t.id}
-                className="flex items-center justify-between rounded-md border p-2"
+                className="flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-muted/20 p-2 pl-3"
               >
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="flex items-center gap-1">
+                <div className="flex min-w-0 flex-col gap-1 text-sm sm:flex-row sm:flex-wrap sm:gap-x-4">
+                  <span className="inline-flex items-center gap-1.5">
                     <Calendar className="size-4" />
-                    {t.daysBefore} day{t.daysBefore !== 1 ? "s" : ""} before
+                    {t.daysBefore === 0 ? "On the day" : `${t.daysBefore} day${t.daysBefore !== 1 ? "s" : ""} before`}
                   </span>
-                  <span className="flex items-center gap-1">
+                  <span className="inline-flex items-center gap-1.5">
                     <Clock className="size-4" />
                     {t.time}
                   </span>
@@ -343,6 +318,8 @@ function PresetCard({
                 <Button
                    variant="ghost"
                    size="icon"
+                   className="size-11 shrink-0 text-muted-foreground hover:text-destructive"
+                   aria-label={`Remove reminder ${t.daysBefore} days before at ${t.time}`}
                    onClick={() => handleRemoveTime(t.id)}
                    disabled={isActivating || deletingTimeId !== null}
                  >
@@ -352,7 +329,7 @@ function PresetCard({
             ))}
           </div>
         ) : (
-          <FieldDescription>No notification times configured.</FieldDescription>
+          <p className="rounded-lg border border-dashed p-4 text-sm leading-5 text-muted-foreground">Add a reminder time to start using this preset.</p>
         )}
 
         {preset.times.length < limits.timesPerPreset && (
@@ -362,9 +339,9 @@ function PresetCard({
             setIsAddTimeOpen(open);
           }}>
              <DialogTrigger asChild>
-               <Button variant="outline" size="sm" className="w-full" disabled={isActivating || isDeleting || deletingTimeId !== null}>
+               <Button variant="outline" size="sm" className="min-h-11 w-full" disabled={isActivating || isDeleting || deletingTimeId !== null}>
                  <Plus className="size-4 mr-2" />
-                 Add notification time
+                 Add reminder time
                </Button>
             </DialogTrigger>
             <DialogContent aria-describedby={undefined} className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-sm">
@@ -403,6 +380,35 @@ function PresetCard({
         )}
       </CardContent>
 
+      <Dialog open={isEditing} onOpenChange={(open) => {
+        if (!isSavingEdit) setIsEditing(open);
+      }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rename preset</DialogTitle>
+            <DialogDescription>Choose a name for this reminder schedule.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(event) => {
+            event.preventDefault();
+            void handleSaveEdit();
+          }} className="space-y-4">
+            <Field>
+              <FieldLabel htmlFor={`preset-name-${preset.id}`}>Preset name</FieldLabel>
+              <Input id={`preset-name-${preset.id}`} value={editName}
+                onChange={(event) => setEditName(event.target.value)}
+                className="h-11" disabled={isSavingEdit} required />
+            </Field>
+            <div className="grid grid-cols-2 gap-2">
+              <Button type="button" variant="outline" className="min-h-11"
+                onClick={() => setIsEditing(false)} disabled={isSavingEdit}>Cancel</Button>
+              <Button type="submit" className="min-h-11" disabled={isSavingEdit || !editName.trim()}>
+                {isSavingEdit ? <Spinner className="size-4" /> : "Save name"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -429,15 +435,17 @@ function PresetCard({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <FileText className="size-4" />
-                <label htmlFor="default-exams" className="text-sm font-medium">
+                <label htmlFor={`default-exams-${preset.id}`} className="text-sm font-medium">
                   Exams
                 </label>
               </div>
               <Button
-                id="default-exams"
+                id={`default-exams-${preset.id}`}
+                aria-pressed={defaultExams}
+                className="min-h-11"
                 variant={defaultExams ? "default" : "outline"}
                 size="sm"
                 onClick={() => setDefaultExams(!defaultExams)}
@@ -445,15 +453,17 @@ function PresetCard({
                 {defaultExams ? "Default" : "Not Default"}
               </Button>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <ClipboardList className="size-4" />
-                <label htmlFor="default-assignments" className="text-sm font-medium">
+                <label htmlFor={`default-assignments-${preset.id}`} className="text-sm font-medium">
                   Assignments
                 </label>
               </div>
               <Button
-                id="default-assignments"
+                id={`default-assignments-${preset.id}`}
+                aria-pressed={defaultAssignments}
+                className="min-h-11"
                 variant={defaultAssignments ? "default" : "outline"}
                 size="sm"
                 onClick={() => setDefaultAssignments(!defaultAssignments)}
@@ -488,15 +498,17 @@ function PresetCard({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <FileText className="size-4" />
-                <label htmlFor="apply-exams" className="text-sm font-medium">
+                <label htmlFor={`apply-exams-${preset.id}`} className="text-sm font-medium">
                   Exams
                 </label>
               </div>
               <Button
-                id="apply-exams"
+                id={`apply-exams-${preset.id}`}
+                aria-pressed={applyExams}
+                className="min-h-11"
                 variant={applyExams ? "default" : "outline"}
                 size="sm"
                 onClick={() => setApplyExams(!applyExams)}
@@ -504,15 +516,17 @@ function PresetCard({
                 {applyExams ? "Selected" : "Select"}
               </Button>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <ClipboardList className="size-4" />
-                <label htmlFor="apply-assignments" className="text-sm font-medium">
+                <label htmlFor={`apply-assignments-${preset.id}`} className="text-sm font-medium">
                   Assignments
                 </label>
               </div>
               <Button
-                id="apply-assignments"
+                id={`apply-assignments-${preset.id}`}
+                aria-pressed={applyAssignments}
+                className="min-h-11"
                 variant={applyAssignments ? "default" : "outline"}
                 size="sm"
                 onClick={() => setApplyAssignments(!applyAssignments)}
@@ -593,22 +607,22 @@ function PushNotificationManager() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <Card className="min-w-0 gap-0 overflow-hidden py-0">
+      <CardHeader className="p-4 sm:p-5">
+        <CardTitle className="flex items-center gap-2 text-base leading-6">
           <Smartphone className="size-5" />
           Push Notifications
         </CardTitle>
         <CardDescription>Receive notifications on your device</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="border-t border-border/60 bg-muted/20 p-4 sm:px-5">
         {isAndroid ? (
-          <Button onClick={installApp} disabled={isInstalling}>
+          <Button className="min-h-11 w-full sm:w-auto" onClick={installApp} disabled={isInstalling}>
             {isInstalling ? <Spinner className="size-4 mr-2" /> : <Download className="size-4 mr-2" />}
             {isInstalling ? "Installing..." : "Install App"}
           </Button>
         ) : isMobile && canInstall ? (
-          <Button onClick={installApp} disabled={isInstalling}>
+          <Button className="min-h-11 w-full sm:w-auto" onClick={installApp} disabled={isInstalling}>
             {isInstalling ? <Spinner className="size-4 mr-2" /> : <Download className="size-4 mr-2" />}
             {isInstalling ? "Installing..." : "Install App"}
           </Button>
@@ -621,7 +635,7 @@ function PushNotificationManager() {
         ) : (
           <>
             {isSubscribed ? (
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Check className="size-4 text-green-500" />
                   <span className="text-sm">Notifications enabled</span>
@@ -629,6 +643,7 @@ function PushNotificationManager() {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="min-h-11 w-full sm:w-auto"
                   onClick={unsubscribeFromPush}
                   disabled={isLoading || offline}
                 >
@@ -636,7 +651,7 @@ function PushNotificationManager() {
                 </Button>
               </div>
             ) : (
-              <Button onClick={subscribeToPush} disabled={isLoading || offline}>
+              <Button className="min-h-11 w-full sm:w-auto" onClick={subscribeToPush} disabled={isLoading || offline}>
                 {isLoading ? "Enabling..." : "Enable Notifications"}
               </Button>
             )}
@@ -779,17 +794,24 @@ export default function NotificationsPage() {
   const canAddPreset = presets.length < limits.presets;
 
   return (
-    <div className="flex flex-1 flex-col gap-6 items-center">
-        <div className="grid gap-6 w-full max-w-2xl">
+    <div className="flex min-w-0 flex-1 flex-col items-center">
+        <div className="grid w-full min-w-0 max-w-2xl gap-6">
           <div>
             <h1 className="text-2xl font-semibold">Notification Settings</h1>
-            <p className="text-muted-foreground">
-              Configure when you want to be notified about exams and assignments
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Choose when to get reminders for exams and assignments.
             </p>
           </div>
 
           <PushNotificationManager />
 
+          <section aria-labelledby="presets-heading" className="min-w-0 space-y-4">
+            <div>
+              <h2 id="presets-heading" className="text-lg font-semibold">Reminder presets</h2>
+              <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                Save a schedule, then make it the default for new items or apply it to current ones.
+              </p>
+            </div>
           {isInitialLoading ? (
             <div className="flex items-center justify-center py-12">
               <Spinner className="size-8" />
@@ -828,28 +850,31 @@ export default function NotificationsPage() {
             </Card>
           )}
 
+          </section>
+
           {!isInitialLoading && canAddPreset && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Create New Preset</CardTitle>
+            <Card className="min-w-0 gap-0 overflow-hidden py-0">
+              <CardHeader className="p-4 sm:p-5">
+                <CardTitle className="text-base leading-6">Create a preset</CardTitle>
                 <CardDescription>
-                  {limits.presets - presets.length} preset(s) remaining for your
-                  plan
+                  {limits.presets - presets.length} {limits.presets - presets.length === 1 ? "preset" : "presets"} available on your plan
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="border-t border-border/60 bg-muted/20 p-4 sm:p-5">
                 <form onSubmit={handleCreatePreset}>
                   <FieldGroup>
                     <Field>
                       <FieldLabel htmlFor="preset-name">Preset Name</FieldLabel>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col gap-3 sm:flex-row">
                         <Input
                           id="preset-name"
+                          className="h-11 min-w-0"
+                          required
                           value={newPresetName}
                           onChange={(e) => setNewPresetName(e.target.value)}
                           placeholder="e.g., Default reminders"
                         />
-                        <Button type="submit" disabled={isLoading}>
+                        <Button type="submit" className="min-h-11 sm:shrink-0" disabled={isLoading || !newPresetName.trim()}>
                           {isLoading ? "Creating..." : "Create"}
                         </Button>
                       </div>
