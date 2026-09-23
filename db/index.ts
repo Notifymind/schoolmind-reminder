@@ -103,6 +103,22 @@ export async function createNotificationPreset(userId: string, name: string, id 
   return result[0];
 }
 
+export async function createDefaultNotificationPreset(userId: string) {
+  const presetId = generateId();
+  const now = new Date();
+  await db.transaction(async (tx) => {
+    await tx.insert(notificationPresets).values({
+      id: presetId, userId, name: "default",
+      isActiveForExams: true, isActiveForAssignments: true,
+      activatedForExamsAt: now, activatedForAssignmentsAt: now,
+    });
+    await tx.insert(notificationTimes).values([
+      { id: generateId(), presetId, daysBefore: 1, time: "18:00" },
+      { id: generateId(), presetId, daysBefore: 2, time: "17:00" },
+    ]);
+  });
+}
+
 export async function updateNotificationPreset(presetId: string, userId: string, name: string) {
   const result = await db
     .update(notificationPresets)

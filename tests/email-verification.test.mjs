@@ -25,6 +25,7 @@ function setup({ failCodeDelivery = false, env = {} } = {}) {
   const loginCodes = [];
   const referralLinks = [];
   const resetDeliveries = [];
+  const defaultPresetUsers = [];
   const database = { user: [], session: [], account: [], verification: [] };
   const { auth: options } = load('lib/auth.ts', {
     'better-auth': { betterAuth: options => options },
@@ -34,7 +35,7 @@ function setup({ failCodeDelivery = false, env = {} } = {}) {
     '@better-auth/passkey': { passkey: () => ({}) },
     'better-auth/plugins': { admin: () => ({}) },
     '@/db/referrals': { referralCookie: 'notifymind_referral', linkReferral: async (...args) => referralLinks.push(args) },
-    '@/db': {}, '@/db/schema': {}, './permissions': {},
+    '@/db': { createDefaultNotificationPreset: async userId => defaultPresetUsers.push(userId) }, '@/db/schema': {}, './permissions': {},
     './email': { sendLoginCode: async message => { if (failCodeDelivery) throw new Error("Provider failed"); loginCodes.push(message); }, sendVerificationEmail: async message => deliveries.push(message), sendResetPassword: async message => resetDeliveries.push(message) },
   }, { GOOGLE_CLIENT_ID: 'test-google-client', GOOGLE_CLIENT_SECRET: 'test-google-secret', ...env });
   const auth = betterAuth({
@@ -45,11 +46,20 @@ function setup({ failCodeDelivery = false, env = {} } = {}) {
     secret: 'test-only-secret-with-at-least-32-characters',
     logger: { disabled: true },
   });
-  return { auth, deliveries, database, referralLinks, resetDeliveries, loginCodes };
+  return { auth, deliveries, database, referralLinks, resetDeliveries, loginCodes, defaultPresetUsers };
 }
 
 const credentials = { email: 'student@example.com', password: 'test-password-123', name: 'Student' };
 const callbackURL = 'http://localhost:3000/verify-email?verified=1';
+
+test('new accounts get a default preset once, without recreating it on login', async () => {
+  const { auth, deliveries, database, defaultPresetUsers } = setup();
+  await auth.api.signUpEmail({ body: credentials });
+  assert.deepEqual(defaultPresetUsers, [database.user[0].id]);
+  await auth.handler(new Request(deliveries[0].url));
+  await auth.api.signInEmail({ body: credentials });
+  assert.deepEqual(defaultPresetUsers, [database.user[0].id]);
+});
 
 test('preview bypass skips the code but still requires verified email and a valid password', async () => {
   const { auth, deliveries, database, loginCodes, referralLinks } = setup({ env: { BYPASS_2FA: 'true' } });

@@ -4,7 +4,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { passkey } from "@better-auth/passkey";
 import { admin } from "better-auth/plugins";
 import { twoFactor } from "better-auth/plugins/two-factor";
-import { db, hasSellerDebt } from "@/db";
+import { createDefaultNotificationPreset, db, hasSellerDebt } from "@/db";
 import * as schema from "@/db/schema";
 import { ac, freeRole, proRole, sellerRole, adminRole } from "./permissions";
 import { sendVerificationEmail, sendResetPassword, sendLoginCode } from "./email";
@@ -54,7 +54,12 @@ export const auth = betterAuth({
   },
   databaseHooks: {
     user: {
-      create: { before: async (user) => ({ data: { ...user, twoFactorEnabled: true } }) },
+      create: {
+        before: async (user) => ({ data: { ...user, twoFactorEnabled: true } }),
+        after: async (user) => {
+          await createDefaultNotificationPreset(user.id);
+        },
+      },
     },
     session: {
       create: {
