@@ -239,7 +239,7 @@ function PresetCard({
   return (
     <Card className="min-w-0 gap-0 overflow-hidden py-0">
       <div className="flex items-start gap-3 p-4 sm:p-5">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 self-center">
           <h3 className="text-base font-semibold leading-6 [overflow-wrap:anywhere]">
             {preset.name}
           </h3>
