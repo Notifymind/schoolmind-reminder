@@ -25,21 +25,29 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { DaysBeforePicker } from "@/components/ui/days-before-picker";
 import { Spinner } from "@/components/ui/spinner";
 import {
-   Bell,
-   Plus,
-   Trash2,
-   Check,
-   Clock,
-   Calendar,
-   Edit2,
-   Smartphone,
-   FileText,
-   ClipboardList,
-   Download,
-   Share,
-   Save,
-   Star,
- } from "lucide-react";
+  Bell,
+  Plus,
+  Trash2,
+  Check,
+  Clock,
+  Calendar,
+  Edit2,
+  Smartphone,
+  FileText,
+  ClipboardList,
+  Download,
+  Share,
+  Save,
+  Star,
+  MoreHorizontal,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
 import {
@@ -232,38 +240,41 @@ function PresetCard({
   return (
     <Card className={(preset.isActiveForExams || preset.isActiveForAssignments ? "border-primary " : "") + "gap-0"}>
       <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
             {isEditing ? (
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   className="text-lg font-semibold"
                 />
-                <Button size="sm" onClick={handleSaveEdit} disabled={isSavingEdit}>
-                   {isSavingEdit ? <Spinner className="size-4" /> : "Save"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setIsEditing(false)}
-                >
-                  Cancel
-                </Button>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={handleSaveEdit} disabled={isSavingEdit} className="flex-1 sm:flex-none">
+                    {isSavingEdit ? <Spinner className="size-4" /> : "Save"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsEditing(false)}
+                    className="flex-1 sm:flex-none"
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </div>
             ) : (
-              <CardTitle className="flex items-center gap-2">
-                {preset.name}
-              </CardTitle>
+              <CardTitle className="truncate">{preset.name}</CardTitle>
             )}
             <CardDescription className="mt-1">
-              {preset.times.length} notification time(s)
+              {preset.times.length} notification time{preset.times.length !== 1 ? "s" : ""}
             </CardDescription>
           </div>
-          <div className="flex gap-1">
-            {!isEditing && (
-              <>
+
+          {!isEditing && (
+            <div className="flex items-center gap-1 shrink-0">
+              {/* Secondary actions in a dropdown on mobile, inline on larger screens */}
+              <div className="hidden sm:flex gap-1">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -286,23 +297,68 @@ function PresetCard({
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsEditing(true)}
-                  title="Edit"
+                  title="Edit name"
                   disabled={isActivating || isDeleting}
                 >
                   <Edit2 className="size-4" />
                 </Button>
-              </>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDelete}
-              title="Delete"
-              disabled={isActivating || isDeleting}
-            >
-              {isDeleting ? <Spinner className="size-4" /> : <Trash2 className="size-4 text-destructive" />}
-            </Button>
-          </div>
+              </div>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="sm:hidden"
+                    disabled={isActivating || isDeleting}
+                    aria-label="More actions"
+                  >
+                    <MoreHorizontal className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={handleOpenDefaultDialog}
+                    disabled={isSettingDefault}
+                  >
+                    <Star className="size-4 mr-2" />
+                    {isSettingDefault ? "Saving…" : "Make Default"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleOpenApplyDialog}
+                    disabled={isApplying}
+                  >
+                    <Save className="size-4 mr-2" />
+                    {isApplying ? "Applying…" : "Apply to All"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                    <Edit2 className="size-4 mr-2" />
+                    Rename
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleDelete}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="size-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Delete always visible on desktop */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleDelete}
+                title="Delete"
+                disabled={isActivating || isDeleting}
+                className="hidden sm:flex"
+              >
+                {isDeleting ? <Spinner className="size-4" /> : <Trash2 className="size-4 text-destructive" />}
+              </Button>
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -328,25 +384,26 @@ function PresetCard({
             {preset.times.map((t) => (
               <div
                 key={t.id}
-                className="flex items-center justify-between rounded-md border p-2"
+                className="flex items-center justify-between rounded-md border p-2 gap-2"
               >
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="size-4" />
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm min-w-0">
+                  <span className="flex items-center gap-1 whitespace-nowrap">
+                    <Calendar className="size-4 shrink-0" />
                     {t.daysBefore} day{t.daysBefore !== 1 ? "s" : ""} before
                   </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="size-4" />
+                  <span className="flex items-center gap-1 whitespace-nowrap">
+                    <Clock className="size-4 shrink-0" />
                     {t.time}
                   </span>
                 </div>
                 <Button
-                   variant="ghost"
-                   size="icon"
-                   onClick={() => handleRemoveTime(t.id)}
-                   disabled={isActivating || deletingTimeId !== null}
-                 >
-                   {deletingTimeId === t.id ? <Spinner className="size-4" /> : <Trash2 className="size-4" />}
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleRemoveTime(t.id)}
+                  disabled={isActivating || deletingTimeId !== null}
+                  className="shrink-0"
+                >
+                  {deletingTimeId === t.id ? <Spinner className="size-4" /> : <Trash2 className="size-4" />}
                 </Button>
               </div>
             ))}
@@ -842,14 +899,15 @@ export default function NotificationsPage() {
                   <FieldGroup>
                     <Field>
                       <FieldLabel htmlFor="preset-name">Preset Name</FieldLabel>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col gap-2 sm:flex-row">
                         <Input
                           id="preset-name"
                           value={newPresetName}
                           onChange={(e) => setNewPresetName(e.target.value)}
                           placeholder="e.g., Default reminders"
+                          className="flex-1"
                         />
-                        <Button type="submit" disabled={isLoading}>
+                        <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
                           {isLoading ? "Creating..." : "Create"}
                         </Button>
                       </div>
