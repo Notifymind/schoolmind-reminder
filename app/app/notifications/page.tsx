@@ -258,9 +258,15 @@ function PresetCard({
                 <h3>{preset.name}</h3>
               </CardTitle>
             )}
-            <CardDescription className="mt-1">
-              {preset.times.length} of {limits.timesPerPreset} reminders used
-            </CardDescription>
+            {(preset.isActiveForExams || preset.isActiveForAssignments) && (
+              <CardDescription className="mt-1">
+                {preset.isActiveForExams && preset.isActiveForAssignments
+                  ? "Default for Exams & Assignments"
+                  : preset.isActiveForExams
+                    ? "Default for Exams"
+                    : "Default for Assignments"}
+              </CardDescription>
+            )}
           </div>
           <div className="flex gap-1">
             {!isEditing && (
@@ -289,23 +295,6 @@ function PresetCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {(preset.isActiveForExams || preset.isActiveForAssignments) && (
-          <div className="flex flex-wrap gap-2">
-            {preset.isActiveForExams && (
-              <div className="flex items-center gap-1 text-xs font-medium bg-primary/5 px-2.5 py-1.5 rounded-full">
-                <FileText className="size-3" />
-                <span>Exam default</span>
-              </div>
-            )}
-            {preset.isActiveForAssignments && (
-              <div className="flex items-center gap-1 text-xs font-medium bg-primary/5 px-2.5 py-1.5 rounded-full">
-                <ClipboardList className="size-3" />
-                <span>Assignment default</span>
-              </div>
-            )}
-          </div>
-        )}
-
         {preset.times.length > 0 ? (
           <div className="space-y-2">
             {[...preset.times].sort((a, b) => b.daysBefore - a.daysBefore || a.time.localeCompare(b.time)).map((t) => (
