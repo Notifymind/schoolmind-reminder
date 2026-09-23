@@ -429,7 +429,7 @@ export function HomeClient({
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 max-md:[&>*:nth-child(n+4)]:hidden">
             {exams.map((exam) => {
               const { preset, disabled } = getPresetForExam(exam.id);
               return (
@@ -475,7 +475,7 @@ export function HomeClient({
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 max-md:[&>*:nth-child(n+4)]:hidden">
             {assignments.map((assignment) => {
               const { preset, disabled } = getPresetForAssignment(
                 assignment.id,
