@@ -10,36 +10,35 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Field,
   FieldDescription,
   FieldGroup,
-  FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { TimePicker } from "@/components/ui/time-picker";
 import { DaysBeforePicker } from "@/components/ui/days-before-picker";
 import { Spinner } from "@/components/ui/spinner";
 import {
-   Bell,
-   Plus,
-   Trash2,
-   Check,
-   Clock,
-   Calendar,
-   Edit2,
-   Smartphone,
-   FileText,
-   ClipboardList,
-   Download,
-   Share,
-   Save,
-   Star,
- } from "lucide-react";
+  Bell,
+  Plus,
+  Trash2,
+  Check,
+  Clock,
+  Calendar,
+  Edit2,
+  Smartphone,
+  FileText,
+  ClipboardList,
+  Download,
+  Share,
+  Star,
+  MoreHorizontal,
+  BellOff,
+  X,
+} from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
 import {
@@ -61,6 +60,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   createPresetAction,
   deletePresetAction,
   activatePresetForExamsAction,
@@ -74,8 +80,6 @@ import {
   getLimitsAction,
 } from "@/lib/offline/notifications";
 import { usePushNotificationStore } from "@/lib/stores/push-notifications";
-
-
 
 type NotificationTime = {
   id: string;
@@ -150,6 +154,7 @@ function PresetCard({
   const [isApplying, setIsApplying] = React.useState(false);
 
   const isActivating = activatingButton !== null;
+  const isDefault = preset.isActiveForExams || preset.isActiveForAssignments;
 
   const handleSaveEdit = async () => {
     if (editName.trim()) {
@@ -184,10 +189,6 @@ function PresetCard({
     setDeletingTimeId(timeId);
     await onRemoveTime(timeId);
     setDeletingTimeId(null);
-  };
-
-  const handleDelete = () => {
-    setShowDeleteConfirm(true);
   };
 
   const confirmDelete = async () => {
@@ -230,170 +231,159 @@ function PresetCard({
   };
 
   return (
-    <Card className={(preset.isActiveForExams || preset.isActiveForAssignments ? "border-primary " : "") + "gap-0"}>
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
+    <Card className={isDefault ? "border-primary ring-1 ring-primary/20" : ""}>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-3">
+          {/* Title / edit row */}
+          <div className="flex-1 min-w-0">
             {isEditing ? (
               <div className="flex gap-2">
                 <Input
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="text-lg font-semibold"
+                  className="h-8 text-sm font-semibold"
+                  autoFocus
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveEdit()}
                 />
-                <Button size="sm" onClick={handleSaveEdit} disabled={isSavingEdit}>
-                   {isSavingEdit ? <Spinner className="size-4" /> : "Save"}
+                <Button size="sm" onClick={handleSaveEdit} disabled={isSavingEdit} className="h-8">
+                  {isSavingEdit ? <Spinner className="size-3.5" /> : <Check className="size-3.5" />}
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setIsEditing(false)}
-                >
-                  Cancel
+                <Button size="sm" variant="ghost" onClick={() => { setIsEditing(false); setEditName(preset.name); }} className="h-8">
+                  <X className="size-3.5" />
                 </Button>
               </div>
             ) : (
-              <CardTitle className="flex items-center gap-2">
-                {preset.name}
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-base truncate">{preset.name}</CardTitle>
+                {isDefault && (
+                  <span className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                    <Star className="size-2.5" />
+                    Default
+                  </span>
+                )}
+              </div>
             )}
-            <CardDescription className="mt-1">
-              {preset.times.length} notification time(s)
-            </CardDescription>
-          </div>
-          <div className="flex gap-1">
-            {!isEditing && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleOpenDefaultDialog}
-                  title="Make Default"
-                  disabled={isActivating || isDeleting || isSettingDefault}
-                >
-                  {isSettingDefault ? <Spinner className="size-4" /> : <Star className="size-4" />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleOpenApplyDialog}
-                  title="Apply to All"
-                  disabled={isActivating || isDeleting || isApplying}
-                >
-                  {isApplying ? <Spinner className="size-4" /> : <Save className="size-4" />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsEditing(true)}
-                  title="Edit"
-                  disabled={isActivating || isDeleting}
-                >
-                  <Edit2 className="size-4" />
-                </Button>
-              </>
+            {/* Active-for badges */}
+            {!isEditing && isDefault && (
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                {preset.isActiveForExams && (
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                    <FileText className="size-3" />Exams
+                  </span>
+                )}
+                {preset.isActiveForAssignments && (
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                    <ClipboardList className="size-3" />Assignments
+                  </span>
+                )}
+              </div>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDelete}
-              title="Delete"
-              disabled={isActivating || isDeleting}
-            >
-              {isDeleting ? <Spinner className="size-4" /> : <Trash2 className="size-4 text-destructive" />}
-            </Button>
           </div>
+
+          {/* Actions menu */}
+          {!isEditing && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="size-8 shrink-0" disabled={isDeleting}>
+                  {isDeleting ? <Spinner className="size-4" /> : <MoreHorizontal className="size-4" />}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem onClick={() => setIsEditing(true)} disabled={isActivating}>
+                  <Edit2 className="size-3.5 mr-2" />Rename
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleOpenDefaultDialog} disabled={isActivating || isSettingDefault}>
+                  <Star className="size-3.5 mr-2" />Set as default
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleOpenApplyDialog} disabled={isActivating || isApplying}>
+                  <Bell className="size-3.5 mr-2" />Apply to all
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={isActivating}
+                >
+                  <Trash2 className="size-3.5 mr-2" />Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {(preset.isActiveForExams || preset.isActiveForAssignments) && (
-          <div className="flex flex-wrap gap-2">
-            {preset.isActiveForExams && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                <FileText className="size-3" />
-                <span>Default for Exams</span>
-              </div>
-            )}
-            {preset.isActiveForAssignments && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                <ClipboardList className="size-3" />
-                <span>Default for Assignments</span>
-              </div>
-            )}
-          </div>
-        )}
 
+      <CardContent className="pt-0 space-y-3">
+        {/* Time chips */}
         {preset.times.length > 0 ? (
-          <div className="space-y-2">
+          <div className="flex flex-wrap gap-2">
             {preset.times.map((t) => (
               <div
                 key={t.id}
-                className="flex items-center justify-between rounded-md border p-2"
+                className="group flex items-center gap-1.5 text-xs bg-muted rounded-full pl-2.5 pr-1 py-1"
               >
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="size-4" />
-                    {t.daysBefore} day{t.daysBefore !== 1 ? "s" : ""} before
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="size-4" />
-                    {t.time}
-                  </span>
-                </div>
-                <Button
-                   variant="ghost"
-                   size="icon"
-                   onClick={() => handleRemoveTime(t.id)}
-                   disabled={isActivating || deletingTimeId !== null}
-                 >
-                   {deletingTimeId === t.id ? <Spinner className="size-4" /> : <Trash2 className="size-4" />}
-                </Button>
+                <Calendar className="size-3 text-muted-foreground" />
+                <span className="font-medium">
+                  {t.daysBefore === 0 ? "Same day" : `${t.daysBefore}d before`}
+                </span>
+                <span className="text-muted-foreground">·</span>
+                <Clock className="size-3 text-muted-foreground" />
+                <span>{t.time}</span>
+                <button
+                  onClick={() => handleRemoveTime(t.id)}
+                  disabled={isActivating || deletingTimeId !== null}
+                  className="ml-0.5 rounded-full p-0.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
+                  aria-label="Remove time"
+                >
+                  {deletingTimeId === t.id
+                    ? <Spinner className="size-3" />
+                    : <X className="size-3" />}
+                </button>
               </div>
             ))}
           </div>
         ) : (
-          <FieldDescription>No notification times configured.</FieldDescription>
+          <FieldDescription className="text-xs">No reminder times yet.</FieldDescription>
         )}
 
+        {/* Add time */}
         {preset.times.length < limits.timesPerPreset && (
           <Dialog open={isAddTimeOpen} onOpenChange={(open) => {
             if (isAddingTime) return;
             if (open) setAddTimeStep("day");
             setIsAddTimeOpen(open);
           }}>
-             <DialogTrigger asChild>
-               <Button variant="outline" size="sm" className="w-full" disabled={isActivating || isDeleting || deletingTimeId !== null}>
-                 <Plus className="size-4 mr-2" />
-                 Add notification time
-               </Button>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1.5 rounded-full"
+                disabled={isActivating || isDeleting || deletingTimeId !== null}
+              >
+                <Plus className="size-3" />Add reminder time
+              </Button>
             </DialogTrigger>
             <DialogContent aria-describedby={undefined} className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-sm">
               <DialogHeader>
                 <DialogTitle ref={addTimeTitleRef} tabIndex={-1} className="outline-none">
-                  {addTimeStep === "day" ? "How many days ahead should the reminder arrive?" : "And at what time?"}
+                  {addTimeStep === "day" ? "How many days ahead?" : "At what time?"}
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleAddTime}>
                 <FieldGroup>
-                  {addTimeStep === "time" ? (
-                    <TimePicker value={time} onChange={setTime} disabled={isAddingTime} />
-                  ) : (
-                    <DaysBeforePicker value={daysBefore} onChange={setDaysBefore} disabled={isAddingTime} />
-                  )}
+                  {addTimeStep === "time"
+                    ? <TimePicker value={time} onChange={setTime} disabled={isAddingTime} />
+                    : <DaysBeforePicker value={daysBefore} onChange={setDaysBefore} disabled={isAddingTime} />
+                  }
                   <div className="flex justify-end gap-2">
                     {addTimeStep === "time" && (
                       <Button type="button" variant="ghost" className="mr-auto" disabled={isAddingTime} onClick={() => {
                         setAddTimeStep("day");
                         addTimeTitleRef.current?.focus();
-                      }}>
-                        Back
-                      </Button>
+                      }}>Back</Button>
                     )}
-                     <Button type="button" variant="outline" onClick={() => setIsAddTimeOpen(false)} disabled={isAddingTime}>
-                       Cancel
-                    </Button>
+                    <Button type="button" variant="outline" onClick={() => setIsAddTimeOpen(false)} disabled={isAddingTime}>Cancel</Button>
                     <Button type="submit" disabled={isAddingTime}>
-                       {isAddingTime ? <Spinner className="size-4" /> : addTimeStep === "day" ? "Next: choose time" : "Add reminder"}
+                      {isAddingTime ? <Spinner className="size-4" /> : addTimeStep === "day" ? "Next" : "Add reminder"}
                     </Button>
                   </div>
                 </FieldGroup>
@@ -403,75 +393,68 @@ function PresetCard({
         )}
       </CardContent>
 
+      {/* Delete confirm */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Preset</AlertDialogTitle>
+            <AlertDialogTitle>Delete &quot;{preset.name}&quot;?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{preset.name}&quot;?
+              This will remove the preset and all its reminder times. This can&apos;t be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={confirmDelete}>
-              Delete
-            </AlertDialogAction>
+            <AlertDialogAction variant="destructive" onClick={confirmDelete}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Set default dialog */}
       <Dialog open={isDefaultDialogOpen} onOpenChange={setIsDefaultDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Make Preset Default</DialogTitle>
+            <DialogTitle>Set as default for…</DialogTitle>
             <DialogDescription>
-              Choose what this preset should be the default for:
+              Choose which item types should use &quot;{preset.name}&quot; by default.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className="size-4" />
-                <label htmlFor="default-exams" className="text-sm font-medium">
-                  Exams
+          <div className="space-y-3 py-1">
+            {(["exams", "assignments"] as const).map((type) => {
+              const isExams = type === "exams";
+              const checked = isExams ? defaultExams : defaultAssignments;
+              const disabled = !isExams && !hasAssignmentsPermission;
+              return (
+                <label
+                  key={type}
+                  className={[
+                    "flex items-center justify-between rounded-lg border p-3 cursor-pointer transition-colors",
+                    disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-muted/50",
+                    checked ? "border-primary bg-primary/5" : "",
+                  ].join(" ")}
+                >
+                  <div className="flex items-center gap-2.5">
+                    {isExams ? <FileText className="size-4 text-muted-foreground" /> : <ClipboardList className="size-4 text-muted-foreground" />}
+                    <span className="text-sm font-medium capitalize">{type}</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={checked}
+                    disabled={disabled}
+                    onChange={() => isExams ? setDefaultExams(!defaultExams) : setDefaultAssignments(!defaultAssignments)}
+                  />
+                  <div className={[
+                    "size-5 rounded border-2 flex items-center justify-center transition-colors",
+                    checked ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30",
+                  ].join(" ")}>
+                    {checked && <Check className="size-3" />}
+                  </div>
                 </label>
-              </div>
-              <Button
-                id="default-exams"
-                variant={defaultExams ? "default" : "outline"}
-                size="sm"
-                onClick={() => setDefaultExams(!defaultExams)}
-              >
-                {defaultExams ? "Default" : "Not Default"}
-              </Button>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ClipboardList className="size-4" />
-                <label htmlFor="default-assignments" className="text-sm font-medium">
-                  Assignments
-                </label>
-              </div>
-              <Button
-                id="default-assignments"
-                variant={defaultAssignments ? "default" : "outline"}
-                size="sm"
-                onClick={() => setDefaultAssignments(!defaultAssignments)}
-                disabled={!hasAssignmentsPermission}
-              >
-                {defaultAssignments ? "Default" : "Not Default"}
-              </Button>
-            </div>
+              );
+            })}
           </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsDefaultDialogOpen(false)}
-              disabled={isSettingDefault}
-            >
-              Cancel
-            </Button>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" onClick={() => setIsDefaultDialogOpen(false)} disabled={isSettingDefault}>Cancel</Button>
             <Button onClick={handleSetDefault} disabled={isSettingDefault}>
               {isSettingDefault ? <Spinner className="size-4" /> : "Save"}
             </Button>
@@ -479,62 +462,53 @@ function PresetCard({
         </DialogContent>
       </Dialog>
 
+      {/* Apply to all dialog */}
       <Dialog open={isApplyDialogOpen} onOpenChange={setIsApplyDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Apply Preset to All</DialogTitle>
+            <DialogTitle>Apply to all current items</DialogTitle>
             <DialogDescription>
-              Apply this preset to all current items. This will update existing notifications.
+              Override existing notification settings for all exams or assignments with &quot;{preset.name}&quot;.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className="size-4" />
-                <label htmlFor="apply-exams" className="text-sm font-medium">
-                  Exams
+          <div className="space-y-3 py-1">
+            {(["exams", "assignments"] as const).map((type) => {
+              const isExams = type === "exams";
+              const checked = isExams ? applyExams : applyAssignments;
+              const disabled = !isExams && !hasAssignmentsPermission;
+              return (
+                <label
+                  key={type}
+                  className={[
+                    "flex items-center justify-between rounded-lg border p-3 cursor-pointer transition-colors",
+                    disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-muted/50",
+                    checked ? "border-primary bg-primary/5" : "",
+                  ].join(" ")}
+                >
+                  <div className="flex items-center gap-2.5">
+                    {isExams ? <FileText className="size-4 text-muted-foreground" /> : <ClipboardList className="size-4 text-muted-foreground" />}
+                    <span className="text-sm font-medium capitalize">{type}</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={checked}
+                    disabled={disabled}
+                    onChange={() => isExams ? setApplyExams(!applyExams) : setApplyAssignments(!applyAssignments)}
+                  />
+                  <div className={[
+                    "size-5 rounded border-2 flex items-center justify-center transition-colors",
+                    checked ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30",
+                  ].join(" ")}>
+                    {checked && <Check className="size-3" />}
+                  </div>
                 </label>
-              </div>
-              <Button
-                id="apply-exams"
-                variant={applyExams ? "default" : "outline"}
-                size="sm"
-                onClick={() => setApplyExams(!applyExams)}
-              >
-                {applyExams ? "Selected" : "Select"}
-              </Button>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ClipboardList className="size-4" />
-                <label htmlFor="apply-assignments" className="text-sm font-medium">
-                  Assignments
-                </label>
-              </div>
-              <Button
-                id="apply-assignments"
-                variant={applyAssignments ? "default" : "outline"}
-                size="sm"
-                onClick={() => setApplyAssignments(!applyAssignments)}
-                disabled={!hasAssignmentsPermission}
-              >
-                {applyAssignments ? "Selected" : "Select"}
-              </Button>
-            </div>
+              );
+            })}
           </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsApplyDialogOpen(false)}
-              disabled={isApplying}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleApply}
-              disabled={isApplying || (!applyExams && !applyAssignments)}
-            >
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" onClick={() => setIsApplyDialogOpen(false)} disabled={isApplying}>Cancel</Button>
+            <Button onClick={handleApply} disabled={isApplying || (!applyExams && !applyAssignments)}>
               {isApplying ? <Spinner className="size-4" /> : "Apply"}
             </Button>
           </div>
@@ -582,68 +556,64 @@ function PushNotificationManager() {
 
   if (!isSupported && !isIos) {
     return (
-      <Card>
-        <CardContent className="py-4">
-          <p className="text-muted-foreground text-sm">
-            Push notifications are not supported in this browser.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="flex items-center gap-3 rounded-lg border border-dashed px-4 py-3">
+        <BellOff className="size-4 text-muted-foreground shrink-0" />
+        <p className="text-sm text-muted-foreground">Push notifications aren&apos;t supported in this browser.</p>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Smartphone className="size-5" />
-          Push Notifications
-        </CardTitle>
-        <CardDescription>Receive notifications on your device</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isAndroid ? (
-          <Button onClick={installApp} disabled={isInstalling}>
-            {isInstalling ? <Spinner className="size-4 mr-2" /> : <Download className="size-4 mr-2" />}
-            {isInstalling ? "Installing..." : "Install App"}
-          </Button>
-        ) : isMobile && canInstall ? (
-          <Button onClick={installApp} disabled={isInstalling}>
-            {isInstalling ? <Spinner className="size-4 mr-2" /> : <Download className="size-4 mr-2" />}
-            {isInstalling ? "Installing..." : "Install App"}
+    <div className="flex items-start justify-between gap-4 rounded-lg border bg-card px-4 py-3">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+          <Smartphone className="size-4 text-primary" />
+        </div>
+        <div>
+          <p className="text-sm font-medium leading-none">Push notifications</p>
+          <p className="mt-1 text-xs text-muted-foreground">Receive reminders directly on this device</p>
+        </div>
+      </div>
+
+      <div className="shrink-0">
+        {isAndroid || (isMobile && canInstall) ? (
+          <Button size="sm" onClick={installApp} disabled={isInstalling} className="gap-1.5">
+            {isInstalling ? <Spinner className="size-3.5" /> : <Download className="size-3.5" />}
+            {isInstalling ? "Installing…" : "Install app"}
           </Button>
         ) : isMobile && isIos ? (
-          <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-              <li>Tap the <Share className="size-4 inline mx-1" /> Share button in Safari</li>
-              <li>Scroll down and tap &quot;Add to Home Screen&quot;</li>
-              <li>Open the app from your home screen</li>
-             </ol>
+          <Button size="sm" variant="outline" disabled className="gap-1.5 text-xs">
+            <Share className="size-3.5" />iOS instructions below
+          </Button>
+        ) : isSubscribed ? (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={unsubscribeFromPush}
+            disabled={isLoading || offline}
+            className="gap-1.5"
+          >
+            {isLoading ? <Spinner className="size-3.5" /> : <Check className="size-3.5 text-green-500" />}
+            {isLoading ? "Disabling…" : "Enabled"}
+          </Button>
         ) : (
-          <>
-            {isSubscribed ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Check className="size-4 text-green-500" />
-                  <span className="text-sm">Notifications enabled</span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={unsubscribeFromPush}
-                  disabled={isLoading || offline}
-                >
-                  Disable
-                </Button>
-              </div>
-            ) : (
-              <Button onClick={subscribeToPush} disabled={isLoading || offline}>
-                {isLoading ? "Enabling..." : "Enable Notifications"}
-              </Button>
-            )}
-          </>
+          <Button size="sm" onClick={subscribeToPush} disabled={isLoading || offline} className="gap-1.5">
+            {isLoading ? <Spinner className="size-3.5" /> : <Bell className="size-3.5" />}
+            {isLoading ? "Enabling…" : "Enable"}
+          </Button>
         )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {isMobile && isIos && !isSubscribed && (
+        <div className="col-span-full mt-2 rounded-md bg-muted/50 px-3 py-2">
+          <ol className="space-y-1 text-xs text-muted-foreground list-decimal list-inside">
+            <li>Tap the <Share className="size-3.5 inline mx-0.5 -mt-0.5" /> Share button in Safari</li>
+            <li>Scroll down and tap <strong>Add to Home Screen</strong></li>
+            <li>Open the app from your home screen</li>
+          </ol>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -651,17 +621,13 @@ export default function NotificationsPage() {
   usePageTitle("Notification Settings");
   const { data: session } = useAppSession();
   const [loadedPresets, setPresets] = React.useState<Preset[]>([]);
-  const [loadedLimits, setLimits] = React.useState<Limits>({
-    presets: 1,
-    timesPerPreset: 2,
-  });
+  const [loadedLimits, setLimits] = React.useState<Limits>({ presets: 1, timesPerPreset: 2 });
   const [newPresetName, setNewPresetName] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [isInitialLoading, setIsInitialLoading] = React.useState(true);
   const [activatingButton, setActivatingButton] = React.useState<ActivatingButton>(null);
 
   const role = session?.user?.role as "free" | "basic" | "pro" | "admin" | undefined;
-
   const offline = useOfflineState();
   const hasAssignmentsPermission = offline.snapshot?.hasAssignmentsPermission ?? null;
   const presets = offline.snapshot?.presets ?? loadedPresets;
@@ -680,12 +646,9 @@ export default function NotificationsPage() {
     loadPresets().finally(() => setIsInitialLoading(false));
   }, []);
 
-
-
   async function handleCreatePreset(e: React.FormEvent) {
     e.preventDefault();
     if (!newPresetName.trim()) return;
-
     setIsLoading(true);
     const result = await createPresetAction(newPresetName.trim());
     if ("error" in result) {
@@ -698,9 +661,9 @@ export default function NotificationsPage() {
   }
 
   async function handleDeletePreset(presetId: string): Promise<void> {
-     const result = await deletePresetAction(presetId);
-     if ("error" in result) toast.error(result.error);
-     else await loadPresets();
+    const result = await deletePresetAction(presetId);
+    if ("error" in result) toast.error(result.error);
+    else await loadPresets();
   }
 
   async function handleSetDefault(presetId: string, exams: boolean, assignments: boolean): Promise<void> {
@@ -724,78 +687,79 @@ export default function NotificationsPage() {
     setActivatingButton({ presetId, type: exams ? "applyExams" : "applyAssignments" });
     try {
       const results: string[] = [];
-      
       if (exams) {
         const result = await applyPresetToAllCurrentExamsAction(presetId);
-        if ("error" in result) {
-          toast.error(result.error);
-          return;
-        }
+        if ("error" in result) { toast.error(result.error); return; }
         results.push(`${result.applied} exam(s)`);
       }
-      
       if (assignments) {
         const result = await applyPresetToAllCurrentAssignmentsAction(presetId);
-        if ("error" in result) {
-          toast.error(result.error);
-          return;
-        }
+        if ("error" in result) { toast.error(result.error); return; }
         results.push(`${result.applied} assignment(s)`);
       }
-      
-      if (results.length > 0) {
-        toast.success(`Applied to ${results.join(" and ")}`);
-      }
+      if (results.length > 0) toast.success(`Applied to ${results.join(" and ")}`);
     } finally {
       setActivatingButton(null);
     }
   }
 
   async function handleEditPreset(presetId: string, name: string): Promise<void> {
-     const result = await updatePresetAction(presetId, name);
-     if ("error" in result) toast.error(result.error);
-     else await loadPresets();
+    const result = await updatePresetAction(presetId, name);
+    if ("error" in result) toast.error(result.error);
+    else await loadPresets();
   }
- 
-  async function handleAddTime(
-     presetId: string,
-     daysBefore: number,
-     time: string,
-  ): Promise<void> {
-     const result = await addNotificationTimeAction(presetId, daysBefore, time);
-     if ("error" in result) {
-       toast.error(result.error);
-     } else {
-       await loadPresets();
-     }
+
+  async function handleAddTime(presetId: string, daysBefore: number, time: string): Promise<void> {
+    const result = await addNotificationTimeAction(presetId, daysBefore, time);
+    if ("error" in result) toast.error(result.error);
+    else await loadPresets();
   }
- 
+
   async function handleRemoveTime(timeId: string): Promise<void> {
-     const result = await removeNotificationTimeAction(timeId);
-     if ("error" in result) toast.error(result.error);
-     else await loadPresets();
+    const result = await removeNotificationTimeAction(timeId);
+    if ("error" in result) toast.error(result.error);
+    else await loadPresets();
   }
 
   const canAddPreset = presets.length < limits.presets;
 
   return (
-    <div className="flex flex-1 flex-col gap-6 items-center">
-        <div className="grid gap-6 w-full max-w-2xl">
-          <div>
-            <h1 className="text-2xl font-semibold">Notification Settings</h1>
-            <p className="text-muted-foreground">
-              Configure when you want to be notified about exams and assignments
-            </p>
-          </div>
+    <div className="flex flex-1 flex-col items-center">
+      <div className="grid gap-8 w-full max-w-2xl">
 
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Notifications</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage when and how you get reminded about exams and assignments.
+          </p>
+        </div>
+
+        {/* Push notification toggle */}
+        <section className="grid gap-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Device</h2>
           <PushNotificationManager />
+        </section>
+
+        {/* Presets */}
+        <section className="grid gap-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Reminder presets
+            </h2>
+            {!isInitialLoading && (
+              <span className="text-xs text-muted-foreground">
+                {presets.length} / {limits.presets}
+              </span>
+            )}
+          </div>
 
           {isInitialLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Spinner className="size-8" />
+              <Spinner className="size-6" />
             </div>
           ) : presets.length > 0 ? (
-            <div className="grid gap-4">
+            <div className="grid gap-3">
               {presets.map((preset) => (
                 <PresetCard
                   key={preset.id}
@@ -807,70 +771,49 @@ export default function NotificationsPage() {
                   onApplyToAll={(exams, assignments) => handleApplyToAll(preset.id, exams, assignments)}
                   onDelete={() => handleDeletePreset(preset.id)}
                   onEdit={(name) => handleEditPreset(preset.id, name)}
-                  onAddTime={(days, time) =>
-                    handleAddTime(preset.id, days, time)
-                  }
+                  onAddTime={(days, time) => handleAddTime(preset.id, days, time)}
                   onRemoveTime={(timeId) => handleRemoveTime(timeId)}
                 />
               ))}
             </div>
           ) : (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <Bell className="size-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">
-                  No presets configured yet.
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed py-12 text-center">
+              <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+                <Bell className="size-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">No presets yet</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Create a preset to define your reminder schedule.
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Create a preset to set up your notifications.
-                </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
+          {/* Create preset form */}
           {!isInitialLoading && canAddPreset && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Create New Preset</CardTitle>
-                <CardDescription>
-                  {limits.presets - presets.length} preset(s) remaining for your
-                  plan
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleCreatePreset}>
-                  <FieldGroup>
-                    <Field>
-                      <FieldLabel htmlFor="preset-name">Preset Name</FieldLabel>
-                      <div className="flex gap-2">
-                        <Input
-                          id="preset-name"
-                          value={newPresetName}
-                          onChange={(e) => setNewPresetName(e.target.value)}
-                          placeholder="e.g., Default reminders"
-                        />
-                        <Button type="submit" disabled={isLoading}>
-                          {isLoading ? "Creating..." : "Create"}
-                        </Button>
-                      </div>
-                    </Field>
-                  </FieldGroup>
-                </form>
-              </CardContent>
-            </Card>
+            <form onSubmit={handleCreatePreset} className="flex gap-2 mt-1">
+              <Input
+                value={newPresetName}
+                onChange={(e) => setNewPresetName(e.target.value)}
+                placeholder="New preset name…"
+                className="h-9 text-sm"
+              />
+              <Button type="submit" size="sm" disabled={isLoading || !newPresetName.trim()} className="h-9 gap-1.5 shrink-0">
+                {isLoading ? <Spinner className="size-3.5" /> : <Plus className="size-3.5" />}
+                {isLoading ? "Creating…" : "Create"}
+              </Button>
+            </form>
           )}
 
           {!isInitialLoading && !canAddPreset && role === "free" && (
-            <Card className="bg-muted/50">
-              <CardContent className="py-4 text-center">
-                <p className="text-sm text-muted-foreground">
-                  You&apos;ve reached the maximum number of presets for your
-                  plan.
-                </p>
-              </CardContent>
-            </Card>
+            <p className="text-xs text-center text-muted-foreground px-4 py-2 rounded-lg bg-muted/50">
+              Upgrade to Pro to create more presets and add more reminder times.
+            </p>
           )}
-        </div>
+        </section>
       </div>
+    </div>
   );
 }
+
