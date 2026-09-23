@@ -595,15 +595,23 @@ function PushNotificationManager() {
   }
 
   return (
-    <Card className="min-w-0 gap-0 overflow-hidden py-0">
+    <Card className="min-w-0 gap-0 overflow-hidden py-0 md:grid md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
       <CardHeader className="p-4 sm:p-5">
         <CardTitle className="flex items-center gap-2 text-base leading-6">
           <Smartphone className="size-5" />
           Push Notifications
         </CardTitle>
-        <CardDescription>Receive notifications on your device</CardDescription>
+        <CardDescription>
+          <span className={isSubscribed ? "md:hidden" : undefined}>Receive notifications on your device</span>
+          {isSubscribed && (
+            <span className="hidden items-center gap-2 md:inline-flex">
+              <Check className="size-4 text-green-500" />
+              Notifications enabled
+            </span>
+          )}
+        </CardDescription>
       </CardHeader>
-      <CardContent className="border-t border-border/60 bg-muted/20 p-4 sm:px-5">
+      <CardContent className="border-t border-border/60 bg-muted/20 p-4 sm:px-5 md:border-0 md:bg-transparent md:pl-0">
         {isAndroid ? (
           <Button className="min-h-11 w-full sm:w-auto" onClick={installApp} disabled={isInstalling}>
             {isInstalling ? <Spinner className="size-4 mr-2" /> : <Download className="size-4 mr-2" />}
@@ -624,7 +632,7 @@ function PushNotificationManager() {
           <>
             {isSubscribed ? (
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 md:hidden">
                   <Check className="size-4 text-green-500" />
                   <span className="text-sm">Notifications enabled</span>
                 </div>
