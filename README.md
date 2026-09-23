@@ -156,6 +156,21 @@ once per minute per IP on each server instance. Login challenges expire after te
 minutes. Users cannot disable the requirement or trust a device to skip it.
 Google and passkey login continue to use their existing flows.
 
+For preview deployments, set this server-only runtime environment variable and
+restart or redeploy the app:
+
+```dotenv
+BYPASS_2FA=true
+```
+
+Only the exact value `true` skips the email login code for all password accounts
+on that deployment. Password checks and registration email verification still
+apply. Account 2FA settings stay intact, so removing the variable or setting it
+to `false` restores the code requirement for subsequent logins after a restart.
+Existing sessions remain valid. Keep this variable unset in production and scope
+it to preview deployments in your hosting provider. Do not use a `NEXT_PUBLIC_`
+prefix. No database migration is needed.
+
 For the existing test database, which has application tables but no recorded
 Drizzle migrations, use `bun x --bun drizzle-kit push --strict --verbose` and review
 the SQL before accepting. Do not run `migrate` against that database: it would

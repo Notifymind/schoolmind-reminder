@@ -20,7 +20,7 @@ function load(file, dependencies, env = {}) {
   return context.exports;
 }
 
-function setup({ failCodeDelivery = false } = {}) {
+function setup({ failCodeDelivery = false, env = {} } = {}) {
   const deliveries = [];
   const loginCodes = [];
   const referralLinks = [];
@@ -36,7 +36,7 @@ function setup({ failCodeDelivery = false } = {}) {
     '@/db/referrals': { referralCookie: 'notifymind_referral', linkReferral: async (...args) => referralLinks.push(args) },
     '@/db': {}, '@/db/schema': {}, './permissions': {},
     './email': { sendLoginCode: async message => { if (failCodeDelivery) throw new Error("Provider failed"); loginCodes.push(message); }, sendVerificationEmail: async message => deliveries.push(message), sendResetPassword: async message => resetDeliveries.push(message) },
-  }, { GOOGLE_CLIENT_ID: 'test-google-client', GOOGLE_CLIENT_SECRET: 'test-google-secret' });
+  }, { GOOGLE_CLIENT_ID: 'test-google-client', GOOGLE_CLIENT_SECRET: 'test-google-secret', ...env });
   const auth = betterAuth({
     ...options,
     plugins: options.plugins.filter(plugin => plugin.id === "two-factor"),
@@ -50,6 +50,34 @@ function setup({ failCodeDelivery = false } = {}) {
 
 const credentials = { email: 'student@example.com', password: 'test-password-123', name: 'Student' };
 const callbackURL = 'http://localhost:3000/verify-email?verified=1';
+
+test('preview bypass skips the code but still requires verified email and a valid password', async () => {
+  const { auth, deliveries, database, loginCodes, referralLinks } = setup({ env: { BYPASS_2FA: 'true' } });
+  await auth.api.signUpEmail({ body: credentials });
+  assert.equal(database.user[0].twoFactorEnabled, true);
+  await assert.rejects(auth.api.signInEmail({ body: credentials }), error => error.body.code === 'EMAIL_NOT_VERIFIED');
+  await auth.handler(new Request(deliveries[0].url));
+  await assert.rejects(auth.api.signInEmail({ body: { ...credentials, password: 'wrong-password' } }));
+  assert.equal(database.session.length, 0);
+  const login = await auth.api.signInEmail({
+    body: credentials,
+    headers: new Headers({ cookie: 'notifymind_referral=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' }),
+    returnHeaders: true,
+  });
+  assert.ok(login.response.token);
+  assert.equal(login.response.twoFactorRedirect, undefined);
+  assert.equal(database.session.length, 1);
+  assert.equal(database.user[0].twoFactorEnabled, true, 'bypass must not disable 2FA on the account');
+  assert.equal(loginCodes.length, 0);
+  assert.ok(await auth.api.getSession({ headers: challengeHeaders(login.headers) }));
+  assert.deepEqual(referralLinks, [[database.user[0].id, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa']]);
+});
+
+for (const value of [undefined, 'false', '1', 'TRUE']) {
+  test(`2FA remains required when BYPASS_2FA is ${value}`, async () => {
+    await pendingLogin({ env: { BYPASS_2FA: value } });
+  });
+}
 
 test('signup requires verification, resend works, and valid links unlock password login', async () => {
   const { auth, deliveries, database } = setup();
