@@ -230,14 +230,15 @@ function PresetCard({
   };
 
   return (
-    <Card className={(preset.isActiveForExams || preset.isActiveForAssignments ? "border-primary " : "") + "gap-0"}>
+    <Card className={(preset.isActiveForExams || preset.isActiveForAssignments ? "border-primary/30 " : "") + "gap-5 shadow-none"}>
       <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
             {isEditing ? (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Input
                   value={editName}
+                  aria-label="Preset name"
                   onChange={(e) => setEditName(e.target.value)}
                   className="text-lg font-semibold"
                 />
@@ -253,51 +254,33 @@ function PresetCard({
                 </Button>
               </div>
             ) : (
-              <CardTitle className="flex items-center gap-2">
-                {preset.name}
+              <CardTitle className="text-lg leading-snug break-words">
+                <h3>{preset.name}</h3>
               </CardTitle>
             )}
             <CardDescription className="mt-1">
-              {preset.times.length} notification time(s)
+              {preset.times.length} of {limits.timesPerPreset} reminders used
             </CardDescription>
           </div>
           <div className="flex gap-1">
             {!isEditing && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleOpenDefaultDialog}
-                  title="Make Default"
-                  disabled={isActivating || isDeleting || isSettingDefault}
-                >
-                  {isSettingDefault ? <Spinner className="size-4" /> : <Star className="size-4" />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleOpenApplyDialog}
-                  title="Apply to All"
-                  disabled={isActivating || isDeleting || isApplying}
-                >
-                  {isApplying ? <Spinner className="size-4" /> : <Save className="size-4" />}
-                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsEditing(true)}
-                  title="Edit"
+                  aria-label={`Rename ${preset.name}`}
+                  title="Rename preset"
                   disabled={isActivating || isDeleting}
                 >
                   <Edit2 className="size-4" />
                 </Button>
-              </>
             )}
             <Button
               variant="ghost"
               size="icon"
               onClick={handleDelete}
-              title="Delete"
+              aria-label={`Delete ${preset.name}`}
+              title="Delete preset"
               disabled={isActivating || isDeleting}
             >
               {isDeleting ? <Spinner className="size-4" /> : <Trash2 className="size-4 text-destructive" />}
@@ -305,19 +288,19 @@ function PresetCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-4">
         {(preset.isActiveForExams || preset.isActiveForAssignments) && (
           <div className="flex flex-wrap gap-2">
             {preset.isActiveForExams && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+              <div className="flex items-center gap-1 text-xs font-medium bg-primary/5 px-2.5 py-1.5 rounded-full">
                 <FileText className="size-3" />
-                <span>Default for Exams</span>
+                <span>Exam default</span>
               </div>
             )}
             {preset.isActiveForAssignments && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+              <div className="flex items-center gap-1 text-xs font-medium bg-primary/5 px-2.5 py-1.5 rounded-full">
                 <ClipboardList className="size-3" />
-                <span>Default for Assignments</span>
+                <span>Assignment default</span>
               </div>
             )}
           </div>
@@ -325,15 +308,15 @@ function PresetCard({
 
         {preset.times.length > 0 ? (
           <div className="space-y-2">
-            {preset.times.map((t) => (
+            {[...preset.times].sort((a, b) => b.daysBefore - a.daysBefore || a.time.localeCompare(b.time)).map((t) => (
               <div
                 key={t.id}
-                className="flex items-center justify-between rounded-md border p-2"
+                className="flex items-center justify-between gap-2 rounded-xl bg-muted/50 p-3"
               >
-                <div className="flex items-center gap-3 text-sm">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                   <span className="flex items-center gap-1">
                     <Calendar className="size-4" />
-                    {t.daysBefore} day{t.daysBefore !== 1 ? "s" : ""} before
+                    {t.daysBefore === 0 ? "On the day" : `${t.daysBefore} day${t.daysBefore === 1 ? "" : "s"} before`}
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="size-4" />
@@ -344,6 +327,7 @@ function PresetCard({
                    variant="ghost"
                    size="icon"
                    onClick={() => handleRemoveTime(t.id)}
+                   aria-label={`Remove reminder ${t.daysBefore} days before at ${t.time}`}
                    disabled={isActivating || deletingTimeId !== null}
                  >
                    {deletingTimeId === t.id ? <Spinner className="size-4" /> : <Trash2 className="size-4" />}
@@ -352,7 +336,7 @@ function PresetCard({
             ))}
           </div>
         ) : (
-          <FieldDescription>No notification times configured.</FieldDescription>
+          <FieldDescription className="rounded-xl border border-dashed p-5 text-center">Add a reminder to choose when this preset notifies you.</FieldDescription>
         )}
 
         {preset.times.length < limits.timesPerPreset && (
@@ -362,9 +346,9 @@ function PresetCard({
             setIsAddTimeOpen(open);
           }}>
              <DialogTrigger asChild>
-               <Button variant="outline" size="sm" className="w-full" disabled={isActivating || isDeleting || deletingTimeId !== null}>
+               <Button variant="outline" size="sm" className="w-full border-dashed" disabled={isActivating || isDeleting || deletingTimeId !== null}>
                  <Plus className="size-4 mr-2" />
-                 Add notification time
+                 Add reminder
                </Button>
             </DialogTrigger>
             <DialogContent aria-describedby={undefined} className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-sm">
@@ -402,6 +386,17 @@ function PresetCard({
           </Dialog>
         )}
       </CardContent>
+
+      <div className="flex flex-wrap gap-2 border-t px-6 pt-4">
+        <Button variant="secondary" size="sm" onClick={handleOpenDefaultDialog} disabled={isActivating || isDeleting || isSettingDefault}>
+          {isSettingDefault ? <Spinner className="size-4" /> : <Star className="size-4" />}
+          Set as default
+        </Button>
+        <Button variant="ghost" size="sm" onClick={handleOpenApplyDialog} disabled={isActivating || isDeleting || isApplying}>
+          {isApplying ? <Spinner className="size-4" /> : <Save className="size-4" />}
+          Apply to existing
+        </Button>
+      </div>
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
@@ -593,13 +588,13 @@ function PushNotificationManager() {
   }
 
   return (
-    <Card>
+    <Card className="gap-5 shadow-none">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <span className="mb-2 flex size-11 items-center justify-center rounded-xl bg-muted">
           <Smartphone className="size-5" />
-          Push Notifications
-        </CardTitle>
-        <CardDescription>Receive notifications on your device</CardDescription>
+        </span>
+        <CardTitle><h2>This device</h2></CardTitle>
+        <CardDescription>Allow push notifications to receive your exam and assignment reminders here.</CardDescription>
       </CardHeader>
       <CardContent>
         {isAndroid ? (
@@ -621,7 +616,7 @@ function PushNotificationManager() {
         ) : (
           <>
             {isSubscribed ? (
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Check className="size-4 text-green-500" />
                   <span className="text-sm">Notifications enabled</span>
@@ -642,6 +637,7 @@ function PushNotificationManager() {
             )}
           </>
         )}
+        {offline && <p className="mt-3 text-xs text-muted-foreground">Connect to the internet to change device notifications.</p>}
       </CardContent>
     </Card>
   );
@@ -779,20 +775,28 @@ export default function NotificationsPage() {
   const canAddPreset = presets.length < limits.presets;
 
   return (
-    <div className="flex flex-1 flex-col gap-6 items-center">
-        <div className="grid gap-6 w-full max-w-2xl">
-          <div>
-            <h1 className="text-2xl font-semibold">Notification Settings</h1>
-            <p className="text-muted-foreground">
-              Configure when you want to be notified about exams and assignments
-            </p>
+    <div className="mx-auto w-full max-w-6xl py-4 md:px-4 md:py-8">
+      <header className="mb-8 border-b pb-8">
+        <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+          <Bell className="size-6" />
+        </div>
+        <h1 className="text-3xl font-semibold tracking-tight">Notifications</h1>
+        <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+          Choose when to get a heads-up about exams and assignments.
+        </p>
+      </header>
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <section aria-labelledby="presets-heading" className="min-w-0 space-y-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 id="presets-heading" className="text-lg font-semibold">Reminder presets</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Save a schedule and reuse it for your schoolwork.</p>
+            </div>
+            {!isInitialLoading && <span className="shrink-0 rounded-full bg-muted px-3 py-1 text-xs font-medium tabular-nums">{presets.length} / {limits.presets} used</span>}
           </div>
-
-          <PushNotificationManager />
-
           {isInitialLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Spinner className="size-8" />
+              <Spinner className="size-8" /><span className="sr-only">Loading reminder presets</span>
             </div>
           ) : presets.length > 0 ? (
             <div className="grid gap-4">
@@ -819,10 +823,10 @@ export default function NotificationsPage() {
               <CardContent className="py-8 text-center">
                 <Bell className="size-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">
-                  No presets configured yet.
+                  Your first reminder starts here.
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Create a preset to set up your notifications.
+                  Create a preset below, then add the days and times to be notified.
                 </p>
               </CardContent>
             </Card>
@@ -831,25 +835,25 @@ export default function NotificationsPage() {
           {!isInitialLoading && canAddPreset && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Create New Preset</CardTitle>
+                <CardTitle><h3>Create a preset</h3></CardTitle>
                 <CardDescription>
-                  {limits.presets - presets.length} preset(s) remaining for your
-                  plan
+                  Give your schedule a name, then add reminders.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleCreatePreset}>
                   <FieldGroup>
                     <Field>
-                      <FieldLabel htmlFor="preset-name">Preset Name</FieldLabel>
+                      <FieldLabel htmlFor="preset-name">Preset name</FieldLabel>
                       <div className="flex gap-2">
                         <Input
                           id="preset-name"
                           value={newPresetName}
                           onChange={(e) => setNewPresetName(e.target.value)}
-                          placeholder="e.g., Default reminders"
+                          placeholder="e.g., Exam week"
+                          disabled={isLoading}
                         />
-                        <Button type="submit" disabled={isLoading}>
+                        <Button type="submit" disabled={isLoading || !newPresetName.trim()}>
                           {isLoading ? "Creating..." : "Create"}
                         </Button>
                       </div>
@@ -870,7 +874,18 @@ export default function NotificationsPage() {
               </CardContent>
             </Card>
           )}
-        </div>
+        </section>
+        <aside className="space-y-5 lg:sticky lg:top-6">
+          <PushNotificationManager />
+          <div className="rounded-xl bg-muted/50 p-5">
+            <h2 className="flex items-center gap-2 text-sm font-semibold"><Star className="size-4" /> How presets work</h2>
+            <div className="mt-3 space-y-3 text-sm leading-relaxed text-muted-foreground">
+              <p>Set a default to use that schedule for new exams or assignments.</p>
+              <p>Choose <span className="font-medium text-foreground">Apply to existing</span> to update reminders for items you already have.</p>
+            </div>
+          </div>
+        </aside>
       </div>
+    </div>
   );
 }
