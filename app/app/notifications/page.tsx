@@ -764,13 +764,13 @@ export default function NotificationsPage() {
   const canAddPreset = presets.length < limits.presets;
 
   return (
-    <div className="mx-auto w-full max-w-6xl py-4 md:px-4 md:py-8">
-      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div className="mx-auto w-full max-w-2xl py-4 md:px-4 md:py-8">
+      <div className="grid items-start gap-8">
+        <PushNotificationManager />
         <section aria-labelledby="presets-heading" className="min-w-0 space-y-5">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 id="presets-heading" className="text-lg font-semibold">Reminder presets</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Save a schedule and reuse it for your schoolwork.</p>
             </div>
             {!isInitialLoading && <span className="shrink-0 rounded-full bg-muted px-3 py-1 text-xs font-medium tabular-nums">{presets.length} / {limits.presets} used</span>}
           </div>
@@ -855,16 +855,6 @@ export default function NotificationsPage() {
             </Card>
           )}
         </section>
-        <aside className="space-y-5 lg:sticky lg:top-6">
-          <PushNotificationManager />
-          <div className="rounded-xl bg-muted/50 p-5">
-            <h2 className="flex items-center gap-2 text-sm font-semibold"><Star className="size-4" /> How presets work</h2>
-            <div className="mt-3 space-y-3 text-sm leading-relaxed text-muted-foreground">
-              <p>Set a default to use that schedule for new exams or assignments.</p>
-              <p>Choose <span className="font-medium text-foreground">Apply to existing</span> to update reminders for items you already have.</p>
-            </div>
-          </div>
-        </aside>
       </div>
     </div>
   );
