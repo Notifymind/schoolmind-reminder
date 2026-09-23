@@ -20,6 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getDaysInfo } from "@/lib/user-settings";
 import { SchoolEventCard } from "@/components/school-event-card";
 import { Button } from "@/components/ui/button";
 import { Bell, BellOff } from "lucide-react";
@@ -86,35 +87,7 @@ function AssignmentCard({
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const getDaysText = (): {
-    text: string;
-    isPast: boolean;
-    isUrgent: boolean;
-  } | null => {
-    if (!assignment.dueDate) return null;
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const due = new Date(assignment.dueDate);
-    due.setHours(0, 0, 0, 0);
-    const diffDays = Math.floor(
-      (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-    );
-
-    if (diffDays < 0)
-      return {
-        text: `${Math.abs(diffDays)} days ago`,
-        isPast: true,
-        isUrgent: false,
-      };
-    if (diffDays === 0) return { text: "Today", isPast: false, isUrgent: true };
-    if (diffDays === 1)
-      return { text: "Tomorrow", isPast: false, isUrgent: true };
-    if (diffDays <= 7)
-      return { text: `In ${diffDays} days`, isPast: false, isUrgent: true };
-    return { text: `In ${diffDays} days`, isPast: false, isUrgent: false };
-  };
-
-  const daysInfo = getDaysText();
+  const daysInfo = getDaysInfo(assignment.dueDate);
 
   const handleSelectPreset = async (value: string) => {
     setIsLoading(true);

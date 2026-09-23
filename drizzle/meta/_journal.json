@@ -113,6 +113,13 @@
       "when": 1790009510207,
       "tag": "0015_striped_post",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790196027681,
+      "tag": "0016_user_settings",
+      "breakpoints": true
     }
   ]
 }

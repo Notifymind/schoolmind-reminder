@@ -6,6 +6,10 @@ import { useTheme } from "next-themes";
 import { Bell, ChevronRight, Monitor, Moon, Palette, Sun, User } from "lucide-react";
 import { usePageTitle } from "@/app/app/layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { SubjectAliasSettings } from "@/components/subject-alias-settings";
+import { CountdownColorSettings } from "@/components/countdown-color-settings";
+import { useOfflineState } from "@/lib/offline/store";
+import { defaultUserSettings } from "@/lib/user-settings";
 import { cn } from "@/lib/utils";
 
 const subscribe = () => () => {};
@@ -34,6 +38,10 @@ const settingsLinks = [
 
 export default function SettingsPage() {
   usePageTitle("Settings");
+  const { snapshot, ready } = useOfflineState();
+  const settings = snapshot?.settings ?? defaultUserSettings;
+  const subjects = [...new Set([...(snapshot?.exams ?? []), ...(snapshot?.assignments ?? [])]
+    .map((item) => item.subject).filter((subject): subject is string => !!subject?.trim()))];
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(subscribe, () => true, () => false);
 
@@ -87,6 +95,18 @@ export default function SettingsPage() {
             </p>
           </div>
         </Card>
+
+        <section aria-labelledby="card-settings-heading" className="min-w-0 space-y-4">
+          <div>
+            <h2 id="card-settings-heading" className="text-lg font-semibold">Exam and assignment cards</h2>
+            <p className="mt-1 text-sm leading-5 text-muted-foreground">
+              Personalize your cards. These settings are saved to your account. Offline changes sync when you reconnect.
+            </p>
+            {!snapshot && <p role="status" className="mt-2 text-sm text-muted-foreground">{ready ? "Connect to load your settings before making changes." : "Loading your settings…"}</p>}
+          </div>
+          <SubjectAliasSettings key={`aliases-${snapshot?.user.id ?? "loading"}`} aliases={settings.subjectAliases} subjects={subjects} disabled={!snapshot} />
+          <CountdownColorSettings key={`colors-${snapshot?.user.id ?? "loading"}`} colors={settings.countdownColors} disabled={!snapshot} />
+        </section>
 
         <div className="grid min-w-0 gap-4">
           {settingsLinks.map(({ href, title, description, action, icon: Icon }) => (
