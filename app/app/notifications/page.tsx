@@ -239,19 +239,19 @@ function PresetCard({
   return (
     <Card className="min-w-0 gap-0 overflow-hidden py-0">
       <div className="flex items-start gap-3 p-4 sm:p-5">
-        <div className="min-w-0 flex-1 self-center">
+        <div className="min-w-0 flex-1">
           <h3 className="text-base font-semibold leading-6 [overflow-wrap:anywhere]">
             {preset.name}
           </h3>
-          {(preset.isActiveForExams || preset.isActiveForAssignments) && (
-            <p className="mt-1 text-sm text-muted-foreground">
-              {preset.isActiveForExams && preset.isActiveForAssignments
-                ? "Default for Exams & Assignments"
-                : preset.isActiveForExams
-                  ? "Default for Exams"
-                  : "Default for Assignments"}
-            </p>
-          )}
+          <p className="mt-1 text-sm text-muted-foreground">
+            {preset.isActiveForExams && preset.isActiveForAssignments
+              ? "Default for Exams & Assignments"
+              : preset.isActiveForExams
+                ? "Default for Exams"
+                : preset.isActiveForAssignments
+                  ? "Default for Assignments"
+                  : "Not the default for anything"}
+          </p>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
