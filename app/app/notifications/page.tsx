@@ -240,13 +240,18 @@ function PresetCard({
     <Card className="min-w-0 gap-0 overflow-hidden py-0">
       <div className="flex items-start gap-3 p-4 sm:p-5">
         <div className="min-w-0 flex-1">
-          <p className="text-sm text-muted-foreground">Reminder preset</p>
-          <h3 className="mt-1 text-base font-semibold leading-6 [overflow-wrap:anywhere]">
+          <h3 className="text-base font-semibold leading-6 [overflow-wrap:anywhere]">
             {preset.name}
           </h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {preset.times.length} of {limits.timesPerPreset} reminder times
-          </p>
+          {(preset.isActiveForExams || preset.isActiveForAssignments) && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              {preset.isActiveForExams && preset.isActiveForAssignments
+                ? "Default for Exams & Assignments"
+                : preset.isActiveForExams
+                  ? "Default for Exams"
+                  : "Default for Assignments"}
+            </p>
+          )}
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -281,23 +286,6 @@ function PresetCard({
         </DropdownMenu>
       </div>
       <CardContent className="space-y-3 px-4 pb-4 sm:px-5 sm:pb-5">
-        {(preset.isActiveForExams || preset.isActiveForAssignments) && (
-          <div className="flex flex-wrap gap-2">
-            {preset.isActiveForExams && (
-              <div className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium">
-                <FileText className="size-3" />
-                <span>Default for Exams</span>
-              </div>
-            )}
-            {preset.isActiveForAssignments && (
-              <div className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium">
-                <ClipboardList className="size-3" />
-                <span>Default for Assignments</span>
-              </div>
-            )}
-          </div>
-        )}
-
         {preset.times.length > 0 ? (
           <div className="space-y-2">
             {preset.times.map((t) => (
