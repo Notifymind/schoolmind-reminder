@@ -8,7 +8,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
-import { Home, FileText, ClipboardList, User, LogOut, Sun, Moon, DollarSign, Bell, Inbox, Ticket, BarChart3, Users, Wallet, GraduationCap, History } from "lucide-react"
+import { Home, FileText, ClipboardList, User, LogOut, Sun, Moon, DollarSign, Bell, Inbox, Ticket, BarChart3, Users, Wallet, GraduationCap, History, Settings } from "lucide-react"
 
 import {
   Sidebar,
@@ -182,6 +182,11 @@ const navItems = [
     title: "Referrals",
     url: "/app/referrals",
     icon: Users,
+  },
+  {
+    title: "Settings",
+    url: "/app/settings",
+    icon: Settings,
   },
 ]
 
