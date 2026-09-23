@@ -2,20 +2,15 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { FileText, ClipboardList, Bell, Menu } from "lucide-react"
+import { Home, Bell, Menu } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/ui/sidebar"
 
 const navItems = [
   {
-    title: "Exams",
-    href: "/app/exams",
-    icon: FileText,
-  },
-  {
-    title: "Assignments",
-    href: "/app/assignments",
-    icon: ClipboardList,
+    title: "Home",
+    href: "/app",
+    icon: Home,
   },
   {
     title: "Notifications",
@@ -32,7 +27,7 @@ export function MobileNavbar() {
     <nav className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-[calc(0.75rem+env(safe-area-inset-left))] right-[calc(0.75rem+env(safe-area-inset-right))] z-50 rounded-2xl border bg-background/95 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+          const isActive = pathname === item.href || (item.href !== "/app" && pathname.startsWith(item.href + "/"))
           
           return (
             <Link
