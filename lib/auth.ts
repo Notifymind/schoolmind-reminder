@@ -16,6 +16,8 @@ export type Role = (typeof roleNames)[number];
 
 // Better Auth 1.4 catches OTP delivery errors; report them after its endpoint finishes.
 const failedCodeDeliveries = new WeakSet<object>();
+// Set only on preview deployments. Keep persisted 2FA settings intact.
+const bypass2FA = process.env.BYPASS_2FA === "true";
 
 export const auth = betterAuth({
   // Email codes are mandatory. Do not expose enrollment, opt-out, or alternate factors.
@@ -58,7 +60,7 @@ export const auth = betterAuth({
       create: {
         after: async (session, ctx) => {
           // Session creation covers password, passkey, and Google login.
-          if (!ctx || ctx.path === "/sign-in/email" || ctx.path?.includes("impersonate")) return;
+          if (!ctx || (ctx.path === "/sign-in/email" && !bypass2FA) || ctx.path?.includes("impersonate")) return;
           const code = ctx.getCookie(referralCookie);
           if (!code) return;
           await linkReferral(session.userId, code);
@@ -105,21 +107,25 @@ export const auth = betterAuth({
   }),
   plugins: [
     passkey(),
-    twoFactor({
-      otpOptions: {
-        sendOTP: async (message, ctx) => {
-          try {
-            await sendLoginCode(message);
-          } catch {
-            if (ctx) failedCodeDeliveries.add(ctx.context);
-          }
+    {
+      ...twoFactor({
+        otpOptions: {
+          sendOTP: async (message, ctx) => {
+            try {
+              await sendLoginCode(message);
+            } catch {
+              if (ctx) failedCodeDeliveries.add(ctx.context);
+            }
+          },
+          digits: 6,
+          period: 5,
+          allowedAttempts: 5,
+          storeOTP: "hashed",
         },
-        digits: 6,
-        period: 5,
-        allowedAttempts: 5,
-        storeOTP: "hashed",
-      },
-    }),
+      }),
+      // Keep the plugin schema and endpoints, but skip its login challenge hooks.
+      ...(bypass2FA ? { hooks: {} } : {}),
+    },
     admin({
       defaultRole: "free",
       ac,
