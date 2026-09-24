@@ -103,6 +103,29 @@ export async function clearOfflineData() {
   });
 }
 
+// Server actions can remain pending after a connection drop. Never let one
+// hold the local write lock indefinitely. Late results must not update storage.
+function networkResult<T>(request: Promise<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(
+      () => finish(() => reject(new Error("Network timeout"))),
+      5_000,
+    );
+    const unsubscribe = subscribeOffline(() => {
+      if (state.offline) finish(() => reject(new Error("Connection lost")));
+    });
+    function finish(settle: () => void) {
+      clearTimeout(timer);
+      unsubscribe();
+      settle();
+    }
+    request.then(
+      (result) => finish(() => resolve(result)),
+      (error) => finish(() => reject(error)),
+    );
+  });
+}
+
 export async function synchronizeOffline() {
   if (!navigator.onLine) {
     setOffline(true);
@@ -114,7 +137,7 @@ export async function synchronizeOffline() {
     update({ syncing: true });
     try {
       let saved = await readSavedState();
-      const result = await getOfflineSnapshotAction();
+      const result = await networkResult(getOfflineSnapshotAction());
       setOffline(!navigator.onLine);
       if (!result.snapshot) {
         update({
@@ -136,9 +159,8 @@ export async function synchronizeOffline() {
       const hadPending = saved.queue.length > 0;
       while (saved.queue.length) {
         const entry: PendingChange = saved.queue[0];
-        const response = await syncNotificationChangeAction(
-          saved.snapshot.user.id,
-          entry.change,
+        const response = await networkResult(
+          syncNotificationChangeAction(saved.snapshot.user.id, entry.change),
         );
         if ("error" in response) {
           update({ error: response.error ?? "Could not synchronize changes" });
@@ -151,7 +173,9 @@ export async function synchronizeOffline() {
         await writeSavedState(saved);
         publish(saved);
       }
-      const fresh = hadPending ? await getOfflineSnapshotAction() : result;
+      const fresh = hadPending
+        ? await networkResult(getOfflineSnapshotAction())
+        : result;
       if (fresh.snapshot && fresh.snapshot.user.id === saved.snapshot.user.id) {
         saved = { snapshot: fresh.snapshot, queue: [] };
         await writeSavedState(saved);
