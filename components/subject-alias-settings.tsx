@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { BookOpen, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { queueChange } from "@/lib/offline/store";
@@ -61,9 +61,6 @@ export function SubjectAliasSettings({ aliases, subjects, hiddenSubjects, disabl
           <BookOpen aria-hidden="true" className="size-4 text-muted-foreground" />
           Subjects
         </CardTitle>
-        <CardDescription className="leading-5">
-          Rename subjects or hide their cards and stop their reminders. Show a subject again to resume future reminders.
-        </CardDescription>
       </CardHeader>
       <CardContent className="px-4 pb-4 sm:px-5 sm:pb-5">
         <form onSubmit={save} className="space-y-4">

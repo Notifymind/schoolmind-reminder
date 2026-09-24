@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CalendarClock } from "lucide-react";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { queueChange } from "@/lib/offline/store";
 import { countdownBands, defaultCountdownColors, pillColors, type CountdownColors, type PillColor } from "@/lib/user-settings";
@@ -35,7 +35,6 @@ export function CountdownColorSettings({ colors, disabled }: { colors: Countdown
           <CalendarClock aria-hidden="true" className="size-4 text-muted-foreground" />
           Countdown colors
         </CardTitle>
-        <CardDescription className="leading-5">Choose a pill color for each day range. These colors apply to both exams and assignments.</CardDescription>
       </CardHeader>
       <CardContent className="px-4 pb-4 sm:px-5 sm:pb-5">
         <form onSubmit={save} className="space-y-4">
@@ -60,9 +59,6 @@ export function CountdownColorSettings({ colors, disabled }: { colors: Countdown
           </div>
         </form>
       </CardContent>
-      <div className="border-t border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
-        <p className="text-sm leading-5 text-muted-foreground">Colors adapt to light and dark mode. The day label always stays visible.</p>
-      </div>
     </Card>
   );
 }

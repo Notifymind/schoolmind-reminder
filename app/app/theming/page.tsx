@@ -79,19 +79,11 @@ export default function ThemingPage() {
               </div>
             </fieldset>
           </CardContent>
-          <div className="border-t border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
-            <p className="text-sm leading-5 text-muted-foreground">
-              Your theme is saved automatically in this browser. Switch light and dark mode in your user menu.
-            </p>
-          </div>
         </Card>
 
         <section aria-labelledby="card-settings-heading" className="min-w-0 space-y-4">
           <div>
             <h2 id="card-settings-heading" className="text-lg font-semibold">Exam and assignment cards</h2>
-            <p className="mt-1 text-sm leading-5 text-muted-foreground">
-              Personalize your cards. These settings are saved to your account. Offline changes sync when you reconnect.
-            </p>
             {!snapshot && <p role="status" className="mt-2 text-sm text-muted-foreground">{ready ? "Connect to load your settings before making changes." : "Loading your settings…"}</p>}
           </div>
           <SubjectAliasSettings key={`aliases-${snapshot?.user.id ?? "loading"}`} aliases={settings.subjectAliases} hiddenSubjects={settings.hiddenSubjects ?? []} subjects={subjects} disabled={!snapshot} />
