@@ -4,6 +4,7 @@ import { useRef, useState, type PointerEvent } from "react";
 import { Check, GripHorizontal, Menu, PanelBottom, RotateCcw, Type } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
+import { BackToSettings } from "@/components/back-to-settings";
 import { useMobileNavigation } from "@/hooks/use-mobile-navigation";
 import { defaultMobilePages, parseNavigationAppearance, placeNavigationPage } from "@/lib/mobile-navigation";
 import { cn } from "@/lib/utils";
@@ -67,13 +68,16 @@ export function MobileNavigationSettings() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-semibold">Navigation</h1>
         </div>
-        <button type="button" disabled={!ready} onClick={reset} className="flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50">
-          <RotateCcw aria-hidden="true" className="size-4" />Reset
-        </button>
+        <div className="ml-auto flex items-center gap-1">
+          <button type="button" disabled={!ready} onClick={reset} className="flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50">
+            <RotateCcw aria-hidden="true" className="size-4" />Reset
+          </button>
+          <BackToSettings />
+        </div>
       </div>
 
       <Card className="min-w-0 gap-0 overflow-hidden py-0">
