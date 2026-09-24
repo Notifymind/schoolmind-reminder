@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, ChevronRight, Palette, User, Navigation } from "lucide-react";
+import { ChevronRight, Palette, User, Navigation } from "lucide-react";
 import { usePageTitle } from "@/app/app/layout";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -9,13 +9,6 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 const settingsLinks = [
   { href: "/app/navigation", title: "Navigation", description: "Arrange your mobile navbar and choose its appearance.", action: "Customize navigation", icon: Navigation },
   { href: "/app/theming", title: "Appearance", description: "Choose a theme and customize your exam and assignment cards.", action: "Customize appearance", icon: Palette },
-  {
-    href: "/app/notifications",
-    title: "Notifications",
-    description: "Manage push notifications and reminder presets for exams and assignments.",
-    action: "Manage notifications",
-    icon: Bell,
-  },
   {
     href: "/app/account",
     title: "Account",
