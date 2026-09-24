@@ -27,9 +27,11 @@ export default function ThemingPage() {
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center">
       <div className="grid w-full min-w-0 max-w-2xl gap-6">
-        <BackToSettings />
-        <div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-2xl font-semibold">Appearance</h1>
+          <div className="ml-auto">
+            <BackToSettings />
+          </div>
         </div>
 
         <Card className="min-w-0 gap-0 overflow-hidden py-0">

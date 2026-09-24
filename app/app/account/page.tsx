@@ -17,7 +17,12 @@ export default async function AccountPage() {
 
   return (
     <AccountClient deletionBlockedByDebt={deletionBlockedByDebt}>
-      <BackToSettings />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-semibold">Account</h1>
+        <div className="ml-auto">
+          <BackToSettings />
+        </div>
+      </div>
       {canChangeClass && (
         <ClassSelectionCard
           key={currentClass ?? "unassigned"}
