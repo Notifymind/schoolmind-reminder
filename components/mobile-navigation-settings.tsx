@@ -82,16 +82,16 @@ export function MobileNavigationSettings() {
           <p className="mb-4 text-center text-xs font-medium uppercase tracking-widest text-muted-foreground">Your navbar</p>
           <div aria-label="Navbar preview" className={cn("bg-background/95 p-2", appearance.floating ? "rounded-2xl border shadow-lg shadow-black/5" : "border-y")}>
             <div className="flex h-16 items-center overflow-x-auto">
-              <div className="flex min-h-11 min-w-max shrink-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-3 py-2 text-muted-foreground">
-                <Menu aria-hidden="true" className="size-5" />
-                <span className={appearance.showLabels ? "text-xs font-medium" : "sr-only"}>Menu</span>
-              </div>
               {chosen.map(page => (
                 <div key={page.href} title={page.title} className={cn("flex min-h-11 min-w-max shrink-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-3 py-2 text-muted-foreground", page.href === "/app/navigation" && "bg-primary/10 text-primary")}>
                   <page.icon aria-hidden="true" className="size-5" />
                   <span className={appearance.showLabels ? "whitespace-nowrap text-xs font-medium" : "sr-only"}>{page.title}</span>
                 </div>
               ))}
+              <div className="flex min-h-11 min-w-max shrink-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-3 py-2 text-muted-foreground">
+                <Menu aria-hidden="true" className="size-5" />
+                <span className={appearance.showLabels ? "text-xs font-medium" : "sr-only"}>Menu</span>
+              </div>
             </div>
           </div>
         </div>
@@ -121,11 +121,6 @@ export function MobileNavigationSettings() {
             <p id="navigation-reorder-help" className="mt-1 text-xs leading-5 text-muted-foreground">Tap to show or hide. Drag handles to reorder, or focus a handle and use the arrow keys.</p>
           </div>
           <ul>
-            <li className="flex min-h-16 items-center gap-3 px-2 text-sm font-medium sm:gap-4">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"><Check aria-hidden="true" className="size-4" strokeWidth={3} /></span>
-              <span className="flex-1">Menu</span>
-              <span className="pr-2 text-xs font-normal text-muted-foreground">Always shown</span>
-            </li>
             {chosen.map(page => (
               <li key={page.href} data-nav-row={page.href} className={cn("relative flex items-center rounded-lg transition-colors", preview?.href === page.href && "bg-muted opacity-50", target?.href === page.href && "bg-primary/5", target?.href === page.href && (target.after ? "after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:bg-primary" : "before:absolute before:inset-x-2 before:top-0 before:h-0.5 before:bg-primary"))}>
                 <button type="button" disabled={!ready} aria-pressed="true" aria-label={`Show ${page.title} in navbar`} onClick={() => save(selected.filter(href => href !== page.href))} className="flex min-h-16 min-w-0 flex-1 items-center gap-3 rounded-lg px-2 text-left text-sm font-medium hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50 sm:gap-4">
@@ -146,6 +141,11 @@ export function MobileNavigationSettings() {
                 </button>
               </li>
             ))}
+            <li className="flex min-h-16 items-center gap-3 px-2 text-sm font-medium sm:gap-4">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"><Check aria-hidden="true" className="size-4" strokeWidth={3} /></span>
+              <span className="flex-1">Menu</span>
+              <span className="pr-2 text-xs font-normal text-muted-foreground">Always shown</span>
+            </li>
             {available.map(page => (
               <li key={page.href}>
                 <button type="button" disabled={!ready} aria-pressed="false" aria-label={`Show ${page.title} in navbar`} onClick={() => save(placeNavigationPage(selected, page.href))} className="flex min-h-16 w-full items-center gap-3 rounded-lg px-2 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50 sm:gap-4">
