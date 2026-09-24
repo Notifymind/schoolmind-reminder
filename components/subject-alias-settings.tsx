@@ -70,7 +70,7 @@ export function SubjectAliasSettings({ aliases, subjects, hiddenSubjects, disabl
           <fieldset disabled={disabled || saving || changingVisibility} className="min-w-0 space-y-3">
             <legend className="sr-only">Subject display names</legend>
             {allSubjects.length ? allSubjects.map((subject) => (
-              <div key={subject} className="grid min-w-0 gap-2 rounded-lg border border-border/60 bg-muted/20 p-3 sm:grid-cols-2 sm:items-center sm:gap-4">
+              <div key={subject} className="grid min-w-0 gap-2 rounded-lg border border-border/60 bg-muted/20 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_6rem] sm:items-center sm:gap-3">
                 <span className="text-sm font-medium [overflow-wrap:anywhere]">{subject}</span>
                 <Input
                   aria-label={`Alias for ${subject}`}
@@ -80,15 +80,15 @@ export function SubjectAliasSettings({ aliases, subjects, hiddenSubjects, disabl
                   maxLength={100}
                   placeholder={subject}
                 />
-                <Button type="button" variant="outline" className="min-h-11 sm:col-span-2"
+                <Button type="button" variant="outline" className="min-h-11"
                   aria-label={`Hide ${subject}`} aria-pressed={hidden.has(subject)}
                   onClick={() => void toggleHidden(subject)}>
                   {hidden.has(subject) ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
-                  {hidden.has(subject) ? "Hidden · click to show" : "Visible · click to hide"}
+                  <span className="sm:hidden">{hidden.has(subject) ? "Hidden · click to show" : "Visible · click to hide"}</span>
+                  <span className="hidden sm:inline">{hidden.has(subject) ? "Hidden" : "Visible"}</span>
                 </Button>
               </div>
             )) : <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">Your subjects will appear here when school data is available.</p>}
-            <p className="text-sm leading-5 text-muted-foreground">Leave an alias blank to use the original name. Visibility changes save immediately. Offline changes stop reminders after syncing.</p>
           </fieldset>
           <div className="flex flex-wrap justify-end gap-2">
             <Button type="button" variant="ghost" className="min-h-11" disabled={disabled || saving || current.length === 0} onClick={() => setDraft([])}>Reset aliases</Button>
