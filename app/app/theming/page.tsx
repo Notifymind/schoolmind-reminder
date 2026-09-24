@@ -11,6 +11,7 @@ import { CountdownColorSettings } from "@/components/countdown-color-settings";
 import { useOfflineState } from "@/lib/offline/store";
 import { defaultUserSettings } from "@/lib/user-settings";
 import { cn } from "@/lib/utils";
+import { BackToSettings } from "@/components/back-to-settings";
 
 const subscribe = () => () => {};
 
@@ -26,6 +27,7 @@ export default function ThemingPage() {
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center">
       <div className="grid w-full min-w-0 max-w-2xl gap-6">
+        <BackToSettings />
         <div>
           <h1 className="text-2xl font-semibold">Appearance</h1>
         </div>

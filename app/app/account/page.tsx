@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { getClassNames, getUserClass, getUserRole, hasSellerDebt } from "@/db";
 import { ClassSelectionCard } from "@/components/class-selection-card";
 import { AccountClient } from "./client";
+import { BackToSettings } from "@/components/back-to-settings";
 
 export default async function AccountPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -16,6 +17,7 @@ export default async function AccountPage() {
 
   return (
     <AccountClient deletionBlockedByDebt={deletionBlockedByDebt}>
+      <BackToSettings />
       {canChangeClass && (
         <ClassSelectionCard
           key={currentClass ?? "unassigned"}
