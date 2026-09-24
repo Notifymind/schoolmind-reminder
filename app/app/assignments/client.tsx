@@ -20,7 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getDaysInfo } from "@/lib/user-settings";
+import { getDaysInfo, schoolEventPage } from "@/lib/user-settings";
 import { SchoolEventCard } from "@/components/school-event-card";
 import { Button } from "@/components/ui/button";
 import { Bell, BellOff } from "lucide-react";
@@ -178,7 +178,7 @@ function AssignmentCard({
 
 export function AssignmentsClient({
   classes,
-  assignments,
+  assignments: initialItems,
   hasClass,
   hasPermission,
   isLoggedIn,
@@ -213,6 +213,9 @@ export function AssignmentsClient({
   >(initialAssignmentPresets);
 
   const offline = useOfflineState();
+  const all = pathname.endsWith("/all") || title.startsWith("All ");
+  const view = offline.snapshot ? schoolEventPage(offline.snapshot.assignments, offline.snapshot.settings?.hiddenSubjects ?? [], all, currentPage) : null;
+  const assignments = view?.items ?? initialItems;
   const presets = offline.snapshot?.presets ?? loadedPresets;
   const assignmentPresets = offline.snapshot ? offline.snapshot.assignmentPreferences.map(p => ({ assignmentId: p.itemId, disabled: p.disabled, preset: presets.find(preset => preset.id === p.presetId) ?? null })) : loadedAssignmentPresets;
 
@@ -269,7 +272,7 @@ export function AssignmentsClient({
       )}
       {isLoggedIn && hasClass && assignments.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-muted-foreground">No assignments scheduled yet.</p>
+          <p className="text-muted-foreground">No visible assignments. Check Settings to show hidden subjects.</p>
         </div>
       )}
       {assignments.map((assignment) => {
@@ -286,8 +289,8 @@ export function AssignmentsClient({
         );
       })}
       <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
+        currentPage={view?.currentPage ?? currentPage}
+        totalPages={view?.totalPages ?? totalPages}
         onPageChange={handlePageChange}
       />
     </div>

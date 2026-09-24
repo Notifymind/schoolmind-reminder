@@ -1,7 +1,7 @@
 "use server";
 
-import { getUserSettings, saveSubjectAliases, saveCountdownColors } from "@/db/user-settings";
-import { validSubjectAliases, validCountdownColors } from "@/lib/user-settings";
+import { getUserSettings, saveHiddenSubjects, saveSubjectAliases, saveCountdownColors } from "@/db/user-settings";
+import { validSubjectAliases, validCountdownColors, validHiddenSubjects } from "@/lib/user-settings";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import {
@@ -135,6 +135,10 @@ export async function syncNotificationChangeAction(
   }
 
   switch (change.kind) {
+    case "hiddenSubjects":
+      if (!validHiddenSubjects(change.value)) return { error: "Invalid hidden subjects" };
+      await saveHiddenSubjects(session.user.id, change.value);
+      return { success: true };
     case "subjectAliases":
       if (!validSubjectAliases(change.value)) return { error: "Invalid subject aliases" };
       await saveSubjectAliases(session.user.id, change.value);

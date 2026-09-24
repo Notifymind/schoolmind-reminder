@@ -1,3 +1,5 @@
+import { getUserSettings } from "@/db/user-settings";
+import { visibleSubjectEvents } from "@/lib/user-settings";
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth"
 import { getClassNames, getUserClass, getExamsByClass, getAssignmentsByClass, getPresetsWithTimes, getNotificationPreferencesForExams, getNotificationPreferencesForAssignments, getNotificationPresetById, getNotificationTimes } from "@/db"
@@ -61,13 +63,14 @@ export default async function HomePage() {
   let assignmentPresets: AssignmentPreset[] = []
 
   if (session?.user?.id) {
+    const { hiddenSubjects } = await getUserSettings(session.user.id)
     const userClass = await getUserClass(session.user.id)
     if (userClass) {
       hasClass = true
       const now = new Date()
       const fourteenDaysLater = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
 
-      const allExams = await getExamsByClass(userClass)
+      const allExams = visibleSubjectEvents(await getExamsByClass(userClass), hiddenSubjects)
       examsList = allExams
         .filter((exam) => {
           if (!exam.dueDate) return false
@@ -79,7 +82,7 @@ export default async function HomePage() {
           return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
         })
 
-      const allAssignments = await getAssignmentsByClass(userClass)
+      const allAssignments = visibleSubjectEvents(await getAssignmentsByClass(userClass), hiddenSubjects)
       assignmentsList = allAssignments
         .filter((assignment) => {
           if (!assignment.dueDate) return false

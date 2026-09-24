@@ -1,3 +1,5 @@
+import { getUserSettings } from "@/db/user-settings";
+import { visibleSubjectEvents } from "@/lib/user-settings";
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth"
 import { getClassNames, getUserClass, getAssignmentsByClass, getPresetsWithTimes, getNotificationPreferencesForAssignments, getNotificationPresetById, getNotificationTimes } from "@/db"
@@ -49,6 +51,7 @@ export default async function UpcomingAssignmentsPage() {
   let presets: Preset[] = []
   let assignmentPresets: AssignmentPreset[] = []
   if (session?.user?.id) {
+    const { hiddenSubjects } = await getUserSettings(session.user.id)
     userRole = session.user.role as string | undefined
     const permissionResult = await auth.api.userHasPermission({
       body: {
@@ -60,7 +63,7 @@ export default async function UpcomingAssignmentsPage() {
     const userClass = await getUserClass(session.user.id)
     if (userClass) {
       hasClass = true
-      const allAssignments = await getAssignmentsByClass(userClass)
+      const allAssignments = visibleSubjectEvents(await getAssignmentsByClass(userClass), hiddenSubjects)
       const now = new Date()
       const maxDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
       assignmentsList = allAssignments

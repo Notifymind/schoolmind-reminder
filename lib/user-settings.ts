@@ -22,6 +22,7 @@ export type CountdownColors = Record<CountdownBand, PillColor>;
 export type SubjectAlias = { subject: string; alias: string };
 export type UserSettings = {
   subjectAliases: SubjectAlias[];
+  hiddenSubjects: string[];
   countdownColors: CountdownColors;
 };
 export const defaultCountdownColors: CountdownColors = {
@@ -29,7 +30,7 @@ export const defaultCountdownColors: CountdownColors = {
   later: "neutral", past: "neutral",
 };
 export const defaultUserSettings: UserSettings = {
-  subjectAliases: [], countdownColors: defaultCountdownColors,
+  subjectAliases: [], hiddenSubjects: [], countdownColors: defaultCountdownColors,
 };
 
 export function validSubjectAliases(value: unknown): value is SubjectAlias[] {
@@ -80,4 +81,33 @@ export function getDaysInfo(dueDate: Date | string | null, now = new Date()) {
   const text = days < 0 ? `${Math.abs(days)} day${days === -1 ? "" : "s"} ago`
     : days === 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
   return { days, text, isPast: days < 0 };
+}
+
+
+export function validHiddenSubjects(value: unknown): value is string[] {
+  return Array.isArray(value) && value.length <= 100 &&
+    value.every((subject) => typeof subject === "string" && subject.length > 0 &&
+      subject.length <= 200 && subject === subject.trim()) && new Set(value).size === value.length;
+}
+
+export function visibleSubjectEvents<T extends { subject: string | null }>(items: T[], hiddenSubjects: string[] = []): T[] {
+  const hidden = new Set(hiddenSubjects);
+  return items.filter((item) => !item.subject || !hidden.has(item.subject));
+}
+
+export function schoolEventPage<T extends { subject: string | null; dueDate: Date | null }>(
+  items: T[], hiddenSubjects: string[] = [], all = false, page = 1, now = Date.now(),
+) {
+  const visible = visibleSubjectEvents(items, hiddenSubjects)
+    .filter((item) => all || (item.dueDate && new Date(item.dueDate).getTime() >= now &&
+      new Date(item.dueDate).getTime() <= now + 14 * 86400000))
+    .sort((a, b) => {
+      if (!a.dueDate) return b.dueDate ? 1 : 0;
+      if (!b.dueDate) return -1;
+      const difference = new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      return all ? -difference : difference;
+    });
+  const totalPages = all ? Math.ceil(visible.length / 10) : 1;
+  const currentPage = Math.min(Math.max(1, Number.isFinite(page) ? Math.floor(page) : 1), Math.max(1, totalPages));
+  return { items: all ? visible.slice((currentPage - 1) * 10, currentPage * 10) : visible, totalPages, currentPage };
 }

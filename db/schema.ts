@@ -553,6 +553,7 @@ export const twoFactor = pgTable("two_factor", {
 
 export const userSettings = pgTable("user_settings", {
   userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+  hiddenSubjects: jsonb("hidden_subjects").$type<string[]>().notNull().default([]),
   subjectAliases: jsonb("subject_aliases").$type<SubjectAlias[]>().notNull().default([]),
   countdownColors: jsonb("countdown_colors").$type<Partial<CountdownColors>>().notNull().default({}),
 });

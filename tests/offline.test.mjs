@@ -416,10 +416,12 @@ test("personal settings replay over old offline snapshots without changing other
   assert.ok((await client.queueChange({ kind: "countdownColors", value: colors })).success);
   assert.equal(client.getOfflineState().snapshot.settings.subjectAliases[0].alias, "Mathematics");
   assert.equal(client.getOfflineState().snapshot.settings.countdownColors.tomorrow, "red");
+  assert.ok((await client.queueChange({ kind: "hiddenSubjects", value: ["MATH"] })).success);
   const reloaded = f.client();
   await reloaded.initializeOffline();
   assert.equal(reloaded.getOfflineState().snapshot.settings.subjectAliases[0].alias, "Mathematics");
-  assert.equal(reloaded.getOfflineState().pending, 2);
+  assert.equal(reloaded.getOfflineState().pending, 3);
+  assert.equal(reloaded.getOfflineState().snapshot.settings.hiddenSubjects[0], "MATH");
   f.navigator.onLine = true;
   await reloaded.synchronizeOffline();
   assert.equal(reloaded.getOfflineState().pending, 0);

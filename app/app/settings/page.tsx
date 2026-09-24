@@ -104,7 +104,7 @@ export default function SettingsPage() {
             </p>
             {!snapshot && <p role="status" className="mt-2 text-sm text-muted-foreground">{ready ? "Connect to load your settings before making changes." : "Loading your settings…"}</p>}
           </div>
-          <SubjectAliasSettings key={`aliases-${snapshot?.user.id ?? "loading"}`} aliases={settings.subjectAliases} subjects={subjects} disabled={!snapshot} />
+          <SubjectAliasSettings key={`aliases-${snapshot?.user.id ?? "loading"}`} aliases={settings.subjectAliases} hiddenSubjects={settings.hiddenSubjects ?? []} subjects={subjects} disabled={!snapshot} />
           <CountdownColorSettings key={`colors-${snapshot?.user.id ?? "loading"}`} colors={settings.countdownColors} disabled={!snapshot} />
         </section>
 

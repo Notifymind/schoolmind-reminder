@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getDaysInfo } from "@/lib/user-settings";
+import { getDaysInfo, schoolEventPage } from "@/lib/user-settings";
 import { SchoolEventCard } from "@/components/school-event-card";
 import { Button } from "@/components/ui/button";
 import { Calendar, BookOpen, Bell, BellOff, ChevronRight } from "lucide-react";
@@ -301,8 +301,8 @@ function AssignmentCard({
 
 export function HomeClient({
   classes,
-  exams,
-  assignments,
+  exams: initialExams,
+  assignments: initialAssignments,
   hasClass,
   isLoggedIn,
   presets: initialPresets,
@@ -330,6 +330,8 @@ export function HomeClient({
 
 
   const offline = useOfflineState();
+  const exams = offline.snapshot ? schoolEventPage(offline.snapshot.exams, offline.snapshot.settings?.hiddenSubjects ?? []).items : initialExams;
+  const assignments = offline.snapshot ? schoolEventPage(offline.snapshot.assignments, offline.snapshot.settings?.hiddenSubjects ?? []).items : initialAssignments;
   const hasAssignmentsPermission = offline.snapshot?.hasAssignmentsPermission ?? null;
   const presets = offline.snapshot?.presets ?? loadedPresets;
   const examPresets = offline.snapshot ? offline.snapshot.examPreferences.map(p => ({ examId: p.itemId, disabled: p.disabled, preset: presets.find(preset => preset.id === p.presetId) ?? null })) : loadedExamPresets;

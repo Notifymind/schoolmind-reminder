@@ -1,10 +1,11 @@
-import { defaultUserSettings, validSubjectAliases, validCountdownColors, type SubjectAlias, type CountdownColors } from "@/lib/user-settings";
+import { defaultUserSettings, validHiddenSubjects, validSubjectAliases, validCountdownColors, type SubjectAlias, type CountdownColors } from "@/lib/user-settings";
 import type { getOfflineSnapshotAction } from "@/lib/actions/offline";
 
 export type Snapshot = NonNullable<
   Awaited<ReturnType<typeof getOfflineSnapshotAction>>["snapshot"]
 >;
 export type Change =
+  | { kind: "hiddenSubjects"; value: string[] }
   | { kind: "subjectAliases"; value: SubjectAlias[] }
   | { kind: "countdownColors"; value: CountdownColors }
   | { kind: "createPreset"; id: string; name: string }
@@ -38,6 +39,9 @@ export function applyChange(snapshot: Snapshot, change: Change): Snapshot {
       ? next.presets.find((p) => p.id === change.presetId)
       : undefined;
   switch (change.kind) {
+    case "hiddenSubjects":
+      next.settings = { ...(next.settings ?? defaultUserSettings), hiddenSubjects: change.value };
+      break;
     case "subjectAliases":
       next.settings = { ...(next.settings ?? defaultUserSettings), subjectAliases: change.value };
       break;
@@ -139,6 +143,8 @@ export function validateChange(
   snapshot: Snapshot,
   change: Change,
 ): string | undefined {
+  if (change.kind === "hiddenSubjects" && !validHiddenSubjects(change.value))
+    return "Choose up to 100 unique subjects to hide";
   if (change.kind === "subjectAliases" && !validSubjectAliases(change.value))
     return "Use unique subject names and aliases of up to 100 characters, with at most 100 aliases";
   if (change.kind === "countdownColors" && !validCountdownColors(change.value))

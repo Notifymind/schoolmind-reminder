@@ -1,3 +1,5 @@
+import { getUserSettings } from "@/db/user-settings";
+import { visibleSubjectEvents } from "@/lib/user-settings";
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth"
 import { getClassNames, getUserClass, getExamsByClass, getPresetsWithTimes, getNotificationPreferencesForExams, getNotificationPresetById, getNotificationTimes } from "@/db"
@@ -40,7 +42,7 @@ type ExamPreset = {
 const ITEMS_PER_PAGE = 10
 export default async function ExamsPage(props: { searchParams: Promise<{ page?: string }> }) {
   const searchParams = await props.searchParams
-  const currentPage = Math.max(1, parseInt(searchParams.page || "1", 10))
+  let currentPage = Math.max(1, parseInt(searchParams.page || "1", 10) || 1)
   const session = await auth.api.getSession({
     headers: await import("next/headers").then(m => m.headers()),
   })
@@ -51,6 +53,7 @@ export default async function ExamsPage(props: { searchParams: Promise<{ page?: 
   let examPresets: ExamPreset[] = []
   let totalCount = 0
   if (session?.user?.id) {
+    const { hiddenSubjects } = await getUserSettings(session.user.id)
     const permissionResult = await auth.api.userHasPermission({
       body: {
         userId: session.user.id,
@@ -61,13 +64,14 @@ export default async function ExamsPage(props: { searchParams: Promise<{ page?: 
     const userClass = await getUserClass(session.user.id)
     if (userClass) {
       hasClass = true
-      const allExams = (await getExamsByClass(userClass)).sort((a, b) => {
+      const allExams = visibleSubjectEvents(await getExamsByClass(userClass), hiddenSubjects).sort((a, b) => {
         if (!a.dueDate && !b.dueDate) return 0
         if (!a.dueDate) return 1
         if (!b.dueDate) return -1
         return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
       })
       totalCount = allExams.length
+      currentPage = Math.min(currentPage, Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE)))
       examsList = allExams.slice(
         (currentPage - 1) * ITEMS_PER_PAGE,
         currentPage * ITEMS_PER_PAGE

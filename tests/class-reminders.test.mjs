@@ -64,6 +64,8 @@ test('class changes stop old exam and assignment reminders', async t => {
     CREATE TABLE sent_notifications (id text PRIMARY KEY, user_id text, exam_id integer, assignment_id integer,
       days_before integer, time varchar(5), sent_at timestamp DEFAULT now());
   `);
+  await pg.exec(fs.readFileSync("drizzle/0016_user_settings.sql", "utf8"));
+  await pg.exec(fs.readFileSync("drizzle/0017_hidden_subjects.sql", "utf8"));
   const ids = async table => (await pg.query(`SELECT id FROM ${table} ORDER BY id`)).rows.map(row => row.id);
 
   await t.test('saving the same class preserves subscriptions and pending deliveries', async () => {
@@ -100,6 +102,32 @@ test('class changes stop old exam and assignment reminders', async t => {
     assert.equal((await ids('user_notifications')).length, 2);
     assert.equal((await ids('sent_notifications')).length, 2);
     assert.equal((await pg.query("SELECT id FROM push_deliveries WHERE user_id = 'student'")).rows.length, 2);
+  });
+  await t.test('hidden subjects block new reminders and queued retries, and showing them restores future reminders', async () => {
+    const settingsApi = load('db/user-settings.ts', {
+      'drizzle-orm': orm, '@/db': { db }, '@/db/schema': schema,
+      '@/lib/user-settings': load('lib/user-settings.ts', {}),
+    });
+    await pg.exec("UPDATE exams SET subject = 'MATH'; UPDATE assignments SET subject = 'MATH';");
+    await settingsApi.saveHiddenSubjects('student', ['MATH']);
+    for (const [examId, assignmentId] of [[2, null], [null, 2]]) {
+      assert.equal(await actions.queueReminder('student', examId, assignmentId, 0, '10:00', 'Hidden', 'Hidden', 'exam_reminder'), false);
+    }
+    await pg.exec("UPDATE push_deliveries SET next_attempt_at = now() - interval '1 minute'");
+    let blocked = 0;
+    for (let i = 0; i < 3; i++) {
+      const delivery = await actions.claimPushDelivery();
+      if (delivery?.userId === 'student') {
+        assert.equal(delivery.subscription, undefined);
+        blocked++;
+      }
+    }
+    assert.equal(blocked, 2);
+    assert.equal(await actions.queueReminder('other', 1, null, 0, '10:00', 'Visible', 'Visible', 'exam_reminder'), true);
+    await settingsApi.saveHiddenSubjects('student', []);
+    for (const [examId, assignmentId] of [[2, null], [null, 2]]) {
+      assert.equal(await actions.queueReminder('student', examId, assignmentId, 0, '10:00', 'Visible', 'Visible', 'exam_reminder'), true);
+    }
   });
   await t.test('cleanup failure rolls back the class and preference changes', async () => {
     await pg.exec(`CREATE FUNCTION reject_delivery_delete() RETURNS trigger LANGUAGE plpgsql AS $$
