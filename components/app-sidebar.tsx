@@ -8,7 +8,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
-import { Home, FileText, ClipboardList, User, LogOut, Sun, Moon, DollarSign, Bell, Inbox, Ticket, BarChart3, Users, Wallet, GraduationCap, History, Settings, Palette, Navigation } from "lucide-react"
+import { Home, FileText, ClipboardList, User, LogOut, Sun, Moon, DollarSign, Bell, Inbox, Ticket, BarChart3, Users, Wallet, GraduationCap, History, Settings, Navigation } from "lucide-react"
 
 import {
   Sidebar,
@@ -189,7 +189,6 @@ const navItems = [
     icon: Settings,
   },
   { title: "Navigation", url: "/app/navigation", icon: Navigation },
-  { title: "Theming", url: "/app/theming", icon: Palette },
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

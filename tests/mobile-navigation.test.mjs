@@ -8,7 +8,7 @@ test('saved navigation supports no links and safely recovers from invalid storag
   assert.deepEqual(parseMobilePages('broken'), defaultMobilePages);
   assert.deepEqual(parseMobilePages('{}'), defaultMobilePages);
   assert.deepEqual(parseMobilePages('[]'), []);
-  assert.deepEqual(parseMobilePages('["/app/theming", "/app/theming", "menu", "/unknown", 1]'), ['/app/theming']);
+  assert.deepEqual(parseMobilePages('["/app/settings", "/app/settings", "/app/theming", "menu", "/unknown", 1]'), ['/app/settings']);
   assert.deepEqual(parseMobilePages(JSON.stringify(mobilePages.map(page => page.href))), mobilePages.map(page => page.href));
 });
 
@@ -16,7 +16,7 @@ test('navigation choices respect admin, seller and subscription access', () => {
   const paths = role => availableMobilePages(role).map(page => page.href);
   for (const role of [undefined, 'free', 'pro']) {
     assert.ok(paths(role).includes('/app/subscription'));
-    assert.ok(paths(role).includes('/app/theming'));
+    assert.ok(!paths(role).includes('/app/theming'));
     assert.ok(paths(role).every(path => !path.includes('/admin/') && !path.includes('/seller/')));
   }
   assert.ok(paths('seller').includes('/app/seller/codes'));
@@ -39,7 +39,7 @@ test('appearance defaults preserve the existing navbar and accept icon-only dock
 test('dropping pages inserts, reorders and appends without duplicates', () => {
   const { placeNavigationPage } = navigation;
   const selected = ['/app', '/app/notifications', '/app/settings'];
-  assert.deepEqual(placeNavigationPage(selected, '/app/theming', '/app/notifications'), ['/app', '/app/theming', '/app/notifications', '/app/settings']);
+  assert.deepEqual(placeNavigationPage(selected, '/app/account', '/app/notifications'), ['/app', '/app/account', '/app/notifications', '/app/settings']);
   assert.deepEqual(placeNavigationPage(selected, '/app/settings', '/app'), ['/app/settings', '/app', '/app/notifications']);
   assert.deepEqual(placeNavigationPage(selected, '/app'), ['/app/notifications', '/app/settings', '/app']);
   assert.deepEqual(placeNavigationPage(selected, '/app', '/app'), selected);
