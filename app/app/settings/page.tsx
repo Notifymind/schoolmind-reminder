@@ -8,7 +8,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 
 const settingsLinks = [
   { href: "/app/navigation", title: "Navigation", description: "Arrange your mobile navbar and choose its appearance.", action: "Customize navigation", icon: Navigation },
-  { href: "/app/theming", title: "Theming", description: "Choose a theme and customize your exam and assignment cards.", action: "Customize theming", icon: Palette },
+  { href: "/app/theming", title: "Appearance", description: "Choose a theme and customize your exam and assignment cards.", action: "Customize appearance", icon: Palette },
   {
     href: "/app/notifications",
     title: "Notifications",

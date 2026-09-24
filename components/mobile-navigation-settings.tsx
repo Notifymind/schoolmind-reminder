@@ -70,7 +70,6 @@ export function MobileNavigationSettings() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Navigation</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Make your mobile navbar your own.</p>
         </div>
         <button type="button" disabled={!ready} onClick={reset} className="flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50">
           <RotateCcw aria-hidden="true" className="size-4" />Reset

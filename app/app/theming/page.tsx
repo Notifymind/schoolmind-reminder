@@ -5,7 +5,7 @@ import { usePalette } from "@/components/palette-provider";
 import { themes } from "@/lib/themes";
 import { Check, Palette } from "lucide-react";
 import { usePageTitle } from "@/app/app/layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SubjectAliasSettings } from "@/components/subject-alias-settings";
 import { CountdownColorSettings } from "@/components/countdown-color-settings";
 import { useOfflineState } from "@/lib/offline/store";
@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 const subscribe = () => () => {};
 
 export default function ThemingPage() {
-  usePageTitle("Theming");
+  usePageTitle("Appearance");
   const { snapshot, ready } = useOfflineState();
   const settings = snapshot?.settings ?? defaultUserSettings;
   const subjects = [...new Set([...(snapshot?.exams ?? []), ...(snapshot?.assignments ?? [])]
@@ -27,19 +27,15 @@ export default function ThemingPage() {
     <div className="flex min-w-0 flex-1 flex-col items-center">
       <div className="grid w-full min-w-0 max-w-2xl gap-6">
         <div>
-          <h1 className="text-2xl font-semibold">Theming</h1>
-          <p className="mt-1 text-sm leading-5 text-muted-foreground">
-            Choose your theme and personalize exam and assignment cards.
-          </p>
+          <h1 className="text-2xl font-semibold">Appearance</h1>
         </div>
 
         <Card className="min-w-0 gap-0 overflow-hidden py-0">
           <CardHeader className="p-4 sm:p-5">
             <CardTitle className="flex items-center gap-2 text-base leading-6">
               <Palette aria-hidden="true" className="size-4 text-muted-foreground" />
-              Appearance
+              Theme
             </CardTitle>
-            <CardDescription>Choose your colors. Every theme has a light and dark version.</CardDescription>
           </CardHeader>
           <CardContent className="px-4 pb-4 sm:px-5 sm:pb-5">
             <fieldset disabled={!mounted}>
