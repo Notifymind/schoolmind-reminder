@@ -1,4 +1,4 @@
-import { Home, Bell, FileText, ClipboardList, User, Settings, Palette, DollarSign, Users, Ticket, History, BarChart3, GraduationCap, Wallet, Gift } from "lucide-react";
+import { Home, Bell, FileText, ClipboardList, User, Settings, Palette, DollarSign, Users, Ticket, History, BarChart3, GraduationCap, Wallet, Gift, Navigation } from "lucide-react";
 
 export const mobilePages = [
   { href: "/app", title: "Home", icon: Home },
@@ -10,6 +10,7 @@ export const mobilePages = [
   { href: "/app/subscription", title: "Subscription", icon: DollarSign, access: "subscriber" },
   { href: "/app/referrals", title: "Referrals", icon: Users },
   { href: "/app/settings", title: "Settings", icon: Settings },
+  { href: "/app/navigation", title: "Navigation", icon: Navigation },
   { href: "/app/theming", title: "Theming", icon: Palette },
   { href: "/app/account", title: "Account", icon: User },
   { href: "/app/seller/codes", title: "Codes", icon: Ticket, access: "seller" },
@@ -45,4 +46,22 @@ export function parseMobilePages(value: string | null): string[] {
   } catch {
     return defaultMobilePages;
   }
+}
+
+export type NavigationAppearance = { showLabels: boolean; floating: boolean };
+export function parseNavigationAppearance(value: string | null): NavigationAppearance {
+  try {
+    const parsed = JSON.parse(value ?? "{}");
+    return { showLabels: parsed?.showLabels !== false, floating: parsed?.floating !== false };
+  } catch {
+    return { showLabels: true, floating: true };
+  }
+}
+
+export function placeNavigationPage(selected: string[], href: string, before?: string): string[] {
+  if (href === before) return selected;
+  const next = selected.filter(page => page !== href);
+  const index = before ? next.indexOf(before) : -1;
+  next.splice(index < 0 ? next.length : index, 0, href);
+  return next;
 }

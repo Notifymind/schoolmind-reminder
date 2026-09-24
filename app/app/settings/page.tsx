@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, ChevronRight, Palette, User } from "lucide-react";
+import { Bell, ChevronRight, Palette, User, Navigation } from "lucide-react";
 import { usePageTitle } from "@/app/app/layout";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { MobileNavigationSettings } from "@/components/mobile-navigation-settings";
 
 const settingsLinks = [
+  { href: "/app/navigation", title: "Navigation", description: "Arrange your mobile navbar and choose its appearance.", action: "Customize navigation", icon: Navigation },
   { href: "/app/theming", title: "Theming", description: "Choose a theme and customize your exam and assignment cards.", action: "Customize theming", icon: Palette },
   {
     href: "/app/notifications",
@@ -37,8 +37,6 @@ export default function SettingsPage() {
             Choose how NotifyMind looks and manage your account preferences.
           </p>
         </div>
-
-        <MobileNavigationSettings />
 
         <div className="grid min-w-0 gap-4">
           {settingsLinks.map(({ href, title, description, action, icon: Icon }) => (

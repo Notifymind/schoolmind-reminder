@@ -26,3 +26,23 @@ test('navigation choices respect admin, seller and subscription access', () => {
   assert.ok(paths('admin').includes('/app/admin/overview'));
   assert.ok(!paths('admin').includes('/app/subscription'));
 });
+
+test('appearance defaults preserve the existing navbar and accept icon-only docked mode', () => {
+  const { parseNavigationAppearance } = navigation;
+  for (const value of [null, 'broken', 'null', '{}']) {
+    assert.deepEqual(parseNavigationAppearance(value), { showLabels: true, floating: true });
+  }
+  assert.deepEqual(parseNavigationAppearance('{"showLabels":false,"floating":false}'), { showLabels: false, floating: false });
+  assert.deepEqual(parseNavigationAppearance('{"showLabels":false}'), { showLabels: false, floating: true });
+});
+
+test('dropping pages inserts, reorders and appends without duplicates', () => {
+  const { placeNavigationPage } = navigation;
+  const selected = ['/app', '/app/notifications', '/app/settings'];
+  assert.deepEqual(placeNavigationPage(selected, '/app/theming', '/app/notifications'), ['/app', '/app/theming', '/app/notifications', '/app/settings']);
+  assert.deepEqual(placeNavigationPage(selected, '/app/settings', '/app'), ['/app/settings', '/app', '/app/notifications']);
+  assert.deepEqual(placeNavigationPage(selected, '/app'), ['/app/notifications', '/app/settings', '/app']);
+  assert.deepEqual(placeNavigationPage(selected, '/app', '/app'), selected);
+  assert.deepEqual(placeNavigationPage([], '/app'), ['/app']);
+  assert.deepEqual(selected, ['/app', '/app/notifications', '/app/settings']);
+});

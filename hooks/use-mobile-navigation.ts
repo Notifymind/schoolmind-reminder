@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { useAppSession } from "@/lib/offline/session";
-import { availableMobilePages, parseMobilePages } from "@/lib/mobile-navigation";
+import { availableMobilePages, parseMobilePages, parseNavigationAppearance, type NavigationAppearance } from "@/lib/mobile-navigation";
 
 const changeEvent = "notifymind-mobile-navigation-change";
 function subscribe(listener: () => void) {
@@ -20,6 +20,18 @@ export function useMobileNavigation() {
   const saved = useSyncExternalStore(subscribe, () => {
     try { return window.localStorage.getItem(key); } catch { return null; }
   }, () => null);
+  const appearanceKey = `${key}:appearance`;
+  const savedAppearance = useSyncExternalStore(subscribe, () => {
+    try { return window.localStorage.getItem(appearanceKey); } catch { return null; }
+  }, () => null);
+  const appearance = parseNavigationAppearance(savedAppearance);
+  function setAppearance(next: NavigationAppearance) {
+    try {
+      window.localStorage.setItem(appearanceKey, JSON.stringify(next));
+      window.dispatchEvent(new Event(changeEvent));
+      return true;
+    } catch { return false; }
+  }
   const selected = parseMobilePages(saved);
   const pages = availableMobilePages(session?.user.role);
 
@@ -33,5 +45,5 @@ export function useMobileNavigation() {
     }
   }
 
-  return { pages, selected, setSelected, ready: !!session };
+  return { pages, selected, setSelected, appearance, setAppearance, ready: !!session };
 }
