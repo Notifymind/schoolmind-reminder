@@ -46,6 +46,9 @@ function fixture() {
   let disk = { snapshot: snapshot(), queue: [] };
   let server = snapshot();
   let responseError;
+  let stallSnapshot = false;
+  let resolveSnapshot;
+  const timers = new Map();
   let loseResponse = false;
   let failStorage = false;
   const calls = [];
@@ -61,9 +64,9 @@ function fixture() {
     },
   };
   const actions = {
-    getOfflineSnapshotAction: async () => ({
-      snapshot: structuredClone(server),
-    }),
+    getOfflineSnapshotAction: async () => stallSnapshot
+      ? new Promise(resolve => { resolveSnapshot = resolve; })
+      : { snapshot: structuredClone(server) },
     syncNotificationChangeAction: async (userId, change) => {
       calls.push({ userId, change });
       if (responseError) return { error: responseError };
@@ -84,10 +87,13 @@ function fixture() {
         "./model": model,
         "./storage": storage,
       },
-      { navigator },
+      { navigator, setTimeout: (fn) => { const id = Symbol(); timers.set(id, fn); return id; }, clearTimeout: (id) => timers.delete(id) },
     );
   return {
     client,
+    stallSnapshot: () => { stallSnapshot = true; },
+    resolveSnapshot: () => resolveSnapshot({ snapshot: structuredClone(server) }),
+    expireRequests: () => { for (const fn of [...timers.values()]) fn(); },
     navigator,
     calls,
     disk: () => disk,
@@ -106,6 +112,28 @@ function fixture() {
     },
   };
 }
+
+for (const trigger of ["timeout", "offline event"]) test(`a stalled sync releases local edits after ${trigger} without restarting`, async () => {
+  const f = fixture();
+  const client = f.client();
+  await client.initializeOffline();
+  f.navigator.onLine = true;
+  f.stallSnapshot();
+  const sync = client.synchronizeOffline();
+  await new Promise(setImmediate);
+  if (trigger === "timeout") f.expireRequests();
+  else client.setOffline(true);
+  await new Promise(setImmediate);
+  assert.equal(client.getOfflineState().offline, true);
+  await sync;
+  f.navigator.onLine = false;
+  assert.equal((await client.queueChange({ kind: "createPreset", id: randomUUID(), name: "Saved while disconnected" })).success, true);
+  assert.equal(f.disk().queue.length, 1);
+  f.resolveSnapshot();
+  await new Promise(setImmediate);
+  assert.equal(f.disk().queue.length, 1, "Late network responses must not overwrite local edits");
+  assert.equal(client.getOfflineState().offline, true);
+});
 
 test("offline presets, times and event choices survive a fresh client and synchronize in order", async () => {
   const f = fixture();
@@ -355,6 +383,9 @@ test("service worker caches the complete public shell, falls back for app naviga
     },
     URL,
     Response,
+    AbortController,
+    setTimeout,
+    clearTimeout,
     fetch: async (request) => {
       if (!connected) throw new Error("Offline");
       return new Response(
@@ -392,7 +423,6 @@ test("service worker caches the complete public shell, falls back for app naviga
   for (const request of [
     { method: "POST", url: "https://example.test/app/notifications" },
     { method: "GET", url: "https://example.test/api/auth/get-session" },
-    { method: "GET", url: "https://example.test/app?_rsc=private" },
     { method: "GET", url: "https://other.test/_next/static/script.js" },
   ])
     handlers.get("fetch")({
@@ -400,4 +430,55 @@ test("service worker caches the complete public shell, falls back for app naviga
       respondWith: () =>
         assert.fail("Must not intercept private or cross-origin requests"),
     });
+});
+
+test("a stalled app navigation falls back to the cached shell without restarting", async () => {
+  const handlers = new Map();
+  const timers = new Map();
+  vm.runInNewContext(fs.readFileSync("public/sw.js", "utf8"), {
+    self: {
+      location: { origin: "https://example.test" },
+      addEventListener: (event, fn) => handlers.set(event, fn),
+    },
+    caches: { match: async () => new Response("saved app") },
+    URL, Response, AbortController,
+    setTimeout: (fn) => { const id = Symbol(); timers.set(id, fn); return id; },
+    clearTimeout: (id) => timers.delete(id),
+    fetch: () => new Promise(() => {}),
+  });
+  let response;
+  handlers.get("fetch")({
+    request: { method: "GET", mode: "navigate", url: "https://example.test/app/exams" },
+    respondWith: (work) => { response = work; },
+  });
+  for (const fn of [...timers.values()]) fn();
+  const result = await Promise.race([response, new Promise(resolve => setTimeout(() => resolve(null), 50))]);
+  assert.ok(result, "Navigation must stop waiting for the disconnected network");
+  assert.equal(await result.text(), "saved app");
+});
+
+test("stalled client navigation reports offline and fails without caching private RSC", async () => {
+  const handlers = new Map();
+  const timers = new Map();
+  const messages = [];
+  vm.runInNewContext(fs.readFileSync("public/sw.js", "utf8"), {
+    self: {
+      location: { origin: "https://example.test" },
+      addEventListener: (event, fn) => handlers.set(event, fn),
+      clients: { get: async () => ({ postMessage: message => messages.push(message.type) }) },
+    },
+    URL, Response, AbortController,
+    setTimeout: (fn) => { const id = Symbol(); timers.set(id, fn); return id; },
+    clearTimeout: (id) => timers.delete(id),
+    fetch: () => new Promise(() => {}),
+  });
+  let response;
+  handlers.get("fetch")({
+    clientId: "open-app",
+    request: { method: "GET", url: "https://example.test/app/exams?_rsc=private" },
+    respondWith: work => { response = work; },
+  });
+  for (const fn of [...timers.values()]) fn();
+  assert.equal((await response).type, "error");
+  assert.deepEqual(messages, ["NETWORK_UNAVAILABLE"]);
 });

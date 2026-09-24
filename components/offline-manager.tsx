@@ -30,7 +30,7 @@ export function OfflineManager() {
     void initializeOffline().then(() => synchronizeOffline());
     const navigateOffline = (event: MouseEvent) => {
       if (
-        !getOfflineState().offline ||
+        (!getOfflineState().offline && navigator.onLine) ||
         event.defaultPrevented ||
         event.button !== 0 ||
         event.metaKey ||
@@ -63,6 +63,10 @@ export function OfflineManager() {
       if (document.visibilityState === "visible") void synchronizeOffline();
     };
     const offline = () => setOffline(true);
+    const networkMessage = (event: MessageEvent) => {
+      if (event.data?.type === "NETWORK_UNAVAILABLE") offline();
+    };
+    navigator.serviceWorker?.addEventListener("message", networkMessage);
     const online = () => {
       sync();
     };
@@ -73,6 +77,7 @@ export function OfflineManager() {
     const timer = window.setInterval(sync, 30_000);
     return () => {
       clearInterval(timer);
+      navigator.serviceWorker?.removeEventListener("message", networkMessage);
       document.removeEventListener("click", navigateOffline, true);
       window.removeEventListener("offline", offline);
       window.removeEventListener("online", online);

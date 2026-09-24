@@ -1,4 +1,23 @@
-const CACHE_NAME = "notifymind-shell-v2";
+const CACHE_NAME = "notifymind-shell-v3";
+
+// Some connection drops leave fetch pending instead of rejecting promptly.
+async function fetchWithTimeout(request) {
+  const controller = new AbortController();
+  let timer;
+  try {
+    return await Promise.race([
+      fetch(request, { signal: controller.signal }),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          reject(new Error("Network timeout"));
+          controller.abort();
+        }, 5_000);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 async function cacheShell() {
   const cache = await caches.open(CACHE_NAME);
@@ -46,11 +65,20 @@ self.addEventListener("fetch", (event) => {
   } else if (event.request.mode === "navigate" && (url.pathname === "/app" || url.pathname.startsWith("/app/") || url.pathname === "/offline")) {
     event.respondWith((async () => {
       try {
-        const response = await fetch(event.request);
+        const response = await fetchWithTimeout(event.request);
         if (response.status < 500) return response;
       } catch { /* Render the local app when the network is unavailable. */ }
       return (await caches.match("/offline")) || new Response("Connect once to download the offline app.", { status: 503, headers: { "Content-Type": "text/plain" } });
     })());
+  } else if ((url.pathname === "/app" || url.pathname.startsWith("/app/")) &&
+    (event.request.headers?.get("RSC") === "1" || url.searchParams.has("_rsc"))) {
+    // RSC cannot consume an HTML shell. Fail promptly so Next can perform a
+    // document navigation, which uses the cached shell above.
+    event.respondWith(fetchWithTimeout(event.request).catch(async () => {
+      const client = await self.clients.get(event.clientId);
+      client?.postMessage({ type: "NETWORK_UNAVAILABLE" });
+      return Response.error();
+    }));
   }
   // Auth responses, private HTML, RSC payloads, and server actions are never cached.
 });
