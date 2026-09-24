@@ -1,8 +1,9 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { useTheme } from "next-themes";
-import { Monitor, Moon, Palette, Sun } from "lucide-react";
+import { usePalette } from "@/components/palette-provider";
+import { themes } from "@/lib/themes";
+import { Check, Palette } from "lucide-react";
 import { usePageTitle } from "@/app/app/layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SubjectAliasSettings } from "@/components/subject-alias-settings";
@@ -12,11 +13,6 @@ import { defaultUserSettings } from "@/lib/user-settings";
 import { cn } from "@/lib/utils";
 
 const subscribe = () => () => {};
-const themes = [
-  { value: "light", label: "Light", icon: Sun },
-  { value: "dark", label: "Dark", icon: Moon },
-  { value: "system", label: "System", icon: Monitor },
-] as const;
 
 export default function ThemingPage() {
   usePageTitle("Theming");
@@ -24,7 +20,7 @@ export default function ThemingPage() {
   const settings = snapshot?.settings ?? defaultUserSettings;
   const subjects = [...new Set([...(snapshot?.exams ?? []), ...(snapshot?.assignments ?? [])]
     .map((item) => item.subject).filter((subject): subject is string => !!subject?.trim()))];
-  const { theme, setTheme } = useTheme();
+  const { palette, setPalette } = usePalette();
   const mounted = useSyncExternalStore(subscribe, () => true, () => false);
 
   return (
@@ -43,28 +39,40 @@ export default function ThemingPage() {
               <Palette aria-hidden="true" className="size-4 text-muted-foreground" />
               Appearance
             </CardTitle>
-            <CardDescription>Choose a theme, or follow your device settings.</CardDescription>
+            <CardDescription>Choose your colors. Every theme has a light and dark version.</CardDescription>
           </CardHeader>
           <CardContent className="px-4 pb-4 sm:px-5 sm:pb-5">
             <fieldset disabled={!mounted}>
               <legend className="sr-only">Theme</legend>
-              <div className="grid grid-cols-3 gap-2">
-                {themes.map(({ value, label, icon: Icon }) => (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {themes.map(({ value, label }) => (
                   <label key={value} className="relative min-w-0">
                     <input
                       type="radio"
                       name="theme"
                       value={value}
-                      checked={mounted && theme === value}
-                      onChange={() => setTheme(value)}
+                      checked={mounted && palette === value}
+                      onChange={() => setPalette(value)}
                       className="peer sr-only"
                     />
                     <span className={cn(
-                      "flex min-h-20 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-border/60 bg-muted/20 p-3 text-sm font-medium transition-colors hover:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-disabled:cursor-wait peer-disabled:opacity-50",
-                      mounted && theme === value && "border-primary bg-primary/5 text-primary",
+                      "flex cursor-pointer flex-col gap-3 rounded-lg border border-border/60 bg-muted/20 p-3 text-sm font-medium transition-colors hover:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-disabled:cursor-wait peer-disabled:opacity-50",
+                      mounted && palette === value && "border-primary bg-primary/5 text-primary",
                     )}>
-                      <Icon aria-hidden="true" className="size-5" />
-                      {label}
+                      <span data-palette={value} aria-hidden="true" className="theme-preview flex h-16 w-full overflow-hidden rounded-md border border-border">
+                        <span className="flex flex-1 items-end gap-1 bg-background p-2">
+                          <span className="h-6 flex-1 rounded-sm bg-primary" />
+                          <span className="h-9 flex-1 rounded-sm border border-border bg-muted" />
+                        </span>
+                        <span className="dark theme-preview flex flex-1 items-end gap-1 bg-background p-2">
+                          <span className="h-6 flex-1 rounded-sm bg-primary" />
+                          <span className="h-9 flex-1 rounded-sm border border-border bg-muted" />
+                        </span>
+                      </span>
+                      <span className="flex items-center justify-between gap-1">
+                        {label}
+                        <Check aria-hidden="true" className={cn("size-4 shrink-0", mounted && palette === value ? "visible" : "invisible")} />
+                      </span>
                     </span>
                   </label>
                 ))}
@@ -73,7 +81,7 @@ export default function ThemingPage() {
           </CardContent>
           <div className="border-t border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
             <p className="text-sm leading-5 text-muted-foreground">
-              Your theme is saved automatically in this browser.
+              Your theme is saved automatically in this browser. Switch light and dark mode in your user menu.
             </p>
           </div>
         </Card>

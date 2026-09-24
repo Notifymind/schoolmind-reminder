@@ -1,4 +1,4 @@
-import { Home, Bell, FileText, ClipboardList, User, Settings, DollarSign, Users, Ticket, History, BarChart3, GraduationCap, Wallet, Gift, Navigation } from "lucide-react";
+import { Home, Bell, FileText, ClipboardList, User, Settings, DollarSign, Users, Ticket, History, BarChart3, GraduationCap, Wallet, Gift } from "lucide-react";
 
 export const mobilePages = [
   { href: "/app", title: "Home", icon: Home },
@@ -10,7 +10,6 @@ export const mobilePages = [
   { href: "/app/subscription", title: "Subscription", icon: DollarSign, access: "subscriber" },
   { href: "/app/referrals", title: "Referrals", icon: Users },
   { href: "/app/settings", title: "Settings", icon: Settings },
-  { href: "/app/navigation", title: "Navigation", icon: Navigation },
   { href: "/app/account", title: "Account", icon: User },
   { href: "/app/seller/codes", title: "Codes", icon: Ticket, access: "seller" },
   { href: "/app/seller/prices", title: "Prices", icon: DollarSign, access: "seller" },

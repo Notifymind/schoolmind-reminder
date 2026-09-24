@@ -8,7 +8,7 @@ test('saved navigation supports no links and safely recovers from invalid storag
   assert.deepEqual(parseMobilePages('broken'), defaultMobilePages);
   assert.deepEqual(parseMobilePages('{}'), defaultMobilePages);
   assert.deepEqual(parseMobilePages('[]'), []);
-  assert.deepEqual(parseMobilePages('["/app/settings", "/app/settings", "/app/theming", "menu", "/unknown", 1]'), ['/app/settings']);
+  assert.deepEqual(parseMobilePages('["/app/settings", "/app/settings", "/app/theming", "/app/navigation", "menu", "/unknown", 1]'), ['/app/settings']);
   assert.deepEqual(parseMobilePages(JSON.stringify(mobilePages.map(page => page.href))), mobilePages.map(page => page.href));
 });
 
@@ -17,6 +17,7 @@ test('navigation choices respect admin, seller and subscription access', () => {
   for (const role of [undefined, 'free', 'pro']) {
     assert.ok(paths(role).includes('/app/subscription'));
     assert.ok(!paths(role).includes('/app/theming'));
+    assert.ok(!paths(role).includes('/app/navigation'));
     assert.ok(paths(role).every(path => !path.includes('/admin/') && !path.includes('/seller/')));
   }
   assert.ok(paths('seller').includes('/app/seller/codes'));

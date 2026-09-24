@@ -5,6 +5,7 @@ import { ServiceWorkerRegistration } from "@/components/service-worker-registrat
 import { StandaloneNavigationGuard } from "@/components/standalone-navigation-guard";
 import { OfflineManager } from "@/components/offline-manager";
 import { Toaster } from "@/components/ui/sonner";
+import { paletteInitScript } from "@/lib/themes";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,6 +30,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: paletteInitScript }} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
