@@ -98,14 +98,13 @@ export function MobileNavigationSettings() {
 
         <div className="divide-y divide-border/60 border-y border-border/60 px-4 sm:px-6">
           {([
-            { key: "showLabels", title: "Labels", description: "Show page names under icons.", icon: Type },
-            { key: "floating", title: "Floating navbar", description: "Leave space around the navbar.", icon: PanelBottom },
+            { key: "showLabels", title: "Labels", icon: Type },
+            { key: "floating", title: "Floating navbar", icon: PanelBottom },
           ] as const).map(option => (
             <label key={option.key} className="flex cursor-pointer items-center gap-3 py-5 sm:gap-4">
               <option.icon aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-medium">{option.title}</span>
-                <span className="mt-1 block text-xs leading-5 text-muted-foreground sm:text-sm">{option.description}</span>
               </span>
               <input type="checkbox" role="switch" aria-label={option.title} disabled={!ready} checked={appearance[option.key]} onChange={event => {
                 if (!setAppearance({ ...appearance, [option.key]: event.target.checked })) toast.error("Could not save navbar appearance.");
@@ -118,7 +117,7 @@ export function MobileNavigationSettings() {
         <section aria-labelledby="navigation-tabs-heading" className="px-2 py-4 sm:px-4">
           <div className="px-2 pb-3 sm:px-2">
             <h2 id="navigation-tabs-heading" className="text-sm font-medium">Customize tabs</h2>
-            <p id="navigation-reorder-help" className="mt-1 text-xs leading-5 text-muted-foreground">Tap to show or hide. Drag handles to reorder, or focus a handle and use the arrow keys.</p>
+            <p id="navigation-reorder-help" className="sr-only">Tap to show or hide. Drag handles to reorder, or focus a handle and use the arrow keys.</p>
           </div>
           <ul>
             {chosen.map(page => (
@@ -156,7 +155,6 @@ export function MobileNavigationSettings() {
             ))}
           </ul>
         </section>
-        <p className="border-t border-border/60 bg-muted/20 px-4 py-3 text-xs leading-5 text-muted-foreground sm:px-6">Changes save automatically in this browser.</p>
       </Card>
       <p role="status" className="sr-only">{announcement}</p>
       {preview && <div aria-hidden="true" className="pointer-events-none fixed z-[100] rounded-lg border bg-background px-3 py-2 text-sm shadow-xl" style={{ left: preview.x + 12, top: preview.y + 12 }}>{pages.find(page => page.href === preview.href)?.title}</div>}
