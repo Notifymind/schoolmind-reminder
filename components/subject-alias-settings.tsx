@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { queueChange } from "@/lib/offline/store";
-import type { SubjectAlias } from "@/lib/user-settings";
+import { subjectDisplayName, type SubjectAlias } from "@/lib/user-settings";
 
 export function SubjectAliasSettings({ aliases, subjects, hiddenSubjects, disabled }: {
   aliases: SubjectAlias[];
@@ -44,7 +44,7 @@ export function SubjectAliasSettings({ aliases, subjects, hiddenSubjects, disabl
     setSaving(true);
     try {
       const value = current.map(({ subject, alias }) => ({ subject, alias: alias.trim() }))
-        .filter(({ subject, alias }) => alias && alias !== subject);
+        .filter(({ subject, alias }) => alias && alias !== subjectDisplayName(subject, []));
       const result = await queueChange({ kind: "subjectAliases", value });
       if ("error" in result) toast.error(result.error);
       else {
@@ -78,7 +78,7 @@ export function SubjectAliasSettings({ aliases, subjects, hiddenSubjects, disabl
                   value={current.find((entry) => entry.subject === subject)?.alias ?? ""}
                   onChange={(event) => setAlias(subject, event.target.value)}
                   maxLength={100}
-                  placeholder={subject}
+                  placeholder={subjectDisplayName(subject, [])}
                 />
                 <Button type="button" variant="outline" className="min-h-11"
                   aria-label={`Hide ${subject}`} aria-pressed={hidden.has(subject)}

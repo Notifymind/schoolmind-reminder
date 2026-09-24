@@ -20,6 +20,14 @@ export const countdownBands = [
 export type CountdownBand = (typeof countdownBands)[number]["key"];
 export type CountdownColors = Record<CountdownBand, PillColor>;
 export type SubjectAlias = { subject: string; alias: string };
+const defaultSubjectAliases: SubjectAlias[] = [
+  { subject: "Bosnian, Croatian, Serbian Language and Literature", alias: "Bosnian" },
+  { subject: "Computers", alias: "ICT" },
+  { subject: "English as a first language", alias: "EFL" },
+  { subject: "English as a second language", alias: "ESL" },
+  { subject: "German Language", alias: "German" },
+  { subject: "Turkish Language", alias: "Turkish" },
+];
 export type UserSettings = {
   subjectAliases: SubjectAlias[];
   hiddenSubjects: string[];
@@ -66,7 +74,9 @@ export function countdownBand(days: number): CountdownBand {
 }
 
 export function subjectDisplayName(subject: string | null, aliases: SubjectAlias[]): string {
-  return aliases.find((entry) => entry.subject === subject)?.alias || subject || "No subject";
+  return aliases.find((entry) => entry.subject === subject)?.alias
+    || defaultSubjectAliases.find((entry) => entry.subject === subject)?.alias
+    || subject || "No subject";
 }
 
 // Compare local calendar dates, so DST days are still exactly one day apart.

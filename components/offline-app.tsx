@@ -6,6 +6,7 @@ import { HomeClient } from "@/app/app/client";
 import { ExamsClient } from "@/app/app/exams/client";
 import { AssignmentsClient } from "@/app/app/assignments/client";
 import NotificationsPage from "@/app/app/notifications/page";
+import ThemingPage from "@/app/app/theming/page";
 import SettingsPage from "@/app/app/settings/page";
 import { useOfflineState } from "@/lib/offline/store";
 
@@ -69,6 +70,7 @@ export function OfflineApp() {
   };
   let content;
   if (path === "/app/notifications") content = <NotificationsPage />;
+  else if (path === "/app/theming") content = <ThemingPage />;
   else if (path === "/app/settings") content = <SettingsPage />;
   else if (!data.className)
     content = <p>Connect to select your class and download its data.</p>;
