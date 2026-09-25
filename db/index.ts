@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, notInArray, inArray, isNull, or, isNotNull, sql, like, gt } from "drizzle-orm";
 import {
   user,
+  userSettings,
   exams,
   assignments,
   notificationPresets,
@@ -901,14 +902,17 @@ export async function queueReminder(
     const [account] = await tx.select({ class: user.class }).from(user)
       .where(eq(user.id, userId)).for("update");
     if (!account?.class) return false;
+    const [settings] = await tx.select({ hiddenSubjects: userSettings.hiddenSubjects }).from(userSettings)
+      .where(eq(userSettings.userId, userId));
+    const hidden = new Set(settings?.hiddenSubjects ?? []);
     if (examId !== null) {
-      const [exam] = await tx.select({ className: exams.className }).from(exams).where(eq(exams.id, examId));
-      if (exam?.className !== account.class) return false;
+      const [exam] = await tx.select({ className: exams.className, subject: exams.subject }).from(exams).where(eq(exams.id, examId));
+      if (exam?.className !== account.class || (exam.subject && hidden.has(exam.subject))) return false;
     }
     if (assignmentId !== null) {
-      const [assignment] = await tx.select({ className: assignments.className }).from(assignments)
+      const [assignment] = await tx.select({ className: assignments.className, subject: assignments.subject }).from(assignments)
         .where(eq(assignments.id, assignmentId));
-      if (assignment?.className !== account.class) return false;
+      if (assignment?.className !== account.class || (assignment.subject && hidden.has(assignment.subject))) return false;
     }
     // Serialize overlapping cron runs for the same reminder, including NULL IDs.
     const key = JSON.stringify([userId, examId, assignmentId, daysBefore, time]);
@@ -941,14 +945,35 @@ export async function claimPushDelivery() {
       attempts: delivery.attempts + 1,
       nextAttemptAt: new Date(Date.now() + 5 * 60_000),
     }).where(eq(pushDeliveries.id, delivery.id));
-    const [subscription] = await tx.select().from(pushSubscriptions).where(and(
-      eq(pushSubscriptions.id, delivery.subscriptionId), eq(pushSubscriptions.userId, delivery.userId),
-    ));
-    return { ...delivery, attempts: delivery.attempts + 1, subscription };
+    // Recheck preferences for retries, including reminders queued before a subject was hidden.
+    const [[subscription], hidden] = await Promise.all([
+      tx.select().from(pushSubscriptions).where(and(
+        eq(pushSubscriptions.id, delivery.subscriptionId), eq(pushSubscriptions.userId, delivery.userId),
+      )),
+      isReminderHidden(tx, delivery.userId, delivery.payload),
+    ]);
+    return { ...delivery, attempts: delivery.attempts + 1, subscription: hidden ? undefined : subscription };
   });
 }
 
 export async function finishPushDelivery(id: string, retryAt?: Date) {
   if (retryAt) await db.update(pushDeliveries).set({ nextAttemptAt: retryAt }).where(eq(pushDeliveries.id, id));
   else await db.delete(pushDeliveries).where(eq(pushDeliveries.id, id));
+}
+
+
+async function isReminderHidden(reader: Pick<typeof db, "select">, userId: string, payload: string): Promise<boolean> {
+  let target: unknown;
+  try { target = JSON.parse(JSON.parse(payload).tag); } catch { return false; }
+  if (!Array.isArray(target) || target.length !== 5 || target[0] !== userId) return false;
+  const [, examId, assignmentId] = target;
+  const [settings] = await reader.select({ hiddenSubjects: userSettings.hiddenSubjects }).from(userSettings)
+    .where(eq(userSettings.userId, userId));
+  if (!settings?.hiddenSubjects.length) return false;
+  const [item] = Number.isSafeInteger(examId)
+    ? await reader.select({ subject: exams.subject }).from(exams).where(eq(exams.id, examId))
+    : Number.isSafeInteger(assignmentId)
+      ? await reader.select({ subject: assignments.subject }).from(assignments).where(eq(assignments.id, assignmentId))
+      : [];
+  return !!item?.subject && settings.hiddenSubjects.includes(item.subject);
 }

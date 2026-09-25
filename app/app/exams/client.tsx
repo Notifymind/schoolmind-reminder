@@ -20,6 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getDaysInfo, schoolEventPage } from "@/lib/user-settings";
 import { SchoolEventCard } from "@/components/school-event-card";
 import { Button } from "@/components/ui/button";
 import { Bell, BellOff } from "lucide-react";
@@ -86,31 +87,7 @@ function ExamCard({
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const getDaysInfo = () => {
-    if (!exam.dueDate) return null;
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const due = new Date(exam.dueDate);
-    due.setHours(0, 0, 0, 0);
-    const diffDays = Math.floor(
-      (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-    );
-
-    if (diffDays < 0)
-      return {
-        text: `${Math.abs(diffDays)} days ago`,
-        isPast: true,
-        isUrgent: false,
-      };
-    if (diffDays === 0) return { text: "Today", isPast: false, isUrgent: true };
-    if (diffDays === 1)
-      return { text: "Tomorrow", isPast: false, isUrgent: true };
-    if (diffDays <= 7)
-      return { text: `In ${diffDays} days`, isPast: false, isUrgent: true };
-    return { text: `In ${diffDays} days`, isPast: false, isUrgent: false };
-  };
-
-  const daysInfo = getDaysInfo();
+  const daysInfo = getDaysInfo(exam.dueDate);
 
   const handleSelectPreset = async (value: string) => {
     setIsLoading(true);
@@ -201,7 +178,7 @@ function ExamCard({
 
 export function ExamsClient({
   classes,
-  exams,
+  exams: initialItems,
   hasClass,
   hasPermission,
   isLoggedIn,
@@ -233,6 +210,9 @@ export function ExamsClient({
     React.useState<ExamPreset[]>(initialExamPresets);
 
   const offline = useOfflineState();
+  const all = pathname.endsWith("/all") || title.startsWith("All ");
+  const view = offline.snapshot ? schoolEventPage(offline.snapshot.exams, offline.snapshot.settings?.hiddenSubjects ?? [], all, currentPage) : null;
+  const exams = view?.items ?? initialItems;
   const presets = offline.snapshot?.presets ?? loadedPresets;
   const examPresets = offline.snapshot ? offline.snapshot.examPreferences.map(p => ({ examId: p.itemId, disabled: p.disabled, preset: presets.find(preset => preset.id === p.presetId) ?? null })) : loadedExamPresets;
 
@@ -279,7 +259,7 @@ export function ExamsClient({
       )}
       {isLoggedIn && hasClass && exams.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-muted-foreground">No exams scheduled yet.</p>
+          <p className="text-muted-foreground">No visible exams. Check Settings to show hidden subjects.</p>
         </div>
       )}
       {exams.map((exam) => {
@@ -296,8 +276,8 @@ export function ExamsClient({
         );
       })}
       <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
+        currentPage={view?.currentPage ?? currentPage}
+        totalPages={view?.totalPages ?? totalPages}
         onPageChange={handlePageChange}
       />
     </div>

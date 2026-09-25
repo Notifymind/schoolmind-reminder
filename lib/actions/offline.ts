@@ -1,5 +1,7 @@
 "use server";
 
+import { getUserSettings, saveHiddenSubjects, saveSubjectAliases, saveCountdownColors } from "@/db/user-settings";
+import { validSubjectAliases, validCountdownColors, validHiddenSubjects } from "@/lib/user-settings";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import {
@@ -16,7 +18,7 @@ import type { Change } from "@/lib/offline/model";
 export async function getOfflineSnapshotAction() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) return { error: "Not authenticated" as const };
-  const [className, permission, presetResult, limitResult, notifications] =
+  const [className, permission, presetResult, limitResult, notifications, settings] =
     await Promise.all([
       getUserClass(session.user.id),
       auth.api.userHasPermission({
@@ -28,6 +30,7 @@ export async function getOfflineSnapshotAction() {
       getPresetsWithTimes(session.user.id),
       actions.getLimitsAction(),
       actions.getUserNotificationsAction(),
+      getUserSettings(session.user.id),
     ]);
   const [exams, assignments] = await Promise.all([
     className ? getExamsByClass(className) : [],
@@ -59,6 +62,7 @@ export async function getOfflineSnapshotAction() {
         class: className,
       },
       savedAt: new Date(),
+      settings,
       className,
       hasAssignmentsPermission: permission.success,
       exams,
@@ -131,6 +135,18 @@ export async function syncNotificationChangeAction(
   }
 
   switch (change.kind) {
+    case "hiddenSubjects":
+      if (!validHiddenSubjects(change.value)) return { error: "Invalid hidden subjects" };
+      await saveHiddenSubjects(session.user.id, change.value);
+      return { success: true };
+    case "subjectAliases":
+      if (!validSubjectAliases(change.value)) return { error: "Invalid subject aliases" };
+      await saveSubjectAliases(session.user.id, change.value);
+      return { success: true };
+    case "countdownColors":
+      if (!validCountdownColors(change.value)) return { error: "Invalid countdown colors" };
+      await saveCountdownColors(session.user.id, change.value);
+      return { success: true };
     case "createPreset":
       return actions.createPresetAction(change.name, change.id);
     case "renamePreset":

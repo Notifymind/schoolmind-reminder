@@ -1,6 +1,10 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { Calendar, Clock } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { useOfflineState } from "@/lib/offline/store";
+import { countdownBand, defaultUserSettings, pillColors, subjectDisplayName, type getDaysInfo } from "@/lib/user-settings";
 import { cn } from "@/lib/utils";
 
 type SchoolEvent = {
@@ -21,10 +25,13 @@ export function SchoolEventCard({
 }: {
   event: SchoolEvent;
   fallbackTitle: string;
-  daysInfo: { text: string; isUrgent: boolean; isPast: boolean } | null;
+  daysInfo: ReturnType<typeof getDaysInfo>;
   action: ReactNode;
   compactDescription?: boolean;
 }) {
+  const { snapshot } = useOfflineState();
+  const settings = snapshot?.settings ?? defaultUserSettings;
+  const subject = subjectDisplayName(event.subject, settings.subjectAliases);
   const description = event.description?.trim();
   const showDescription = description && description !== event.title?.trim();
 
@@ -33,8 +40,8 @@ export function SchoolEventCard({
       <div className="flex items-start gap-3 p-4 sm:p-5">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p className="text-sm leading-5 text-muted-foreground [overflow-wrap:anywhere]">
-              {event.subject || "No subject"}
+            <p title={event.subject && subject !== event.subject ? event.subject : undefined} className="text-sm leading-5 text-muted-foreground [overflow-wrap:anywhere]">
+              {subject}
             </p>
             {event.type && (
               <span className="inline-block max-w-full rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground [overflow-wrap:anywhere]">
@@ -71,10 +78,8 @@ export function SchoolEventCard({
           {daysInfo && (
             <span
               className={cn(
-                "shrink-0 rounded-md bg-muted px-2 py-1 text-xs font-medium",
-                daysInfo.isUrgent
-                  ? "bg-orange-500/10 text-orange-700 dark:text-orange-400"
-                  : "text-muted-foreground",
+                "shrink-0 rounded-md px-2 py-1 text-xs font-medium",
+                pillColors[settings.countdownColors[countdownBand(daysInfo.days)]].className,
               )}
             >
               {daysInfo.text}

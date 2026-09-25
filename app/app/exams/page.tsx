@@ -1,3 +1,5 @@
+import { getUserSettings } from "@/db/user-settings";
+import { visibleSubjectEvents } from "@/lib/user-settings";
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth"
 import { getClassNames, getUserClass, getExamsByClass, getPresetsWithTimes, getNotificationPreferencesForExams, getNotificationPresetById, getNotificationTimes } from "@/db"
@@ -32,6 +34,7 @@ export default async function UpcomingExamsPage() {
   let examPresets: ExamPreset[] = []
 
   if (session?.user?.id) {
+    const { hiddenSubjects } = await getUserSettings(session.user.id)
     const permissionResult = await auth.api.userHasPermission({
       body: {
         userId: session.user.id,
@@ -43,7 +46,7 @@ export default async function UpcomingExamsPage() {
     const userClass = await getUserClass(session.user.id)
     if (userClass) {
       hasClass = true
-      const allExams = await getExamsByClass(userClass)
+      const allExams = visibleSubjectEvents(await getExamsByClass(userClass), hiddenSubjects)
       const now = new Date()
       const fourteenDaysLater = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
       

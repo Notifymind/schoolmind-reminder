@@ -1,3 +1,5 @@
+import { getUserSettings } from "@/db/user-settings";
+import { visibleSubjectEvents } from "@/lib/user-settings";
 import { auth } from "@/lib/auth"
 import { getClassNames, getUserClass, getAssignmentsByClass, getPresetsWithTimes, getNotificationPreferencesForAssignments, getNotificationPresetById, getNotificationTimes } from "@/db"
 import { assignments } from "@/db/schema"
@@ -34,7 +36,7 @@ type AssignmentPreset = {
 const ITEMS_PER_PAGE = 10
 export default async function AssignmentsPage(props: { searchParams: Promise<{ page?: string }> }) {
   const searchParams = await props.searchParams
-  const currentPage = Math.max(1, parseInt(searchParams.page || "1", 10))
+  let currentPage = Math.max(1, parseInt(searchParams.page || "1", 10) || 1)
   const session = await auth.api.getSession({
     headers: await import("next/headers").then(m => m.headers()),
   })
@@ -46,6 +48,7 @@ export default async function AssignmentsPage(props: { searchParams: Promise<{ p
   let assignmentPresets: AssignmentPreset[] = []
   let totalCount = 0
   if (session?.user?.id) {
+    const { hiddenSubjects } = await getUserSettings(session.user.id)
     userRole = session.user.role as string | undefined
     const permissionResult = await auth.api.userHasPermission({
       body: {
@@ -57,13 +60,14 @@ export default async function AssignmentsPage(props: { searchParams: Promise<{ p
     const userClass = await getUserClass(session.user.id)
     if (userClass) {
       hasClass = true
-      const allAssignments = (await getAssignmentsByClass(userClass)).sort((a, b) => {
+      const allAssignments = visibleSubjectEvents(await getAssignmentsByClass(userClass), hiddenSubjects).sort((a, b) => {
         if (!a.dueDate && !b.dueDate) return 0
         if (!a.dueDate) return 1
         if (!b.dueDate) return -1
         return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
       })
       totalCount = allAssignments.length
+      currentPage = Math.min(currentPage, Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE)))
       assignmentsList = allAssignments.slice(
         (currentPage - 1) * ITEMS_PER_PAGE,
         currentPage * ITEMS_PER_PAGE

@@ -26,7 +26,8 @@ function load(file, dependencies = {}, globals = {}) {
   vm.runInNewContext(source, context);
   return context.exports;
 }
-const model = load("lib/offline/model.ts");
+const settings = load("lib/user-settings.ts");
+const model = load("lib/offline/model.ts", { "@/lib/user-settings": settings });
 function snapshot(userId = "alice") {
   return {
     user: { id: userId, role: "pro", name: "Alice" },
@@ -261,6 +262,8 @@ test("local validation enforces downloaded plan limits and notification time bou
 test("sync rejects a mismatched account and assignment access before any mutation", async () => {
   const calls = [];
   const { syncNotificationChangeAction } = load("lib/actions/offline.ts", {
+    "@/db/user-settings": {},
+    "@/lib/user-settings": settings,
     "next/headers": { headers: async () => ({}) },
     "@/lib/auth": {
       auth: {
@@ -400,4 +403,27 @@ test("service worker caches the complete public shell, falls back for app naviga
       respondWith: () =>
         assert.fail("Must not intercept private or cross-origin requests"),
     });
+});
+
+
+test("personal settings replay over old offline snapshots without changing other preferences", async () => {
+  const f = fixture();
+  const client = f.client();
+  await client.initializeOffline();
+  const aliases = [{ subject: "MATH", alias: "Mathematics" }];
+  const colors = { ...settings.defaultCountdownColors, tomorrow: "red" };
+  assert.ok((await client.queueChange({ kind: "subjectAliases", value: aliases })).success);
+  assert.ok((await client.queueChange({ kind: "countdownColors", value: colors })).success);
+  assert.equal(client.getOfflineState().snapshot.settings.subjectAliases[0].alias, "Mathematics");
+  assert.equal(client.getOfflineState().snapshot.settings.countdownColors.tomorrow, "red");
+  assert.ok((await client.queueChange({ kind: "hiddenSubjects", value: ["MATH"] })).success);
+  const reloaded = f.client();
+  await reloaded.initializeOffline();
+  assert.equal(reloaded.getOfflineState().snapshot.settings.subjectAliases[0].alias, "Mathematics");
+  assert.equal(reloaded.getOfflineState().pending, 3);
+  assert.equal(reloaded.getOfflineState().snapshot.settings.hiddenSubjects[0], "MATH");
+  f.navigator.onLine = true;
+  await reloaded.synchronizeOffline();
+  assert.equal(reloaded.getOfflineState().pending, 0);
+  assert.equal(reloaded.getOfflineState().snapshot.settings.countdownColors.tomorrow, "red");
 });

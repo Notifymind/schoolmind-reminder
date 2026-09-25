@@ -1,0 +1,1 @@
+ALTER TABLE "user_settings" ADD COLUMN "hidden_subjects" jsonb DEFAULT '[]'::jsonb NOT NULL;
